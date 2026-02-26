@@ -24,11 +24,11 @@
 	}
 
 	function totalVcpus(pod: Pod): number {
-		return pod.vms.reduce((sum, vm) => sum + vm.vcpus, 0);
+		return (pod.vms ?? []).reduce((sum, vm) => sum + vm.vcpus, 0);
 	}
 
 	function totalRamGb(pod: Pod): number {
-		return Math.round(pod.vms.reduce((sum, vm) => sum + vm.ram_mb, 0) / 1024);
+		return Math.round((pod.vms ?? []).reduce((sum, vm) => sum + vm.ram_mb, 0) / 1024);
 	}
 
 	async function handleAction(key: string, action: () => Promise<void>) {
@@ -125,7 +125,7 @@
 				<div>
 					<StatusBadge status={pod.status} />
 				</div>
-				<span class="text-sm text-surface-600-400">{pod.vms.length} VM{pod.vms.length !== 1 ? 's' : ''}</span>
+				<span class="text-sm text-surface-600-400">{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
 				<span class="text-sm text-surface-600-400">{totalVcpus(pod)} vCPU · {totalRamGb(pod)} GB</span>
 				<div>
 					<span class="rounded-md bg-primary-500/15 px-2.5 py-0.5 font-mono text-xs font-semibold text-primary-400">
@@ -163,9 +163,9 @@
 			<!-- VM sub-rows -->
 			<div
 				class="overflow-hidden transition-all duration-300 ease-in-out"
-				style="max-height: {collapsed[pod.id] ? '0px' : `${pod.vms.length * 60 + 20}px`};"
+				style="max-height: {collapsed[pod.id] ? '0px' : `${(pod.vms ?? []).length * 60 + 20}px`};"
 			>
-				{#each pod.vms as vm (vm.id)}
+				{#each pod.vms ?? [] as vm (vm.id)}
 					<div
 						class="grid items-center gap-2 border-b border-surface-200-800/50 bg-surface-50-950/50 py-2.5 pl-12 pr-5"
 						class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}

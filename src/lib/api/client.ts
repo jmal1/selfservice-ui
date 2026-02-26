@@ -68,14 +68,21 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 // --- Pods ---
 
-export function getPods(): Promise<Pod[]> {
-	if (isMock) return mockApi.getPods();
-	return apiFetch<Pod[]>('/api/v1/pods');
+// Normalize pod data — ensure vms array is never null
+function normalizePod(pod: Pod): Pod {
+	return { ...pod, vms: pod.vms ?? [] };
 }
 
-export function getPod(id: string): Promise<Pod> {
+export async function getPods(): Promise<Pod[]> {
+	if (isMock) return mockApi.getPods();
+	const pods = await apiFetch<Pod[]>('/api/v1/pods');
+	return (pods ?? []).map(normalizePod);
+}
+
+export async function getPod(id: string): Promise<Pod> {
 	if (isMock) return mockApi.getPod(id);
-	return apiFetch<Pod>(`/api/v1/pods/${id}`);
+	const pod = await apiFetch<Pod>(`/api/v1/pods/${id}`);
+	return normalizePod(pod);
 }
 
 export interface CreatePodRequest {

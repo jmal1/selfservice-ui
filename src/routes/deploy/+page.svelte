@@ -80,7 +80,7 @@
 								></span>
 								<span class="font-medium text-surface-900-100">{pod.name}</span>
 							</div>
-							<span class="text-xs text-surface-500">{pod.vms.length} VM{pod.vms.length !== 1 ? 's' : ''}</span>
+							<span class="text-xs text-surface-500">{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
 						</a>
 					{/each}
 				</div>

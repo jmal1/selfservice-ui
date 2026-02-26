@@ -50,7 +50,7 @@
 			if (pod && pod.id === e.pod_id) {
 				pod = {
 					...pod,
-					vms: pod.vms.map((vm) =>
+					vms: (pod.vms ?? []).map((vm) =>
 						vm.id === e.vm_id
 							? { ...vm, status: e.status, ip_address: e.ip_address ?? vm.ip_address }
 							: vm
@@ -67,13 +67,17 @@
 
 	async function loadData() {
 		try {
-			const [podResult, tplResult] = await Promise.all([getPod(podId), getTemplates()]);
-			pod = podResult;
-			templates = tplResult;
+			pod = await getPod(podId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load pod';
 		} finally {
 			loading = false;
+		}
+		// Templates may fail (e.g., 500) — don't block pod display
+		try {
+			templates = await getTemplates();
+		} catch {
+			templates = [];
 		}
 	}
 
@@ -108,7 +112,7 @@
 		await handleAction(`delete-${vmId}`, async () => {
 			await deleteVM(podId, vmId);
 			if (pod) {
-				pod = { ...pod, vms: pod.vms.filter((vm) => vm.id !== vmId) };
+				pod = { ...pod, vms: (pod.vms ?? []).filter((vm) => vm.id !== vmId) };
 			}
 		});
 	}
@@ -219,7 +223,7 @@
 		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
 			<div class="flex items-center justify-between border-b border-surface-200-800 px-5 py-3">
 				<h2 class="text-sm font-semibold text-surface-900-100">
-					Virtual Machines ({pod.vms.length})
+					Virtual Machines ({(pod.vms ?? []).length})
 				</h2>
 				<button
 					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
@@ -269,12 +273,12 @@
 				</div>
 			{/if}
 
-			{#if pod.vms.length === 0}
+			{#if (pod.vms ?? []).length === 0}
 				<div class="px-5 py-12 text-center text-surface-500">
 					<p class="text-sm">No VMs in this pod yet.</p>
 				</div>
 			{:else}
-				{#each pod.vms as vm (vm.id)}
+				{#each pod.vms ?? [] as vm (vm.id)}
 					<div class="border-b border-surface-200-800 last:border-b-0">
 						<!-- VM row -->
 						<div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center gap-3 px-5 py-3">

@@ -11,19 +11,21 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	const totalVMs = $derived(pods.reduce((s, p) => s + p.vms.length, 0));
+	const totalVMs = $derived(pods.reduce((s, p) => s + (p.vms ?? []).length, 0));
 
 	onMount(async () => {
 		if (!authStore.isAdmin) return;
 		try {
-			const [p, u] = await Promise.all([getPods(), adminGetUsers()]);
-			pods = p;
-			users = u;
+			pods = await getPods();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load admin data';
-		} finally {
-			loading = false;
 		}
+		try {
+			users = await adminGetUsers();
+		} catch (e) {
+			if (!error) error = e instanceof Error ? e.message : 'Failed to load users';
+		}
+		loading = false;
 	});
 </script>
 

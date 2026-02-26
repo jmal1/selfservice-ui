@@ -31,7 +31,7 @@
 				p.id === e.pod_id
 					? {
 							...p,
-							vms: p.vms.map((vm) =>
+							vms: (p.vms ?? []).map((vm) =>
 								vm.id === e.vm_id
 									? { ...vm, status: e.status, ip_address: e.ip_address ?? vm.ip_address }
 									: vm
