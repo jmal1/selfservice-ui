@@ -9,7 +9,8 @@ import type {
 	User,
 	ResourceUsage,
 	Job,
-	AuditEntry
+	AuditEntry,
+	VLANPoolEntry
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -257,4 +258,38 @@ export function adminGetJobs(): Promise<Job[]> {
 export function adminGetAuditLog(): Promise<AuditEntry[]> {
 	if (isMock) return mockApi.adminGetAuditLog();
 	return apiFetch<AuditEntry[]>('/api/v1/admin/audit');
+}
+
+// --- VLAN Pool Admin ---
+
+export async function adminGetVLANPool(): Promise<VLANPoolEntry[]> {
+	const entries = await apiFetch<VLANPoolEntry[]>('/api/v1/admin/vlans');
+	return entries ?? [];
+}
+
+export interface AddVLANRequest {
+	vlan_tag: number;
+	subnet: string;
+	host_scope: string;
+}
+
+export function adminAddVLAN(req: AddVLANRequest): Promise<VLANPoolEntry> {
+	return apiFetch<VLANPoolEntry>('/api/v1/admin/vlans', {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminUpdateVLAN(
+	id: number,
+	req: { host_scope: string }
+): Promise<VLANPoolEntry> {
+	return apiFetch<VLANPoolEntry>(`/api/v1/admin/vlans/${id}`, {
+		method: 'PATCH',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminRemoveVLAN(id: number): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/vlans/${id}`, { method: 'DELETE' });
 }

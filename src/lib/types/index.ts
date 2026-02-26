@@ -68,7 +68,6 @@ export interface Pod {
 	owner_id: string;
 	name: string;
 	salt: string;
-	pod_index: number;
 	vlan_id: number;
 	subnet: string;
 	status: PodStatus;
@@ -100,6 +99,15 @@ export interface AuditEntry {
 	details: Record<string, unknown>;
 	ip_address: string;
 	created_at: string;
+}
+
+export interface VLANPoolEntry {
+	id: number;
+	vlan_tag: number;
+	subnet: string;
+	host_scope: string;
+	pod_id: string | null;
+	allocated_at: string | null;
 }
 
 export interface ResourceUsage {
