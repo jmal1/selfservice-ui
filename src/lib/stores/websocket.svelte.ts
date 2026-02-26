@@ -1,6 +1,5 @@
 import type { WSEvent } from '$lib/types';
 import { config } from '$lib/config';
-import { authStore } from './auth.svelte';
 
 type EventHandler = (event: WSEvent) => void;
 
@@ -19,50 +18,53 @@ class WebSocketStore {
 		if (this.ws?.readyState === WebSocket.OPEN) return;
 		this.intentionalClose = false;
 
-		const url = new URL(config.wsUrl);
-		if (authStore.token) {
-			url.searchParams.set('token', authStore.token);
+		// Don't attempt WebSocket if URL is invalid or not configured
+		if (!config.wsUrl) return;
+
+		try {
+			const url = new URL(config.wsUrl);
+
+			this.ws = new WebSocket(url.toString());
+
+			this.ws.onopen = () => {
+				this.connected = true;
+				this.reconnectAttempt = 0;
+			};
+
+			this.ws.onclose = () => {
+				this.connected = false;
+				this.ws = null;
+				if (!this.intentionalClose && this.reconnectAttempt < 3) {
+					this.scheduleReconnect();
+				}
+			};
+
+			this.ws.onerror = () => {
+				this.ws?.close();
+			};
+
+			this.ws.onmessage = (event: MessageEvent) => {
+				try {
+					const data = JSON.parse(event.data as string) as WSEvent;
+					const typeHandlers = this.handlers.get(data.type);
+					if (typeHandlers) {
+						for (const handler of typeHandlers) {
+							handler(data);
+						}
+					}
+					const allHandlers = this.handlers.get('*');
+					if (allHandlers) {
+						for (const handler of allHandlers) {
+							handler(data);
+						}
+					}
+				} catch {
+					// Ignore malformed messages
+				}
+			};
+		} catch {
+			// Invalid URL or WebSocket construction failed — skip silently
 		}
-
-		this.ws = new WebSocket(url.toString());
-
-		this.ws.onopen = () => {
-			this.connected = true;
-			this.reconnectAttempt = 0;
-		};
-
-		this.ws.onclose = () => {
-			this.connected = false;
-			this.ws = null;
-			if (!this.intentionalClose) {
-				this.scheduleReconnect();
-			}
-		};
-
-		this.ws.onerror = () => {
-			this.ws?.close();
-		};
-
-		this.ws.onmessage = (event: MessageEvent) => {
-			try {
-				const data = JSON.parse(event.data as string) as WSEvent;
-				const typeHandlers = this.handlers.get(data.type);
-				if (typeHandlers) {
-					for (const handler of typeHandlers) {
-						handler(data);
-					}
-				}
-				// Also notify wildcard listeners
-				const allHandlers = this.handlers.get('*');
-				if (allHandlers) {
-					for (const handler of allHandlers) {
-						handler(data);
-					}
-				}
-			} catch {
-				// Ignore malformed messages
-			}
-		};
 	}
 
 	disconnect() {

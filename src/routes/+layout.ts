@@ -5,6 +5,7 @@ import { config } from '$lib/config';
 import { mockApi } from '$lib/api/mock';
 
 export const ssr = false;
+export const prerender = false;
 
 export const load: LayoutLoad = async ({ url }) => {
 	if (authStore.isAuthenticated) return {};
