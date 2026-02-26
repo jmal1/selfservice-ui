@@ -1,0 +1,233 @@
+import { goto } from '$app/navigation';
+import { authStore } from '$lib/stores/auth.svelte';
+import { config } from '$lib/config';
+import { mockApi } from './mock';
+import type {
+	Pod,
+	PodVM,
+	Template,
+	User,
+	ResourceUsage,
+	Job,
+	AuditEntry
+} from '$lib/types';
+
+const isMock = config.mock;
+
+// --- Error type ---
+
+export class ApiError extends Error {
+	constructor(
+		public status: number,
+		public statusText: string,
+		public body: Record<string, unknown> | null
+	) {
+		super(`API Error ${status}: ${statusText}`);
+		this.name = 'ApiError';
+	}
+}
+
+// --- Typed fetch wrapper ---
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+	const url = `${config.apiBaseUrl}${path}`;
+	const headers = new Headers(options.headers);
+
+	if (authStore.token) {
+		headers.set('Authorization', `Bearer ${authStore.token}`);
+	}
+	if (!headers.has('Content-Type') && options.body) {
+		headers.set('Content-Type', 'application/json');
+	}
+
+	const response = await fetch(url, {
+		...options,
+		headers,
+		credentials: 'include'
+	});
+
+	if (response.status === 401) {
+		authStore.logout();
+		await goto('/login');
+		throw new ApiError(401, 'Unauthorized', null);
+	}
+
+	if (!response.ok) {
+		let body: Record<string, unknown> | null = null;
+		try {
+			body = (await response.json()) as Record<string, unknown>;
+		} catch {
+			// response may not be JSON
+		}
+		throw new ApiError(response.status, response.statusText, body);
+	}
+
+	if (response.status === 204) {
+		return undefined as T;
+	}
+
+	return (await response.json()) as T;
+}
+
+// --- Pods ---
+
+export function getPods(): Promise<Pod[]> {
+	if (isMock) return mockApi.getPods();
+	return apiFetch<Pod[]>('/api/v1/pods');
+}
+
+export function getPod(id: string): Promise<Pod> {
+	if (isMock) return mockApi.getPod(id);
+	return apiFetch<Pod>(`/api/v1/pods/${id}`);
+}
+
+export interface CreatePodRequest {
+	name: string;
+	vms: {
+		template_id: string;
+		display_name: string;
+		vcpus?: number;
+		ram_mb?: number;
+		disk_gb?: number;
+	}[];
+}
+
+export function createPod(req: CreatePodRequest): Promise<Pod> {
+	if (isMock) return mockApi.createPod(req);
+	return apiFetch<Pod>('/api/v1/pods', {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function deletePod(id: string): Promise<void> {
+	if (isMock) return mockApi.deletePod(id);
+	return apiFetch<void>(`/api/v1/pods/${id}`, { method: 'DELETE' });
+}
+
+// --- VMs ---
+
+export function startVM(podId: string, vmId: string): Promise<void> {
+	if (isMock) return mockApi.startVM(podId, vmId);
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/start`, { method: 'POST' });
+}
+
+export function stopVM(podId: string, vmId: string): Promise<void> {
+	if (isMock) return mockApi.stopVM(podId, vmId);
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/stop`, { method: 'POST' });
+}
+
+export function restartVM(podId: string, vmId: string): Promise<void> {
+	if (isMock) return mockApi.restartVM(podId, vmId);
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/restart`, { method: 'POST' });
+}
+
+export function deleteVM(podId: string, vmId: string): Promise<void> {
+	if (isMock) return mockApi.deleteVM(podId, vmId);
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}`, { method: 'DELETE' });
+}
+
+export interface AddVMRequest {
+	template_id: string;
+	display_name: string;
+	vcpus?: number;
+	ram_mb?: number;
+	disk_gb?: number;
+}
+
+export function addVM(podId: string, req: AddVMRequest): Promise<PodVM> {
+	if (isMock) return mockApi.addVM(podId, req);
+	return apiFetch<PodVM>(`/api/v1/pods/${podId}/vms`, {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export interface ConsoleTicket {
+	ticket: string;
+	url: string;
+}
+
+export function getConsoleTicket(podId: string, vmId: string): Promise<ConsoleTicket> {
+	if (isMock) return mockApi.getConsoleTicket(podId, vmId);
+	return apiFetch<ConsoleTicket>(`/api/v1/pods/${podId}/vms/${vmId}/console`);
+}
+
+// --- Templates ---
+
+export function getTemplates(): Promise<Template[]> {
+	if (isMock) return mockApi.getTemplates();
+	return apiFetch<Template[]>('/api/v1/templates');
+}
+
+export interface CreateTemplateRequest {
+	name: string;
+	vcenter_template: string;
+	os_type: string;
+	default_vcpus: number;
+	default_ram_mb: number;
+	default_disk_gb: number;
+	min_vcpus: number;
+	min_ram_mb: number;
+	description: string;
+	icon_url: string;
+	is_active: boolean;
+}
+
+export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Template> {
+	if (isMock) return mockApi.adminCreateTemplate(req as unknown as Record<string, unknown>);
+	return apiFetch<Template>('/api/v1/admin/templates', { method: 'POST', body: JSON.stringify(req) });
+}
+
+export function adminUpdateTemplate(id: string, req: Partial<CreateTemplateRequest>): Promise<Template> {
+	if (isMock) return mockApi.adminUpdateTemplate(id, req as unknown as Record<string, unknown>);
+	return apiFetch<Template>(`/api/v1/admin/templates/${id}`, { method: 'PATCH', body: JSON.stringify(req) });
+}
+
+export function adminDeleteTemplate(id: string): Promise<void> {
+	if (isMock) return mockApi.adminDeleteTemplate(id);
+	return apiFetch<void>(`/api/v1/admin/templates/${id}`, { method: 'DELETE' });
+}
+
+// --- User / Profile ---
+
+export function getMe(): Promise<User> {
+	if (isMock) return mockApi.getMe();
+	return apiFetch<User>('/auth/me');
+}
+
+export function getResourceUsage(): Promise<ResourceUsage> {
+	if (isMock) return mockApi.getResourceUsage();
+	return apiFetch<ResourceUsage>('/api/v1/me/usage');
+}
+
+// --- Admin ---
+
+export function adminGetUsers(): Promise<User[]> {
+	if (isMock) return mockApi.adminGetUsers();
+	return apiFetch<User[]>('/api/v1/admin/users');
+}
+
+export interface UpdateQuotaRequest {
+	max_vcpus: number;
+	max_ram_mb: number;
+	max_pods: number;
+}
+
+export function adminUpdateQuota(userId: string, req: UpdateQuotaRequest): Promise<User> {
+	if (isMock) return mockApi.adminUpdateQuota(userId, req);
+	return apiFetch<User>(`/api/v1/admin/users/${userId}/quota`, {
+		method: 'PATCH',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminGetJobs(): Promise<Job[]> {
+	if (isMock) return mockApi.adminGetJobs();
+	return apiFetch<Job[]>('/api/v1/admin/jobs');
+}
+
+export function adminGetAuditLog(): Promise<AuditEntry[]> {
+	if (isMock) return mockApi.adminGetAuditLog();
+	return apiFetch<AuditEntry[]>('/api/v1/admin/audit');
+}

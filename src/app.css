@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+@import '@fontsource/inter';
+@import './theme-portal.css';
+@import '@skeletonlabs/skeleton';
+
+@theme {
+	--font-sans: 'Inter', sans-serif;
+	--color-accent: oklch(0.55 0.24 273);
+	--color-accent-glow: oklch(0.55 0.24 273 / 0.3);
+}
+
+/* Animated background blobs */
+@keyframes blob-drift {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33% { transform: translate(30px, -20px) scale(1.05); }
+	66% { transform: translate(-15px, 15px) scale(0.95); }
+}
+
+.bg-blob {
+	animation: blob-drift 20s ease-in-out infinite;
+}
+
+.bg-blob-delayed {
+	animation: blob-drift 25s ease-in-out infinite reverse;
+}
+
+/* Glass panel effect */
+.glass {
+	background: light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.05));
+	backdrop-filter: blur(20px);
+	border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+}
+
+.glass-hover:hover {
+	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.1));
+}
+
+/* Glow effect for primary buttons */
+.glow-primary {
+	box-shadow: 0 0 20px oklch(0.55 0.24 273 / 0.3);
+}
+.glow-primary:hover {
+	box-shadow: 0 0 30px oklch(0.55 0.24 273 / 0.4);
+}
+
+/* Pulse animation for status dots */
+@keyframes status-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
+}
+
+.status-pulse {
+	animation: status-pulse 2s ease-in-out infinite;
+}
