@@ -220,6 +220,14 @@ export async function getResourceUsage(): Promise<ResourceUsage> {
 	return me.resource_usage;
 }
 
+// --- Jobs ---
+
+export async function getMyJobs(): Promise<Job[]> {
+	if (isMock) return mockApi.adminGetJobs();
+	const jobs = await apiFetch<Job[]>('/api/v1/jobs');
+	return jobs ?? [];
+}
+
 // --- Admin ---
 
 export function adminGetUsers(): Promise<User[]> {

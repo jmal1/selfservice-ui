@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getPods, getResourceUsage } from '$lib/api/client';
+	import { getPods, getResourceUsage, getMyJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import type { Pod, ResourceUsage, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import ResourceGauges from '$lib/components/ResourceGauges.svelte';
@@ -60,6 +60,12 @@
 			usage = await getResourceUsage();
 		} catch {
 			usage = null;
+		}
+		// Load user's jobs
+		try {
+			jobs = await getMyJobs();
+		} catch {
+			jobs = [];
 		}
 	}
 </script>
