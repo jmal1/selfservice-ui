@@ -13,23 +13,92 @@
 		}
 	});
 
-	function stepStatus(job: Job): Array<{ label: string; status: 'completed' | 'running' | 'pending' | 'failed' }> {
-		if (job.status === 'failed') {
+	interface StepInfo {
+		label: string;
+		status: 'completed' | 'running' | 'pending' | 'failed';
+	}
+
+	function getProvisioningSteps(job: Job): StepInfo[] {
+		const isFailed = job.status === 'failed';
+		const isCompleted = job.status === 'completed';
+		const isRunning = job.status === 'running' || job.status === 'claimed';
+
+		if (job.type === 'pod_create') {
+			const vmCount = (job.payload?.vms as unknown[])?.length ?? 0;
+			const vmLabel = vmCount === 1 ? '1 VM' : `${vmCount} VMs`;
+
+			// Ordered provisioning phases
+			const phases = [
+				'Network Setup',
+				`Clone ${vmLabel}`,
+				'Power On',
+				'Done'
+			];
+
+			if (isFailed) {
+				// Show all phases up to "failed" marker
+				return phases.map((label, i) => {
+					if (i < phases.length - 1) return { label, status: 'completed' as const };
+					return { label: 'Failed', status: 'failed' as const };
+				});
+			}
+
+			if (isCompleted) {
+				return phases.map((label) => ({ label, status: 'completed' as const }));
+			}
+
+			if (isRunning) {
+				// Running — first phase is running, rest pending
+				return [
+					{ label: phases[0], status: 'completed' },
+					{ label: phases[1], status: 'running' },
+					{ label: phases[2], status: 'pending' },
+					{ label: phases[3], status: 'pending' }
+				];
+			}
+
+			// Pending (queued)
 			return [
-				{ label: 'Queued', status: 'completed' as const },
-				{ label: 'Processing', status: 'completed' as const },
-				{ label: 'Failed', status: 'failed' as const }
+				{ label: 'Queued', status: 'completed' },
+				...phases.slice(0, -1).map((label) => ({ label, status: 'pending' as const })),
+				{ label: 'Done', status: 'pending' }
 			];
 		}
-		return [
-			{ label: 'Queued', status: 'completed' as const },
-			{ label: 'Processing', status: job.status === 'running' || job.status === 'claimed' ? 'running' as const : job.status === 'completed' ? 'completed' as const : 'pending' as const },
-			{ label: 'Done', status: job.status === 'completed' ? 'completed' as const : 'pending' as const }
-		];
+
+		if (job.type === 'pod_destroy') {
+			const steps = ['Shutdown VMs', 'Cleanup Network', 'Done'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		// Generic fallback for vm_add, vm_destroy, power ops
+		const fallback = ['Queued', 'Processing', 'Done'];
+		if (isFailed) return [{ label: 'Queued', status: 'completed' }, { label: 'Processing', status: 'completed' }, { label: 'Failed', status: 'failed' }];
+		if (isCompleted) return fallback.map((l) => ({ label: l, status: 'completed' as const }));
+		if (isRunning) return [{ label: 'Queued', status: 'completed' }, { label: 'Processing', status: 'running' }, { label: 'Done', status: 'pending' }];
+		return [{ label: 'Queued', status: 'completed' }, { label: 'Processing', status: 'pending' }, { label: 'Done', status: 'pending' }];
 	}
 
 	function jobLabel(job: Job): string {
-		return job.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+		const labels: Record<string, string> = {
+			pod_create: 'Create Pod',
+			pod_destroy: 'Destroy Pod',
+			vm_add: 'Add VM',
+			vm_destroy: 'Remove VM',
+			vm_power: 'Power Operation'
+		};
+		return labels[job.type] ?? job.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+	}
+
+	function jobSubtitle(job: Job): string {
+		const name = (job.payload?.pod_name as string) || '';
+		const vms = (job.payload?.vms as Array<{ vm_name?: string }>) ?? [];
+		if (name && vms.length) return `${name} · ${vms.length} VM${vms.length > 1 ? 's' : ''}`;
+		if (name) return name;
+		if (vms.length) return `${vms.length} VM${vms.length > 1 ? 's' : ''}`;
+		return '';
 	}
 </script>
 
@@ -59,7 +128,7 @@
 	<!-- Content -->
 	<div
 		class="overflow-hidden transition-all duration-300 ease-in-out"
-		style="max-height: {expanded ? `${Math.max(jobs.length, 1) * 80 + 40}px` : '0px'};"
+		style="max-height: {expanded ? `${Math.max(jobs.length, 1) * 100 + 40}px` : '0px'};"
 	>
 		<div class="border-t border-surface-200-800 px-5 py-4">
 			{#if jobs.length === 0}
@@ -74,18 +143,28 @@
 					{#each jobs as job (job.id)}
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
-								<span class="text-sm font-medium text-surface-900-100">{jobLabel(job)}</span>
-								<span class="text-xs {job.status === 'failed' ? 'text-error-500 font-medium' : 'text-surface-500'}">{job.status}</span>
+								<div class="flex items-center gap-2">
+									<span class="text-sm font-medium text-surface-900-100">{jobLabel(job)}</span>
+									{#if jobSubtitle(job)}
+										<span class="text-xs text-surface-500">· {jobSubtitle(job)}</span>
+									{/if}
+								</div>
+								<span class="text-xs {job.status === 'failed' ? 'text-error-500 font-medium' : job.status === 'completed' ? 'text-success-500' : 'text-surface-500'}">{job.status}</span>
 							</div>
 							<!-- Step progress -->
-							<div class="flex items-center gap-1">
-								{#each stepStatus(job) as step, i}
+							<div class="flex items-center gap-0.5">
+								{#each getProvisioningSteps(job) as step, i}
 									{#if i > 0}
-										<div class="h-0.5 flex-1 rounded-full {step.status === 'completed' ? 'bg-success-500' : step.status === 'failed' ? 'bg-error-500' : 'bg-surface-300-700'}"></div>
+										<div class="h-0.5 flex-1 rounded-full transition-colors duration-300 {
+											step.status === 'completed' ? 'bg-success-500' :
+											step.status === 'failed' ? 'bg-error-500' :
+											step.status === 'running' ? 'bg-warning-500/50' :
+											'bg-surface-300-700'
+										}"></div>
 									{/if}
 									<div class="flex flex-col items-center gap-1">
 										<div
-											class="flex h-4 w-4 items-center justify-center rounded-full {
+											class="flex h-4 w-4 items-center justify-center rounded-full transition-colors duration-300 {
 												step.status === 'completed' ? 'bg-success-500' :
 												step.status === 'running' ? 'bg-warning-500' :
 												step.status === 'failed' ? 'bg-error-500' :
@@ -101,9 +180,11 @@
 												<svg class="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 												</svg>
+											{:else if step.status === 'running'}
+												<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
 											{/if}
 										</div>
-										<span class="text-[10px] {step.status === 'failed' ? 'text-error-500' : 'text-surface-500'}">{step.label}</span>
+										<span class="whitespace-nowrap text-[10px] {step.status === 'failed' ? 'text-error-500 font-medium' : step.status === 'running' ? 'text-warning-500' : 'text-surface-500'}">{step.label}</span>
 									</div>
 								{/each}
 							</div>
