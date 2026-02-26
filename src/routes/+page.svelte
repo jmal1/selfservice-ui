@@ -49,13 +49,17 @@
 
 	async function loadData() {
 		try {
-			const [podsResult, usageResult] = await Promise.all([getPods(), getResourceUsage()]);
-			pods = podsResult;
-			usage = usageResult;
+			pods = await getPods();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load dashboard data';
+			error = e instanceof Error ? e.message : 'Failed to load pods';
 		} finally {
 			loadingPods = false;
+		}
+		// Usage endpoint may not be implemented yet — fail silently
+		try {
+			usage = await getResourceUsage();
+		} catch {
+			usage = null;
 		}
 	}
 </script>

@@ -33,9 +33,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 	const url = `${config.apiBaseUrl}${path}`;
 	const headers = new Headers(options.headers);
 
-	if (authStore.token) {
-		headers.set('Authorization', `Bearer ${authStore.token}`);
-	}
 	if (!headers.has('Content-Type') && options.body) {
 		headers.set('Content-Type', 'application/json');
 	}
@@ -191,14 +188,24 @@ export function adminDeleteTemplate(id: string): Promise<void> {
 
 // --- User / Profile ---
 
-export function getMe(): Promise<User> {
-	if (isMock) return mockApi.getMe();
-	return apiFetch<User>('/auth/me');
+interface MeResponse {
+	user: User;
+	resource_usage: ResourceUsage;
 }
 
-export function getResourceUsage(): Promise<ResourceUsage> {
+export async function getMe(): Promise<MeResponse> {
+	if (isMock) {
+		const user = await mockApi.getMe();
+		const usage = await mockApi.getResourceUsage();
+		return { user, resource_usage: usage };
+	}
+	return apiFetch<MeResponse>('/auth/me');
+}
+
+export async function getResourceUsage(): Promise<ResourceUsage> {
 	if (isMock) return mockApi.getResourceUsage();
-	return apiFetch<ResourceUsage>('/api/v1/me/usage');
+	const me = await apiFetch<MeResponse>('/auth/me');
+	return me.resource_usage;
 }
 
 // --- Admin ---

@@ -26,8 +26,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		if (res.ok) {
 			const data = await res.json();
 			const user = data.user ?? data;
-			const token = data.token ?? '';
-			authStore.login(user, token);
+			authStore.login(user, 'session');
 			return {};
 		}
 	} catch {
