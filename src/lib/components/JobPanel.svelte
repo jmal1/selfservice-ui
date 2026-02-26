@@ -13,13 +13,19 @@
 		}
 	});
 
-	function stepStatus(job: Job): Array<{ label: string; status: 'completed' | 'running' | 'pending' }> {
-		const steps = [
+	function stepStatus(job: Job): Array<{ label: string; status: 'completed' | 'running' | 'pending' | 'failed' }> {
+		if (job.status === 'failed') {
+			return [
+				{ label: 'Queued', status: 'completed' as const },
+				{ label: 'Processing', status: 'completed' as const },
+				{ label: 'Failed', status: 'failed' as const }
+			];
+		}
+		return [
 			{ label: 'Queued', status: 'completed' as const },
-			{ label: 'Processing', status: job.status === 'running' ? 'running' as const : job.status === 'completed' || job.status === 'failed' ? 'completed' as const : 'pending' as const },
-			{ label: 'Done', status: job.status === 'completed' ? 'completed' as const : job.status === 'failed' ? 'completed' as const : 'pending' as const }
+			{ label: 'Processing', status: job.status === 'running' || job.status === 'claimed' ? 'running' as const : job.status === 'completed' ? 'completed' as const : 'pending' as const },
+			{ label: 'Done', status: job.status === 'completed' ? 'completed' as const : 'pending' as const }
 		];
-		return steps;
 	}
 
 	function jobLabel(job: Job): string {
@@ -56,7 +62,7 @@
 		style="max-height: {expanded ? `${Math.max(jobs.length, 1) * 80 + 40}px` : '0px'};"
 	>
 		<div class="border-t border-surface-200-800 px-5 py-4">
-			{#if activeJobs.length === 0 && jobs.length === 0}
+			{#if jobs.length === 0}
 				<div class="flex items-center gap-3 py-4 text-surface-500">
 					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -69,19 +75,20 @@
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
 								<span class="text-sm font-medium text-surface-900-100">{jobLabel(job)}</span>
-								<span class="text-xs text-surface-500">{job.status}</span>
+								<span class="text-xs {job.status === 'failed' ? 'text-error-500 font-medium' : 'text-surface-500'}">{job.status}</span>
 							</div>
 							<!-- Step progress -->
 							<div class="flex items-center gap-1">
 								{#each stepStatus(job) as step, i}
 									{#if i > 0}
-										<div class="h-0.5 flex-1 rounded-full {step.status === 'completed' ? 'bg-success-500' : 'bg-surface-300-700'}"></div>
+										<div class="h-0.5 flex-1 rounded-full {step.status === 'completed' ? 'bg-success-500' : step.status === 'failed' ? 'bg-error-500' : 'bg-surface-300-700'}"></div>
 									{/if}
 									<div class="flex flex-col items-center gap-1">
 										<div
 											class="flex h-4 w-4 items-center justify-center rounded-full {
 												step.status === 'completed' ? 'bg-success-500' :
 												step.status === 'running' ? 'bg-warning-500' :
+												step.status === 'failed' ? 'bg-error-500' :
 												'bg-surface-300-700'
 											}"
 											class:animate-pulse={step.status === 'running'}
@@ -90,9 +97,13 @@
 												<svg class="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 												</svg>
+											{:else if step.status === 'failed'}
+												<svg class="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+												</svg>
 											{/if}
 										</div>
-										<span class="text-[10px] text-surface-500">{step.label}</span>
+										<span class="text-[10px] {step.status === 'failed' ? 'text-error-500' : 'text-surface-500'}">{step.label}</span>
 									</div>
 								{/each}
 							</div>
