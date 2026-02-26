@@ -96,9 +96,14 @@ export interface CreatePodRequest {
 	}[];
 }
 
-export function createPod(req: CreatePodRequest): Promise<Pod> {
-	if (isMock) return mockApi.createPod(req);
-	return apiFetch<Pod>('/api/v1/pods', {
+export interface CreatePodResponse {
+	job_id: string;
+	status: string;
+}
+
+export function createPod(req: CreatePodRequest): Promise<CreatePodResponse> {
+	if (isMock) return mockApi.createPod(req) as unknown as Promise<CreatePodResponse>;
+	return apiFetch<CreatePodResponse>('/api/v1/pods', {
 		method: 'POST',
 		body: JSON.stringify(req)
 	});

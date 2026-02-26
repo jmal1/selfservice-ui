@@ -78,7 +78,7 @@
 		submitting = true;
 		error = null;
 		try {
-			const pod = await createPod({
+			await createPod({
 				name: podName.trim(),
 				vms: vmConfigs.map((c) => ({
 					template_id: c.template_id,
@@ -88,7 +88,8 @@
 					disk_gb: c.disk_gb
 				}))
 			});
-			await goto(`/pods/${pod.id}`);
+			// API returns job_id, not a pod — navigate to dashboard to watch progress
+			await goto('/');
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to create pod';
 			submitting = false;
