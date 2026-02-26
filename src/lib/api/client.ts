@@ -230,7 +230,7 @@ export interface UpdateQuotaRequest {
 
 export function adminUpdateQuota(userId: string, req: UpdateQuotaRequest): Promise<User> {
 	if (isMock) return mockApi.adminUpdateQuota(userId, req);
-	return apiFetch<User>(`/api/v1/admin/users/${userId}/quota`, {
+	return apiFetch<User>(`/api/v1/admin/users/${userId}/quotas`, {
 		method: 'PATCH',
 		body: JSON.stringify(req)
 	});
