@@ -7,7 +7,7 @@
 	let copiedField = $state<string | null>(null);
 	let showPassword = $state(false);
 
-	const osType = $derived((vm.template?.os_type ?? '').toLowerCase());
+	const osType = $derived((vm.os_type || vm.template?.os_type || '').toLowerCase());
 	const isLinux = $derived(osType.includes('linux') || osType.includes('ubuntu') || osType.includes('centos') || osType.includes('debian'));
 	const isWindows = $derived(osType.includes('windows'));
 

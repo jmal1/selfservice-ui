@@ -66,6 +66,8 @@ export interface PodVM {
 	default_password: string;
 	generated_username: string;
 	generated_password: string;
+	template_name: string;
+	os_type: string;
 	template?: Template;
 }
 
