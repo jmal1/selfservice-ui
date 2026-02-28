@@ -39,133 +39,82 @@
 
 {#if vm.ip_address}
 	<div class="rounded-xl border border-surface-200-800/50 bg-surface-50-950/50 p-4">
-		<h4 class="mb-3 text-xs font-semibold uppercase tracking-wider text-surface-500">Access</h4>
-
-		<!-- IP Address -->
-		<div class="mb-3 flex items-center gap-2">
-			<span class="text-xs text-surface-500">IP:</span>
-			<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">{vm.ip_address}</code>
-			<button
-				class="text-xs text-primary-500 hover:text-primary-400"
-				onclick={() => handleCopy(vm.ip_address, 'ip')}
-			>
-				{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
-			</button>
-		</div>
-
-		<!-- Default Credentials -->
-		{#if hasCredentials}
-			<div class="mb-3 rounded-lg border border-surface-200-800/50 bg-surface-100-900/50 p-3">
-				<h5 class="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-500">Default Credentials</h5>
-				<div class="space-y-2">
-					{#if displayUsername}
-						<div class="flex items-center gap-2">
-							<span class="w-16 text-xs text-surface-500">User:</span>
-							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">{displayUsername}</code>
-							<button
-								class="text-xs text-primary-500 hover:text-primary-400"
-								onclick={() => handleCopy(displayUsername, 'username')}
-							>
-								{copiedField === 'username' ? '✓ Copied' : 'Copy'}
-							</button>
-						</div>
-					{/if}
-					{#if displayPassword}
-						<div class="flex items-center gap-2">
-							<span class="w-16 text-xs text-surface-500">Pass:</span>
-							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">
-								{showPassword ? displayPassword : '••••••••'}
-							</code>
-							<button
-								class="text-xs text-surface-500 hover:text-surface-300"
-								onclick={() => (showPassword = !showPassword)}
-							>
-								{showPassword ? 'Hide' : 'Show'}
-							</button>
-							<button
-								class="text-xs text-primary-500 hover:text-primary-400"
-								onclick={() => handleCopy(displayPassword, 'password')}
-							>
-								{copiedField === 'password' ? '✓ Copied' : 'Copy'}
-							</button>
-						</div>
-					{/if}
-				</div>
+		{#if isLinux}
+			<!-- SSH: primary command -->
+			<div class="mb-3 flex items-center gap-2">
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">SSH</span>
+				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					ssh {displayUsername || 'user'}@{vm.ip_address}
+				</code>
+				<button
+					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+					onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
+				>
+					{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
+				</button>
+			</div>
+		{:else if isWindows}
+			<!-- RDP: primary command -->
+			<div class="mb-3 flex items-center gap-2">
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">RDP</span>
+				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					mstsc /v:{vm.ip_address}
+				</code>
+				<button
+					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+					onclick={() => handleCopy(`mstsc /v:${vm.ip_address}`, 'rdp')}
+				>
+					{copiedField === 'rdp' ? '✓ Copied' : 'Copy'}
+				</button>
+			</div>
+		{:else}
+			<!-- Generic: just IP -->
+			<div class="mb-3 flex items-center gap-2">
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">IP</span>
+				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					{vm.ip_address}
+				</code>
+				<button
+					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+					onclick={() => handleCopy(vm.ip_address, 'ip')}
+				>
+					{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
+				</button>
 			</div>
 		{/if}
 
-		{#if isLinux}
-			<!-- SSH -->
-			<div class="space-y-2">
-				<div class="flex items-center gap-2">
-					<code class="flex-1 rounded bg-surface-200-800 px-2 py-1 font-mono text-xs text-surface-900-100">
-						ssh {displayUsername || 'user'}@{vm.ip_address}
-					</code>
-					<button
-						class="text-xs text-primary-500 hover:text-primary-400"
-						onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
-					>
-						{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
-					</button>
+		<!-- Credentials + extra actions row -->
+		<div class="flex items-center gap-4">
+			{#if hasCredentials}
+				<div class="flex items-center gap-3 text-xs text-surface-500">
+					{#if displayUsername}
+						<span>User: <code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{displayUsername}</code></span>
+					{/if}
+					{#if displayPassword}
+						<span>Pass:
+							<code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{showPassword ? displayPassword : '••••••••'}</code>
+							<button
+								class="ml-0.5 text-surface-500 hover:text-surface-300"
+								onclick={() => (showPassword = !showPassword)}
+							>{showPassword ? 'Hide' : 'Show'}</button>
+							<button
+								class="ml-0.5 text-primary-500 hover:text-primary-400"
+								onclick={() => handleCopy(displayPassword, 'password')}
+							>{copiedField === 'password' ? '✓' : 'Copy'}</button>
+						</span>
+					{/if}
 				</div>
-				<div class="flex gap-2">
+			{/if}
+			<div class="ml-auto flex gap-2">
+				{#if isWindows}
 					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 opacity-50"
-						disabled
-						title="Coming soon"
-					>
-						Console
-					</button>
-					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 opacity-50"
-						disabled
-						title="Coming soon"
-					>
-						Web Shell
-					</button>
-				</div>
-			</div>
-		{:else if isWindows}
-			<!-- RDP -->
-			<div class="space-y-2">
-				<div class="flex items-center gap-2">
-					<code class="flex-1 rounded bg-surface-200-800 px-2 py-1 font-mono text-xs text-surface-900-100">
-						mstsc /v:{vm.ip_address}
-					</code>
-					<button
-						class="text-xs text-primary-500 hover:text-primary-400"
-						onclick={() => handleCopy(`mstsc /v:${vm.ip_address}`, 'rdp')}
-					>
-						{copiedField === 'rdp' ? '✓ Copied' : 'Copy'}
-					</button>
-				</div>
-				<div class="flex gap-2">
-					<button
-						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-500 transition-colors hover:text-surface-300"
 						onclick={downloadRdp}
 					>
 						Download .rdp
 					</button>
-					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 opacity-50"
-						disabled
-						title="Coming soon"
-					>
-						Console
-					</button>
-				</div>
+				{/if}
 			</div>
-		{:else}
-			<!-- Generic -->
-			<div class="flex gap-2">
-				<button
-					class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 opacity-50"
-					disabled
-					title="Coming soon"
-				>
-					Console
-				</button>
-			</div>
-		{/if}
+		</div>
 	</div>
 {/if}
