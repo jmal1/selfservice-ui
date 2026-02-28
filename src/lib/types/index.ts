@@ -46,6 +46,8 @@ export interface Template {
 	min_ram_mb: number;
 	description: string;
 	icon_url: string;
+	default_username: string;
+	default_password: string;
 	is_active: boolean;
 }
 
@@ -60,6 +62,8 @@ export interface PodVM {
 	disk_gb: number;
 	ip_address: string;
 	status: VMStatus;
+	default_username: string;
+	default_password: string;
 	template?: Template;
 }
 

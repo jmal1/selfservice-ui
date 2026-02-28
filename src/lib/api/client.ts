@@ -182,6 +182,8 @@ export interface CreateTemplateRequest {
 	description: string;
 	icon_url: string;
 	is_active: boolean;
+	default_username: string;
+	default_password: string;
 }
 
 export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Template> {

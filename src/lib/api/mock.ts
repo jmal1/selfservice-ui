@@ -73,6 +73,8 @@ export const mockTemplates: Template[] = [
 		min_ram_mb: 2048,
 		description: 'Ubuntu 24.04 LTS with Docker pre-installed',
 		icon_url: '',
+		default_username: 'student',
+		default_password: 'changeme',
 		is_active: true
 	},
 	{
@@ -87,6 +89,8 @@ export const mockTemplates: Template[] = [
 		min_ram_mb: 4096,
 		description: 'Windows Server 2022 Standard with AD tools',
 		icon_url: '',
+		default_username: 'Administrator',
+		default_password: 'P@ssw0rd!',
 		is_active: true
 	},
 	{
@@ -101,6 +105,8 @@ export const mockTemplates: Template[] = [
 		min_ram_mb: 2048,
 		description: 'Kali Linux rolling release for penetration testing',
 		icon_url: '',
+		default_username: 'kali',
+		default_password: 'kali',
 		is_active: true
 	},
 	{
@@ -115,6 +121,8 @@ export const mockTemplates: Template[] = [
 		min_ram_mb: 1024,
 		description: 'CentOS Stream 9 minimal install',
 		icon_url: '',
+		default_username: '',
+		default_password: '',
 		is_active: false
 	}
 ];
@@ -130,6 +138,8 @@ function makeVM(overrides: Partial<PodVM> & { pod_id: string; template_id: strin
 		disk_gb: tpl?.default_disk_gb ?? 40,
 		ip_address: '',
 		status: 'powered_on',
+		default_username: tpl?.default_username ?? '',
+		default_password: tpl?.default_password ?? '',
 		template: tpl,
 		...overrides
 	};
@@ -514,6 +524,8 @@ export const mockApi = {
 			min_ram_mb: req.min_ram_mb as number,
 			description: req.description as string,
 			icon_url: req.icon_url as string,
+			default_username: (req.default_username as string) ?? '',
+			default_password: (req.default_password as string) ?? '',
 			is_active: req.is_active as boolean
 		};
 		mockTemplates.push(tpl);

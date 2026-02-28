@@ -5,10 +5,12 @@
 	let { vm }: { vm: PodVM } = $props();
 
 	let copiedField = $state<string | null>(null);
+	let showPassword = $state(false);
 
 	const osType = $derived((vm.template?.os_type ?? '').toLowerCase());
 	const isLinux = $derived(osType.includes('linux') || osType.includes('ubuntu') || osType.includes('centos') || osType.includes('debian'));
 	const isWindows = $derived(osType.includes('windows'));
+	const hasCredentials = $derived(!!vm.default_username || !!vm.default_password);
 
 	async function handleCopy(text: string, field: string) {
 		const ok = await copyToClipboard(text);
@@ -46,6 +48,47 @@
 				{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
 			</button>
 		</div>
+
+		<!-- Default Credentials -->
+		{#if hasCredentials}
+			<div class="mb-3 rounded-lg border border-surface-200-800/50 bg-surface-100-900/50 p-3">
+				<h5 class="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-500">Default Credentials</h5>
+				<div class="space-y-2">
+					{#if vm.default_username}
+						<div class="flex items-center gap-2">
+							<span class="w-16 text-xs text-surface-500">User:</span>
+							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">{vm.default_username}</code>
+							<button
+								class="text-xs text-primary-500 hover:text-primary-400"
+								onclick={() => handleCopy(vm.default_username, 'username')}
+							>
+								{copiedField === 'username' ? '✓ Copied' : 'Copy'}
+							</button>
+						</div>
+					{/if}
+					{#if vm.default_password}
+						<div class="flex items-center gap-2">
+							<span class="w-16 text-xs text-surface-500">Pass:</span>
+							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">
+								{showPassword ? vm.default_password : '••••••••'}
+							</code>
+							<button
+								class="text-xs text-surface-500 hover:text-surface-300"
+								onclick={() => (showPassword = !showPassword)}
+							>
+								{showPassword ? 'Hide' : 'Show'}
+							</button>
+							<button
+								class="text-xs text-primary-500 hover:text-primary-400"
+								onclick={() => handleCopy(vm.default_password, 'password')}
+							>
+								{copiedField === 'password' ? '✓ Copied' : 'Copy'}
+							</button>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
 
 		{#if isLinux}
 			<!-- SSH -->

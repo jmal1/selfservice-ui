@@ -39,7 +39,9 @@
 			min_ram_mb: 1024,
 			description: '',
 			icon_url: '',
-			is_active: true
+			is_active: true,
+			default_username: '',
+			default_password: ''
 		};
 	}
 
@@ -77,7 +79,9 @@
 			min_ram_mb: t.min_ram_mb,
 			description: t.description,
 			icon_url: t.icon_url,
-			is_active: t.is_active
+			is_active: t.is_active,
+			default_username: t.default_username ?? '',
+			default_password: t.default_password ?? ''
 		};
 	}
 
@@ -245,6 +249,14 @@
 					<label class="block sm:col-span-2 lg:col-span-3">
 						<span class="text-xs font-medium text-surface-500">Description</span>
 						<input type="text" bind:value={createValues.description} class={inputClass} />
+					</label>
+					<label class="block">
+						<span class="text-xs font-medium text-surface-500">Default Username</span>
+						<input type="text" bind:value={createValues.default_username} class={inputClass} placeholder="e.g. student" />
+					</label>
+					<label class="block">
+						<span class="text-xs font-medium text-surface-500">Default Password</span>
+						<input type="text" bind:value={createValues.default_password} class={inputClass} placeholder="e.g. changeme" />
 					</label>
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={createValues.is_active} class="accent-primary-500" />
