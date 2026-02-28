@@ -10,7 +10,7 @@
 	const activeJobs = $derived.by(() => {
 		const now = Date.now();
 		const running = jobs
-			.filter((j) => j.status === 'running' || j.status === 'claimed' || j.status === 'pending')
+			.filter((j) => j.status === 'running' || j.status === 'in_progress' || j.status === 'claimed' || j.status === 'pending')
 			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 		const recent = jobs
 			.filter((j) => {
@@ -37,7 +37,7 @@
 	function getProvisioningSteps(job: Job): StepInfo[] {
 		const isFailed = job.status === 'failed';
 		const isCompleted = job.status === 'completed';
-		const isRunning = job.status === 'running' || job.status === 'claimed';
+		const isRunning = job.status === 'running' || job.status === 'in_progress' || job.status === 'claimed';
 
 		if (job.type === 'pod_create') {
 			const vmCount = (job.payload?.vms as unknown[])?.length ?? 0;
