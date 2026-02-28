@@ -17,6 +17,8 @@
 					return (
 						e.action.toLowerCase().includes(q) ||
 						e.resource_type.toLowerCase().includes(q) ||
+						(e.user_display_name?.toLowerCase().includes(q) ?? false) ||
+						(e.user_email?.toLowerCase().includes(q) ?? false) ||
 						e.user_id.toLowerCase().includes(q) ||
 						e.ip_address.toLowerCase().includes(q)
 					);
@@ -106,7 +108,16 @@
 							{#each filtered as entry (entry.id)}
 								<tr class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30">
 									<td class="px-5 py-3 text-xs text-surface-600-400">{formatTime(entry.created_at)}</td>
-									<td class="px-5 py-3 font-mono text-xs text-surface-600-400">{entry.user_id}</td>
+									<td class="px-5 py-3 text-surface-600-400">
+									{#if entry.user_display_name}
+										<span class="text-sm font-medium">{entry.user_display_name}</span>
+										{#if entry.user_email}
+											<span class="block text-xs text-surface-500">{entry.user_email}</span>
+										{/if}
+									{:else}
+										<span class="font-mono text-xs">{entry.user_id}</span>
+									{/if}
+								</td>
 									<td class="px-5 py-3 font-medium text-surface-900-100">{entry.action}</td>
 									<td class="px-5 py-3 text-surface-600-400">
 										<span class="text-xs">{entry.resource_type}</span>

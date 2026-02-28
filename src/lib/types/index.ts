@@ -93,6 +93,8 @@ export interface Job {
 export interface AuditEntry {
 	id: string;
 	user_id: string;
+	user_display_name?: string;
+	user_email?: string;
 	action: string;
 	resource_type: string;
 	resource_id: string;
