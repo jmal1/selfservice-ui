@@ -9,7 +9,9 @@
 
 	const activeJobs = $derived.by(() => {
 		const now = Date.now();
-		const running = jobs.filter((j) => j.status === 'running' || j.status === 'claimed' || j.status === 'pending');
+		const running = jobs
+			.filter((j) => j.status === 'running' || j.status === 'claimed' || j.status === 'pending')
+			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 		const recent = jobs
 			.filter((j) => {
 				if (j.status !== 'completed' && j.status !== 'failed') return false;
@@ -80,14 +82,30 @@
 		}
 
 		if (job.type === 'pod_destroy') {
-			const steps = ['Shutdown VMs', 'Cleanup Network', 'Done'];
+			const steps = ['Powering off VMs', 'Destroying VMs', 'Releasing VLANs', 'Cleanup'];
 			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
 			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
 			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
 			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
 		}
 
-		// Generic fallback for vm_add, vm_destroy, power ops
+		if (job.type === 'vm_destroy') {
+			const steps = ['Powering off VM', 'Destroying VM', 'Cleanup'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		if (job.type === 'vm_add') {
+			const steps = ['Cloning VM', 'Configuring network', 'Powering on'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		// Generic fallback for power ops etc.
 		const fallback = ['Queued', 'Processing', 'Done'];
 		if (isFailed) return [{ label: 'Queued', status: 'completed' }, { label: 'Processing', status: 'completed' }, { label: 'Failed', status: 'failed' }];
 		if (isCompleted) return fallback.map((l) => ({ label: l, status: 'completed' as const }));
@@ -98,9 +116,9 @@
 	function jobLabel(job: Job): string {
 		const labels: Record<string, string> = {
 			pod_create: 'Create Pod',
-			pod_destroy: 'Destroy Pod',
-			vm_add: 'Add VM',
-			vm_destroy: 'Remove VM',
+			pod_destroy: 'Destroying Pod',
+			vm_add: 'Adding VM',
+			vm_destroy: 'Destroying VM',
 			vm_power: 'Power Operation'
 		};
 		return labels[job.type] ?? job.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -121,6 +139,17 @@
 
 		if (job.type === 'pod_destroy') {
 			return podName || '';
+		}
+
+		if (job.type === 'vm_destroy') {
+			const vmName = (job.payload?.vm_name as string) || '';
+			return [podName, vmName].filter(Boolean).join(' · ');
+		}
+
+		if (job.type === 'vm_add') {
+			const templateName = (job.payload?.template_name as string) || '';
+			const displayName = (job.payload?.display_name as string) || '';
+			return [podName, displayName || templateName].filter(Boolean).join(' · ');
 		}
 
 		if (job.type === 'vm_start' || job.type === 'vm_stop' || job.type === 'vm_restart') {
