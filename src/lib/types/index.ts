@@ -64,6 +64,8 @@ export interface PodVM {
 	status: VMStatus;
 	default_username: string;
 	default_password: string;
+	generated_username: string;
+	generated_password: string;
 	template?: Template;
 }
 

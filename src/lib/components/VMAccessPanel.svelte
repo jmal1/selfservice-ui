@@ -10,7 +10,11 @@
 	const osType = $derived((vm.template?.os_type ?? '').toLowerCase());
 	const isLinux = $derived(osType.includes('linux') || osType.includes('ubuntu') || osType.includes('centos') || osType.includes('debian'));
 	const isWindows = $derived(osType.includes('windows'));
-	const hasCredentials = $derived(!!vm.default_username || !!vm.default_password);
+
+	// Prefer generated (per-VM) credentials, fall back to template defaults
+	const displayUsername = $derived(vm.generated_username || vm.default_username);
+	const displayPassword = $derived(vm.generated_password || vm.default_password);
+	const hasCredentials = $derived(!!displayUsername || !!displayPassword);
 
 	async function handleCopy(text: string, field: string) {
 		const ok = await copyToClipboard(text);
@@ -54,23 +58,23 @@
 			<div class="mb-3 rounded-lg border border-surface-200-800/50 bg-surface-100-900/50 p-3">
 				<h5 class="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-500">Default Credentials</h5>
 				<div class="space-y-2">
-					{#if vm.default_username}
+					{#if displayUsername}
 						<div class="flex items-center gap-2">
 							<span class="w-16 text-xs text-surface-500">User:</span>
-							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">{vm.default_username}</code>
+							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">{displayUsername}</code>
 							<button
 								class="text-xs text-primary-500 hover:text-primary-400"
-								onclick={() => handleCopy(vm.default_username, 'username')}
+								onclick={() => handleCopy(displayUsername, 'username')}
 							>
 								{copiedField === 'username' ? '✓ Copied' : 'Copy'}
 							</button>
 						</div>
 					{/if}
-					{#if vm.default_password}
+					{#if displayPassword}
 						<div class="flex items-center gap-2">
 							<span class="w-16 text-xs text-surface-500">Pass:</span>
 							<code class="rounded bg-surface-200-800 px-2 py-0.5 font-mono text-sm text-surface-900-100">
-								{showPassword ? vm.default_password : '••••••••'}
+								{showPassword ? displayPassword : '••••••••'}
 							</code>
 							<button
 								class="text-xs text-surface-500 hover:text-surface-300"
@@ -80,7 +84,7 @@
 							</button>
 							<button
 								class="text-xs text-primary-500 hover:text-primary-400"
-								onclick={() => handleCopy(vm.default_password, 'password')}
+								onclick={() => handleCopy(displayPassword, 'password')}
 							>
 								{copiedField === 'password' ? '✓ Copied' : 'Copy'}
 							</button>
@@ -95,11 +99,11 @@
 			<div class="space-y-2">
 				<div class="flex items-center gap-2">
 					<code class="flex-1 rounded bg-surface-200-800 px-2 py-1 font-mono text-xs text-surface-900-100">
-						ssh user@{vm.ip_address}
+						ssh {displayUsername || 'user'}@{vm.ip_address}
 					</code>
 					<button
 						class="text-xs text-primary-500 hover:text-primary-400"
-						onclick={() => handleCopy(`ssh user@${vm.ip_address}`, 'ssh')}
+						onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
 					>
 						{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
 					</button>
