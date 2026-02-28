@@ -9,8 +9,7 @@
 		stopVM,
 		restartVM,
 		deleteVM,
-		getTemplates,
-		addVM
+		getTemplates
 	} from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import type { Pod, Template, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
@@ -27,12 +26,6 @@
 	let actionLoading = $state<Record<string, boolean>>({});
 	let confirmDelete = $state<string | null>(null);
 	let expandedVMs = $state<Record<string, boolean>>({});
-
-	// Add VM form state
-	let showAddVM = $state(false);
-	let addVmTemplateId = $state('');
-	let addVmName = $state('');
-	let addingVM = $state(false);
 
 	onMount(() => {
 		loadData();
@@ -121,24 +114,6 @@
 		confirmDelete = null;
 	}
 
-	async function handleAddVM() {
-		if (!addVmTemplateId || !addVmName.trim()) return;
-		addingVM = true;
-		try {
-			const newVM = await addVM(podId, { template_id: addVmTemplateId, display_name: addVmName.trim() });
-			if (pod) {
-				pod = { ...pod, vms: [...pod.vms, newVM] };
-			}
-			showAddVM = false;
-			addVmTemplateId = '';
-			addVmName = '';
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to add VM';
-		} finally {
-			addingVM = false;
-		}
-	}
-
 	function toggleVMAccess(vmId: string) {
 		expandedVMs = { ...expandedVMs, [vmId]: !expandedVMs[vmId] };
 	}
@@ -225,53 +200,16 @@
 				<h2 class="text-sm font-semibold text-surface-900-100">
 					Virtual Machines ({(pod.vms ?? []).length})
 				</h2>
-				<button
+				<a
+					href="/pods/new?pod={podId}"
 					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
-					onclick={() => (showAddVM = !showAddVM)}
 				>
 					<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 					</svg>
 					Add VM
-				</button>
+				</a>
 			</div>
-
-			{#if showAddVM}
-				<div class="border-b border-surface-200-800 bg-surface-50-950/50 px-5 py-4">
-					<div class="flex items-end gap-3">
-						<div class="flex-1">
-							<label for="add-vm-name" class="mb-1 block text-xs font-medium text-surface-500">VM Name</label>
-							<input
-								id="add-vm-name"
-								type="text"
-								bind:value={addVmName}
-								placeholder="My VM"
-								class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none"
-							/>
-						</div>
-						<div class="flex-1">
-							<label for="add-vm-template" class="mb-1 block text-xs font-medium text-surface-500">Template</label>
-							<select
-								id="add-vm-template"
-								bind:value={addVmTemplateId}
-								class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none"
-							>
-								<option value="">Select a template…</option>
-								{#each templates.filter((t) => t.is_active) as tpl}
-									<option value={tpl.id}>{tpl.name} — {tpl.default_vcpus} vCPU, {Math.round(tpl.default_ram_mb / 1024)} GB RAM</option>
-								{/each}
-							</select>
-						</div>
-						<button
-							class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
-							disabled={!addVmTemplateId || !addVmName.trim() || addingVM}
-							onclick={handleAddVM}
-						>
-							{addingVM ? 'Adding…' : 'Add'}
-						</button>
-					</div>
-				</div>
-			{/if}
 
 			{#if (pod.vms ?? []).length === 0}
 				<div class="px-5 py-12 text-center text-surface-500">
