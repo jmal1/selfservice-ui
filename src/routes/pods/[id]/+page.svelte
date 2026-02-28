@@ -52,11 +52,25 @@
 			}
 		});
 
+		// Poll for updates since WebSocket is not yet implemented on the backend
+		const interval = setInterval(() => {
+			if (!document.hidden) refreshPod();
+		}, 5000);
+
 		return () => {
+			clearInterval(interval);
 			unsubPod();
 			unsubVM();
 		};
 	});
+
+	async function refreshPod() {
+		try {
+			pod = await getPod(podId);
+		} catch {
+			// Silently ignore refresh errors
+		}
+	}
 
 	async function loadData() {
 		try {
