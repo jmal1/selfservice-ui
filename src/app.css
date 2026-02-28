@@ -9,6 +9,11 @@
 	--color-accent-glow: oklch(0.55 0.24 273 / 0.3);
 }
 
+/* Scale up the entire UI ~15% so 100% zoom feels comfortable */
+html {
+	font-size: 18px;
+}
+
 /* Animated background blobs */
 @keyframes blob-drift {
 	0%, 100% { transform: translate(0, 0) scale(1); }
