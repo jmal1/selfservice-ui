@@ -7,7 +7,7 @@
 	let pods = $state<Pod[]>([]);
 	let loading = $state(true);
 
-	const activePods = $derived(pods.filter((p) => p.status === 'running' || p.status === 'creating' || p.status === 'stopped'));
+	const activePods = $derived(pods.filter((p) => p.status === 'active' || p.status === 'provisioning'));
 
 	onMount(async () => {
 		try {
@@ -76,7 +76,7 @@
 						>
 							<div class="flex items-center gap-3">
 								<span
-									class="inline-block h-2 w-2 rounded-full {pod.status === 'running' ? 'bg-success-500 status-pulse' : 'bg-surface-500'}"
+									class="inline-block h-2 w-2 rounded-full {pod.status === 'active' ? 'bg-success-500 status-pulse' : 'bg-surface-500'}"
 								></span>
 								<span class="font-medium text-surface-900-100">{pod.name}</span>
 							</div>
