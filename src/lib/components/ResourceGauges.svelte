@@ -13,11 +13,12 @@
 
 	const gauges = $derived.by((): GaugeItem[] => {
 		if (!usage) return [];
+		const storageUsed = usage.used_storage_gb ?? 0;
 		return [
-			{ label: 'vCPU', used: usage.used_vcpus, max: usage.max_vcpus, unit: 'cores' },
-			{ label: 'RAM', used: Math.round(usage.used_ram_mb / 1024), max: Math.round(usage.max_ram_mb / 1024), unit: 'GB' },
-			{ label: 'Pods', used: usage.active_pods, max: usage.max_pods, unit: '' },
-			{ label: 'Storage', used: usage.used_storage_gb, max: usage.used_storage_gb > 0 ? Math.ceil(usage.used_storage_gb * 2) : 100, unit: 'GB' }
+			{ label: 'vCPU', used: usage.used_vcpus ?? 0, max: usage.max_vcpus ?? 0, unit: 'cores' },
+			{ label: 'RAM', used: Math.round((usage.used_ram_mb ?? 0) / 1024), max: Math.round((usage.max_ram_mb ?? 0) / 1024), unit: 'GB' },
+			{ label: 'Pods', used: usage.active_pods ?? 0, max: usage.max_pods ?? 0, unit: '' },
+			{ label: 'Storage', used: storageUsed, max: storageUsed > 0 ? Math.ceil(storageUsed * 2) : 100, unit: 'GB' }
 		];
 	});
 
