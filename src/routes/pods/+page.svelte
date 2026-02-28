@@ -9,7 +9,7 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	onMount(async () => {
+	async function loadPods() {
 		try {
 			pods = await getPods();
 		} catch (e) {
@@ -17,6 +17,16 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	onMount(() => {
+		loadPods();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadPods();
+		}, 10000);
+
+		return () => clearInterval(interval);
 	});
 </script>
 

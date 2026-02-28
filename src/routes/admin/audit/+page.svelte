@@ -24,8 +24,7 @@
 			: entries
 	);
 
-	onMount(async () => {
-		if (!authStore.isAdmin) return;
+	async function loadAuditLog() {
 		try {
 			entries = await adminGetAuditLog();
 		} catch (e) {
@@ -33,6 +32,17 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	onMount(() => {
+		if (!authStore.isAdmin) return;
+		loadAuditLog();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadAuditLog();
+		}, 15000);
+
+		return () => clearInterval(interval);
 	});
 
 	function formatTime(iso: string): string {

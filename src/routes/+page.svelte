@@ -41,7 +41,12 @@
 			);
 		});
 
+		const interval = setInterval(() => {
+			if (!document.hidden) loadData();
+		}, 10000);
+
 		return () => {
+			clearInterval(interval);
 			unsubPod();
 			unsubVM();
 		};

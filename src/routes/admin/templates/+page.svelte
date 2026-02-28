@@ -43,9 +43,15 @@
 		};
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		if (!authStore.isAdmin) return;
-		await loadTemplates();
+		loadTemplates();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadTemplates();
+		}, 15000);
+
+		return () => clearInterval(interval);
 	});
 
 	async function loadTemplates() {

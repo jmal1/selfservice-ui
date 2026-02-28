@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
@@ -10,23 +10,26 @@
 	let jobs = $state<Job[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let unsubJob: (() => void) | null = null;
-
-	onMount(async () => {
+	onMount(() => {
 		if (!authStore.isAdmin) return;
-		await loadJobs();
+		loadJobs();
 
 		wsStore.connect();
-		unsubJob = wsStore.on('job.status', (event) => {
+		const unsubJob = wsStore.on('job.status', (event) => {
 			const e = event as WSJobStatusEvent;
 			jobs = jobs.map((j) =>
 				j.id === e.job_id ? { ...j, status: e.status, result: e.result ?? j.result } : j
 			);
 		});
-	});
 
-	onDestroy(() => {
-		unsubJob?.();
+		const interval = setInterval(() => {
+			if (!document.hidden) loadJobs();
+		}, 15000);
+
+		return () => {
+			clearInterval(interval);
+			unsubJob();
+		};
 	});
 
 	async function loadJobs() {

@@ -39,9 +39,15 @@
 	let filterScope = $state('all-scopes');
 	let filterStatus = $state('all-status');
 
-	onMount(async () => {
+	onMount(() => {
 		if (!authStore.isAdmin) return;
-		await loadVLANs();
+		loadVLANs();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadVLANs();
+		}, 15000);
+
+		return () => clearInterval(interval);
 	});
 
 	async function loadVLANs() {

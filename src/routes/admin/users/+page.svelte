@@ -16,8 +16,7 @@
 	});
 	let saving = $state(false);
 
-	onMount(async () => {
-		if (!authStore.isAdmin) return;
+	async function loadUsers() {
 		try {
 			users = await adminGetUsers();
 		} catch (e) {
@@ -25,6 +24,17 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	onMount(() => {
+		if (!authStore.isAdmin) return;
+		loadUsers();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadUsers();
+		}, 15000);
+
+		return () => clearInterval(interval);
 	});
 
 	function startEdit(user: User) {

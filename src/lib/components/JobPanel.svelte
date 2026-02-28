@@ -5,7 +5,21 @@
 
 	let expanded = $state(false);
 
-	const activeJobs = $derived(jobs.filter((j) => j.status === 'running' || j.status === 'claimed' || j.status === 'pending'));
+	const ONE_HOUR_MS = 60 * 60 * 1000;
+
+	const activeJobs = $derived.by(() => {
+		const now = Date.now();
+		const running = jobs.filter((j) => j.status === 'running' || j.status === 'claimed' || j.status === 'pending');
+		const recent = jobs
+			.filter((j) => {
+				if (j.status !== 'completed' && j.status !== 'failed') return false;
+				if (!j.completed_at) return false;
+				return now - new Date(j.completed_at).getTime() < ONE_HOUR_MS;
+			})
+			.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
+			.slice(0, 3);
+		return [...running, ...recent];
+	});
 
 	$effect(() => {
 		if (activeJobs.length > 0) {
@@ -25,12 +39,12 @@
 
 		if (job.type === 'pod_create') {
 			const vmCount = (job.payload?.vms as unknown[])?.length ?? 0;
-			const vmLabel = vmCount === 1 ? '1 VM' : `${vmCount} VMs`;
+			const cloneLabel = vmCount > 0 ? `Clone ${vmCount} VM${vmCount > 1 ? 's' : ''}` : 'Clone VMs';
 
 			// Ordered provisioning phases
 			const phases = [
 				'Network Setup',
-				`Clone ${vmLabel}`,
+				cloneLabel,
 				'Power On',
 				'Done'
 			];
@@ -93,12 +107,28 @@
 	}
 
 	function jobSubtitle(job: Job): string {
-		const name = (job.payload?.pod_name as string) || '';
-		const vms = (job.payload?.vms as Array<{ vm_name?: string }>) ?? [];
-		if (name && vms.length) return `${name} · ${vms.length} VM${vms.length > 1 ? 's' : ''}`;
-		if (name) return name;
-		if (vms.length) return `${vms.length} VM${vms.length > 1 ? 's' : ''}`;
-		return '';
+		const podName = (job.payload?.pod_name as string) || '';
+
+		if (job.type === 'pod_create') {
+			const vms = (job.payload?.vms as Array<{ vm_name?: string; template_name?: string }>) ?? [];
+			const templates = [...new Set(vms.map((v) => v.template_name).filter(Boolean))];
+			const templateStr = templates.join(', ');
+			const vmStr = vms.length > 0 ? `${vms.length} VM${vms.length > 1 ? 's' : ''}` : '';
+			const parts = [podName, templateStr, vmStr].filter(Boolean);
+			if (templateStr && vmStr) return podName ? `${podName} · ${templateStr} · ${vmStr}` : `${templateStr} · ${vmStr}`;
+			return parts.join(' · ');
+		}
+
+		if (job.type === 'pod_destroy') {
+			return podName || '';
+		}
+
+		if (job.type === 'vm_start' || job.type === 'vm_stop' || job.type === 'vm_restart') {
+			const vmName = (job.payload?.vm_name as string) || '';
+			return [podName, vmName].filter(Boolean).join(' · ');
+		}
+
+		return podName;
 	}
 </script>
 
@@ -128,10 +158,10 @@
 	<!-- Content -->
 	<div
 		class="overflow-hidden transition-all duration-300 ease-in-out"
-		style="max-height: {expanded ? `${Math.max(jobs.length, 1) * 100 + 40}px` : '0px'};"
+		style="max-height: {expanded ? `${Math.max(activeJobs.length, 1) * 100 + 40}px` : '0px'};"
 	>
 		<div class="border-t border-surface-200-800 px-5 py-4">
-			{#if jobs.length === 0}
+			{#if activeJobs.length === 0}
 				<div class="flex items-center gap-3 py-4 text-surface-500">
 					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -140,7 +170,7 @@
 				</div>
 			{:else}
 				<div class="space-y-4">
-					{#each jobs as job (job.id)}
+					{#each activeJobs as job (job.id)}
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-2">
@@ -170,7 +200,6 @@
 												step.status === 'failed' ? 'bg-error-500' :
 												'bg-surface-300-700'
 											}"
-											class:animate-pulse={step.status === 'running'}
 										>
 											{#if step.status === 'completed'}
 												<svg class="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -181,7 +210,10 @@
 													<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 												</svg>
 											{:else if step.status === 'running'}
-												<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+												<svg class="h-2.5 w-2.5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+													<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
+													<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+												</svg>
 											{/if}
 										</div>
 										<span class="whitespace-nowrap text-[10px] {step.status === 'failed' ? 'text-error-500 font-medium' : step.status === 'running' ? 'text-warning-500' : 'text-surface-500'}">{step.label}</span>

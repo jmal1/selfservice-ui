@@ -13,8 +13,7 @@
 
 	const totalVMs = $derived(pods.reduce((s, p) => s + (p.vms ?? []).length, 0));
 
-	onMount(async () => {
-		if (!authStore.isAdmin) return;
+	async function loadData() {
 		try {
 			pods = await getPods();
 		} catch (e) {
@@ -26,6 +25,17 @@
 			if (!error) error = e instanceof Error ? e.message : 'Failed to load users';
 		}
 		loading = false;
+	}
+
+	onMount(() => {
+		if (!authStore.isAdmin) return;
+		loadData();
+
+		const interval = setInterval(() => {
+			if (!document.hidden) loadData();
+		}, 15000);
+
+		return () => clearInterval(interval);
 	});
 </script>
 
