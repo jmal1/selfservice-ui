@@ -1,12 +1,12 @@
 @import 'tailwindcss';
 @import '@fontsource/inter';
-@import './theme-portal.css';
+@import './theme-crucible.css';
 @import '@skeletonlabs/skeleton';
 
 @theme {
 	--font-sans: 'Inter', sans-serif;
-	--color-accent: oklch(0.55 0.24 273);
-	--color-accent-glow: oklch(0.55 0.24 273 / 0.3);
+	--color-accent: oklch(0.60 0.22 35);
+	--color-accent-glow: oklch(0.60 0.22 35 / 0.3);
 }
 
 /* Scale up the entire UI ~15% so 100% zoom feels comfortable */
@@ -40,12 +40,12 @@ html {
 	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.1));
 }
 
-/* Glow effect for primary buttons */
+/* Glow effect for primary buttons — fire orange */
 .glow-primary {
-	box-shadow: 0 0 20px oklch(0.55 0.24 273 / 0.3);
+	box-shadow: 0 0 20px oklch(0.60 0.22 35 / 0.3);
 }
 .glow-primary:hover {
-	box-shadow: 0 0 30px oklch(0.55 0.24 273 / 0.4);
+	box-shadow: 0 0 30px oklch(0.60 0.22 35 / 0.4);
 }
 
 /* Pulse animation for status dots */
