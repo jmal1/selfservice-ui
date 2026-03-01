@@ -93,7 +93,7 @@
 					class="relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-all
 						{isActive(item.href)
 						? 'bg-primary-500/15 text-primary-400'
-						: 'text-surface-500 hover:bg-surface-200-800/50 hover:text-surface-900-100'}"
+						: 'text-surface-400 hover:bg-surface-200-800/50 hover:text-surface-900-100'}"
 				>
 					{#if isActive(item.href)}
 						<span class="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-primary-500"></span>
@@ -104,7 +104,7 @@
 			{/each}
 
 			{#if authStore.isAdmin}
-				<div class="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-500">
+				<div class="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-400">
 					Admin
 				</div>
 				{#each adminItems as item}
@@ -113,7 +113,7 @@
 						class="relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-all
 							{isActive(item.href)
 							? 'bg-primary-500/15 text-primary-400'
-							: 'text-surface-500 hover:bg-surface-200-800/50 hover:text-surface-900-100'}"
+							: 'text-surface-400 hover:bg-surface-200-800/50 hover:text-surface-900-100'}"
 					>
 						{#if isActive(item.href)}
 							<span class="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-primary-500"></span>
@@ -129,7 +129,7 @@
 		<div class="border-t border-surface-200-800/30 px-4 py-3">
 			<button
 				onclick={() => themeStore.toggle()}
-				class="mb-3 flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-surface-500 transition-all hover:bg-surface-200-800/50 hover:text-surface-900-100"
+				class="mb-3 flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-surface-400 transition-all hover:bg-surface-200-800/50 hover:text-surface-900-100"
 			>
 				{#if themeStore.isDark}
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -150,11 +150,11 @@
 						<p class="truncate text-sm font-medium text-surface-900-100">
 							{authStore.user.display_name}
 						</p>
-						<p class="truncate text-xs text-surface-500">{authStore.user.role}</p>
+						<p class="truncate text-xs text-surface-400">{authStore.user.role}</p>
 					</div>
 					<button
 						onclick={handleLogout}
-						class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-500 transition-colors hover:bg-surface-200-800 hover:text-surface-900-100"
+						class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-colors hover:bg-surface-200-800 hover:text-surface-900-100"
 						aria-label="Sign out"
 						title="Sign out"
 					>

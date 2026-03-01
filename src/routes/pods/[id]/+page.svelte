@@ -158,7 +158,7 @@
 				</a>
 				<div>
 					<h1 class="text-2xl font-bold text-surface-900-100">{pod.name}</h1>
-					<div class="mt-1 flex items-center gap-3 text-sm text-surface-500">
+					<div class="mt-1 flex items-center gap-3 text-sm text-surface-400">
 						<span class="rounded-md bg-primary-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-primary-400">
 							VLAN {pod.vlan_id}
 						</span>
@@ -236,7 +236,7 @@
 						<div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center gap-3 px-5 py-3">
 							<div>
 								<p class="text-sm font-medium text-surface-900-100">{vm.display_name || vm.vcenter_vm_name}</p>
-								<p class="font-mono text-xs text-surface-500">{vm.vcenter_vm_name} · {vm.template_name || vm.template?.name || templateName(vm.template_id)}</p>
+								<p class="font-mono text-xs text-surface-400">{vm.vcenter_vm_name} · {vm.template_name || vm.template?.name || templateName(vm.template_id)}</p>
 							</div>
 							<div>
 								<StatusBadge status={vm.status} />

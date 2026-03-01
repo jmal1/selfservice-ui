@@ -191,7 +191,7 @@
 	>
 		<div class="border-t border-surface-200-800 px-5 py-4">
 			{#if activeJobs.length === 0}
-				<div class="flex items-center gap-3 py-4 text-surface-500">
+				<div class="flex items-center gap-3 py-4 text-surface-400">
 					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 					</svg>
@@ -205,10 +205,10 @@
 								<div class="flex items-center gap-2">
 									<span class="text-sm font-medium text-surface-900-100">{jobLabel(job)}</span>
 									{#if jobSubtitle(job)}
-										<span class="text-xs text-surface-500">· {jobSubtitle(job)}</span>
+										<span class="text-xs text-surface-400">· {jobSubtitle(job)}</span>
 									{/if}
 								</div>
-								<span class="text-xs {job.status === 'failed' ? 'text-error-500 font-medium' : job.status === 'completed' ? 'text-success-500' : 'text-surface-500'}">{job.status}</span>
+								<span class="text-xs {job.status === 'failed' ? 'text-error-500 font-medium' : job.status === 'completed' ? 'text-success-500' : 'text-surface-400'}">{job.status}</span>
 							</div>
 							<!-- Step progress -->
 							<div class="flex items-center gap-0.5">
@@ -245,7 +245,7 @@
 												</svg>
 											{/if}
 										</div>
-										<span class="whitespace-nowrap text-[10px] {step.status === 'failed' ? 'text-error-500 font-medium' : step.status === 'running' ? 'text-warning-500' : 'text-surface-500'}">{step.label}</span>
+										<span class="whitespace-nowrap text-[10px] {step.status === 'failed' ? 'text-error-500 font-medium' : step.status === 'running' ? 'text-warning-500' : 'text-surface-400'}">{step.label}</span>
 									</div>
 								{/each}
 							</div>

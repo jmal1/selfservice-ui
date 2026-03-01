@@ -42,7 +42,7 @@
 		{#if isLinux}
 			<!-- SSH: primary command -->
 			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">SSH</span>
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">SSH</span>
 				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
 					ssh {displayUsername || 'user'}@{vm.ip_address}
 				</code>
@@ -56,7 +56,7 @@
 		{:else if isWindows}
 			<!-- RDP: primary command -->
 			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">RDP</span>
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
 				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
 					mstsc /v:{vm.ip_address}
 				</code>
@@ -70,7 +70,7 @@
 		{:else}
 			<!-- Generic: just IP -->
 			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">IP</span>
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">IP</span>
 				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
 					{vm.ip_address}
 				</code>
@@ -86,7 +86,7 @@
 		<!-- Credentials + extra actions row -->
 		<div class="flex items-center gap-4">
 			{#if hasCredentials}
-				<div class="flex items-center gap-3 text-xs text-surface-500">
+				<div class="flex items-center gap-3 text-xs text-surface-400">
 					{#if displayUsername}
 						<span>User: <code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{displayUsername}</code></span>
 					{/if}
@@ -94,7 +94,7 @@
 						<span>Pass:
 							<code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{showPassword ? displayPassword : '••••••••'}</code>
 							<button
-								class="ml-0.5 text-surface-500 hover:text-surface-300"
+								class="ml-0.5 text-surface-400 hover:text-surface-300"
 								onclick={() => (showPassword = !showPassword)}
 							>{showPassword ? 'Hide' : 'Show'}</button>
 							<button
@@ -108,7 +108,7 @@
 			<div class="ml-auto flex gap-2">
 				{#if isWindows}
 					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-500 transition-colors hover:text-surface-300"
+						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
 						onclick={downloadRdp}
 					>
 						Download .rdp
