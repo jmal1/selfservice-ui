@@ -96,22 +96,10 @@
 				if (prevDefine !== undefined) (window as any).define = prevDefine;
 			}
 
-			const w = window as any;
-			WMKS = w.WMKS;
-
-			// Diagnostics for debugging
-			console.log('[WMKS] window.WMKS:', typeof WMKS);
-			console.log('[WMKS] window.$:', typeof w.$);
-			console.log('[WMKS] $.widget:', typeof w.$?.widget);
-			console.log('[WMKS] $.fn.nwmks:', typeof w.$?.fn?.nwmks);
-			console.log('[WMKS] WMKS.createWMKS:', typeof WMKS?.createWMKS);
-			console.log('[WMKS] #console-canvas exists:', !!document.getElementById('console-canvas'));
+			WMKS = (window as any).WMKS;
 
 			if (!WMKS || typeof WMKS.createWMKS !== 'function') {
-				throw new Error(
-					`WMKS.createWMKS not available. WMKS=${typeof WMKS}, ` +
-					`$=${typeof w.$}, $.widget=${typeof w.$?.widget}, $.fn.nwmks=${typeof w.$?.fn?.nwmks}`
-				);
+				throw new Error('WMKS SDK failed to load');
 			}
 
 			connect();
@@ -221,9 +209,21 @@
 </div>
 
 <style>
+	:global(html),
 	:global(body) {
 		overflow: hidden;
 		margin: 0;
 		padding: 0;
+		height: 100%;
+		width: 100%;
+	}
+	/* Prevent WMKS canvas from overflowing its container */
+	:global(#console-canvas) {
+		overflow: hidden;
+	}
+	:global(#console-canvas canvas) {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
 	}
 </style>
