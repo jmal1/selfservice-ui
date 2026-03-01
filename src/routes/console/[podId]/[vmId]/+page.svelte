@@ -34,6 +34,8 @@
 			wmks = WMKS.createWMKS('console-canvas', {
 				rescale: true,
 				changeResolution: true,
+				fitToParent: true,
+				fitGuest: true,
 				position: WMKS.CONST.Position.CENTER,
 			});
 
@@ -211,19 +213,22 @@
 <style>
 	:global(html),
 	:global(body) {
-		overflow: hidden;
+		overflow: hidden !important;
 		margin: 0;
 		padding: 0;
 		height: 100%;
 		width: 100%;
 	}
-	/* Prevent WMKS canvas from overflowing its container */
+	/* Force the WMKS container and all its children to stay within bounds */
 	:global(#console-canvas) {
-		overflow: hidden;
+		overflow: hidden !important;
+		position: relative;
+	}
+	:global(#console-canvas > div) {
+		overflow: hidden !important;
 	}
 	:global(#console-canvas canvas) {
-		max-width: 100%;
-		max-height: 100%;
-		object-fit: contain;
+		max-width: 100% !important;
+		max-height: 100% !important;
 	}
 </style>
