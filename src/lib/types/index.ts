@@ -112,6 +112,25 @@ export interface AuditEntry {
 	created_at: string;
 }
 
+export interface AuditLogPage {
+	entries: AuditEntry[];
+	total: number;
+	page: number;
+	per_page: number;
+}
+
+export interface ActiveSession {
+	id: string;
+	user_id: string;
+	username: string;
+	display_name?: string;
+	email?: string;
+	created_at: string;
+	last_activity: string;
+	ip_address?: string;
+	user_agent?: string;
+}
+
 export interface VLANPoolEntry {
 	id: number;
 	vlan_tag: number;

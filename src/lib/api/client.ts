@@ -10,6 +10,8 @@ import type {
 	ResourceUsage,
 	Job,
 	AuditEntry,
+	AuditLogPage,
+	ActiveSession,
 	VLANPoolEntry
 } from '$lib/types';
 
@@ -260,6 +262,31 @@ export function adminGetJobs(): Promise<Job[]> {
 export function adminGetAuditLog(): Promise<AuditEntry[]> {
 	if (isMock) return mockApi.adminGetAuditLog();
 	return apiFetch<AuditEntry[]>('/api/v1/admin/audit');
+}
+
+export function adminSearchAuditLog(params: {
+	action?: string;
+	user_id?: string;
+	resource_id?: string;
+	since?: string;
+	until?: string;
+	page?: number;
+	per_page?: number;
+} = {}): Promise<AuditLogPage> {
+	const qs = new URLSearchParams();
+	if (params.action) qs.set('action', params.action);
+	if (params.user_id) qs.set('user_id', params.user_id);
+	if (params.resource_id) qs.set('resource_id', params.resource_id);
+	if (params.since) qs.set('since', params.since);
+	if (params.until) qs.set('until', params.until);
+	if (params.page) qs.set('page', String(params.page));
+	if (params.per_page) qs.set('per_page', String(params.per_page));
+	const query = qs.toString();
+	return apiFetch<AuditLogPage>(`/api/v1/admin/audit/search${query ? `?${query}` : ''}`);
+}
+
+export function adminListSessions(): Promise<ActiveSession[]> {
+	return apiFetch<ActiveSession[]>('/api/v1/admin/sessions');
 }
 
 // --- VLAN Pool Admin ---

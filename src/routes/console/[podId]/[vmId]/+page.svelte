@@ -77,8 +77,23 @@
 
 	onMount(async () => {
 		try {
-			const mod = await import('opennebula-wmks');
-			WMKS = mod.default;
+			// Load WMKS as a classic script (not ESM) so jQuery + jQuery UI
+			// widget factory initialise correctly in the global scope.
+			if (!(window as any).WMKS) {
+				await new Promise<void>((resolve, reject) => {
+					const script = document.createElement('script');
+					script.src = '/wmks/wmks.js';
+					script.onload = () => resolve();
+					script.onerror = () => reject(new Error('Failed to load WMKS script'));
+					document.head.appendChild(script);
+				});
+			}
+
+			WMKS = (window as any).WMKS;
+			if (!WMKS || typeof WMKS.createWMKS !== 'function') {
+				throw new Error('WMKS.createWMKS not available after script load');
+			}
+
 			connect();
 		} catch (e) {
 			status = 'error';
