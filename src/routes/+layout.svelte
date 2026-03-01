@@ -7,7 +7,8 @@
 	let { children } = $props();
 
 	const isLoginPage = $derived(page.url.pathname.startsWith('/login'));
-	const showSidebar = $derived(authStore.isAuthenticated && !isLoginPage);
+	const isConsolePage = $derived(page.url.pathname.startsWith('/console'));
+	const showSidebar = $derived(authStore.isAuthenticated && !isLoginPage && !isConsolePage);
 
 	const navItems = [
 		{ href: '/', label: 'Dashboard', icon: 'dashboard' },

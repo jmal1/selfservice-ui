@@ -57,6 +57,7 @@ export interface PodVM {
 	template_id: string;
 	display_name: string;
 	vcenter_vm_name: string;
+	vcenter_vm_id?: string;
 	vcpus: number;
 	ram_mb: number;
 	disk_gb: number;

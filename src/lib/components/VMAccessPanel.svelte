@@ -15,6 +15,8 @@
 	const displayUsername = $derived(vm.generated_username || vm.default_username);
 	const displayPassword = $derived(vm.generated_password || vm.default_password);
 	const hasCredentials = $derived(!!displayUsername || !!displayPassword);
+	const hasVCenter = $derived(!!vm.vcenter_vm_id);
+	const isPoweredOn = $derived(vm.status === 'powered_on' || vm.status === 'running');
 
 	async function handleCopy(text: string, field: string) {
 		const ok = await copyToClipboard(text);
@@ -22,6 +24,10 @@
 			copiedField = field;
 			setTimeout(() => (copiedField = null), 2000);
 		}
+	}
+
+	function openConsole() {
+		window.open(`/console/${vm.pod_id}/${vm.id}`, '_blank');
 	}
 
 	function downloadRdp() {
@@ -37,50 +43,52 @@
 	}
 </script>
 
-{#if vm.ip_address}
+{#if vm.ip_address || hasVCenter}
 	<div class="rounded-xl border border-surface-200-800/50 bg-surface-50-950/50 p-4">
-		{#if isLinux}
-			<!-- SSH: primary command -->
-			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">SSH</span>
-				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
-					ssh {displayUsername || 'user'}@{vm.ip_address}
-				</code>
-				<button
-					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-					onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
-				>
-					{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
-				</button>
-			</div>
-		{:else if isWindows}
-			<!-- RDP: primary command -->
-			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
-				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
-					mstsc /v:{vm.ip_address}
-				</code>
-				<button
-					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-					onclick={() => handleCopy(`mstsc /v:${vm.ip_address}`, 'rdp')}
-				>
-					{copiedField === 'rdp' ? '✓ Copied' : 'Copy'}
-				</button>
-			</div>
-		{:else}
-			<!-- Generic: just IP -->
-			<div class="mb-3 flex items-center gap-2">
-				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">IP</span>
-				<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
-					{vm.ip_address}
-				</code>
-				<button
-					class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-					onclick={() => handleCopy(vm.ip_address, 'ip')}
-				>
-					{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
-				</button>
-			</div>
+		{#if vm.ip_address}
+			{#if isLinux}
+				<!-- SSH: primary command -->
+				<div class="mb-3 flex items-center gap-2">
+					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">SSH</span>
+					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+						ssh {displayUsername || 'user'}@{vm.ip_address}
+					</code>
+					<button
+						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+						onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
+					>
+						{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
+					</button>
+				</div>
+			{:else if isWindows}
+				<!-- RDP: primary command -->
+				<div class="mb-3 flex items-center gap-2">
+					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
+					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+						mstsc /v:{vm.ip_address}
+					</code>
+					<button
+						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+						onclick={() => handleCopy(`mstsc /v:${vm.ip_address}`, 'rdp')}
+					>
+						{copiedField === 'rdp' ? '✓ Copied' : 'Copy'}
+					</button>
+				</div>
+			{:else}
+				<!-- Generic: just IP -->
+				<div class="mb-3 flex items-center gap-2">
+					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">IP</span>
+					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+						{vm.ip_address}
+					</code>
+					<button
+						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+						onclick={() => handleCopy(vm.ip_address, 'ip')}
+					>
+						{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
+					</button>
+				</div>
+			{/if}
 		{/if}
 
 		<!-- Credentials + extra actions row -->
@@ -106,7 +114,17 @@
 				</div>
 			{/if}
 			<div class="ml-auto flex gap-2">
-				{#if isWindows}
+				{#if hasVCenter}
+					<button
+						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
+						onclick={openConsole}
+						disabled={!isPoweredOn}
+						title={isPoweredOn ? 'Open VM console in new tab' : 'VM must be powered on'}
+					>
+						🖥 Console
+					</button>
+				{/if}
+				{#if isWindows && vm.ip_address}
 					<button
 						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
 						onclick={downloadRdp}
