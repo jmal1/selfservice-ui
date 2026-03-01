@@ -8,6 +8,7 @@
 
 	let canvasContainer: HTMLDivElement;
 	let wmks: any = null;
+	let WMKS: any = null;
 	let status = $state<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
 	let errorMessage = $state('');
 
@@ -21,35 +22,33 @@
 		status = 'connecting';
 		errorMessage = '';
 
-		const wsUrl = getConsoleWsUrl();
-
-		// Check if WMKS SDK is available
-		if (typeof (window as any).WMKS === 'undefined') {
-			// Fallback: raw WebSocket display with message
+		if (!WMKS) {
 			status = 'error';
-			errorMessage = 'WMKS SDK not loaded. Please ensure wmks.min.js is available.';
+			errorMessage = 'WMKS SDK failed to load.';
 			return;
 		}
 
+		const wsUrl = getConsoleWsUrl();
+
 		try {
-			wmks = (window as any).WMKS.createWMKS('console-canvas', {
+			wmks = WMKS.createWMKS('console-canvas', {
 				rescale: true,
 				changeResolution: true,
-				position: (window as any).WMKS.CONST.Position.CENTER,
+				position: WMKS.CONST.Position.CENTER,
 			});
 
-			wmks.register((window as any).WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (event: any, data: any) => {
+			wmks.register(WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (_event: any, data: any) => {
 				switch (data.state) {
-					case (window as any).WMKS.CONST.ConnectionState.CONNECTED:
+					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
 						break;
-					case (window as any).WMKS.CONST.ConnectionState.DISCONNECTED:
+					case WMKS.CONST.ConnectionState.DISCONNECTED:
 						status = 'disconnected';
 						break;
 				}
 			});
 
-			wmks.register((window as any).WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
+			wmks.register(WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
 				status = 'error';
 				errorMessage = data?.message || 'Console connection error';
 			});
@@ -76,8 +75,15 @@
 		connect();
 	}
 
-	onMount(() => {
-		connect();
+	onMount(async () => {
+		try {
+			const mod = await import('opennebula-wmks');
+			WMKS = mod.default;
+			connect();
+		} catch (e) {
+			status = 'error';
+			errorMessage = `Failed to load WMKS SDK: ${e}`;
+		}
 	});
 
 	onDestroy(() => {
@@ -90,8 +96,6 @@
 
 <svelte:head>
 	<title>VM Console</title>
-	<script src="/wmks/wmks.min.js"></script>
-	<link rel="stylesheet" href="/wmks/css/wmks-all.css" />
 </svelte:head>
 
 <div class="flex h-screen w-screen flex-col bg-black">
