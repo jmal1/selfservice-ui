@@ -9,6 +9,7 @@
 	let canvasContainer: HTMLDivElement;
 	let wmks: any = null;
 	let WMKS: any = null;
+	let resizeObserver: ResizeObserver | null = null;
 	let status = $state<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
 	let errorMessage = $state('');
 
@@ -43,6 +44,8 @@
 				switch (data.state) {
 					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
+						// Trigger a resize so WMKS fits to the actual container
+						try { wmks.updateScreen(); } catch {}
 						break;
 					case WMKS.CONST.ConnectionState.DISCONNECTED:
 						status = 'disconnected';
@@ -56,6 +59,14 @@
 			});
 
 			wmks.connect(wsUrl);
+
+			// Watch for container resizes and re-fit WMKS
+			resizeObserver = new ResizeObserver(() => {
+				if (wmks && status === 'connected') {
+					try { wmks.updateScreen(); } catch {}
+				}
+			});
+			resizeObserver.observe(canvasContainer);
 		} catch (e) {
 			status = 'error';
 			errorMessage = `Failed to initialize console: ${e}`;
@@ -112,6 +123,7 @@
 	});
 
 	onDestroy(() => {
+		if (resizeObserver) resizeObserver.disconnect();
 		if (wmks) {
 			try { wmks.disconnect(); } catch {}
 			try { wmks.destroy(); } catch {}
@@ -178,7 +190,7 @@
 
 	<!-- Console canvas (always in DOM so WMKS widget can attach/reattach) -->
 	<div class="relative flex-1 overflow-hidden" bind:this={canvasContainer}>
-		<div id="console-canvas" class="h-full w-full"></div>
+		<div id="console-canvas"></div>
 
 		{#if status === 'error'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/80">
@@ -219,16 +231,24 @@
 		height: 100%;
 		width: 100%;
 	}
-	/* Force the WMKS container and all its children to stay within bounds */
+	/* Pin the WMKS container to the parent via absolute positioning
+	   so its dimensions come from the parent, not its children */
 	:global(#console-canvas) {
+		position: absolute !important;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		overflow: hidden !important;
-		position: relative;
 	}
 	:global(#console-canvas > div) {
 		overflow: hidden !important;
+		max-width: 100% !important;
+		max-height: 100% !important;
 	}
 	:global(#console-canvas canvas) {
 		max-width: 100% !important;
 		max-height: 100% !important;
+		object-fit: contain;
 	}
 </style>
