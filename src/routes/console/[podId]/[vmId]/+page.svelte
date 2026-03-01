@@ -186,10 +186,12 @@
 		</div>
 	</div>
 
-	<!-- Console canvas -->
+	<!-- Console canvas (always in DOM so WMKS widget can attach/reattach) -->
 	<div class="relative flex-1 overflow-hidden" bind:this={canvasContainer}>
+		<div id="console-canvas" class="h-full w-full"></div>
+
 		{#if status === 'error'}
-			<div class="flex h-full items-center justify-center">
+			<div class="absolute inset-0 flex items-center justify-center bg-black/80">
 				<div class="rounded-xl border border-error-500/30 bg-error-500/10 p-8 text-center">
 					<p class="text-lg font-semibold text-error-400">Console Error</p>
 					<p class="mt-2 text-sm text-surface-400">{errorMessage}</p>
@@ -202,7 +204,7 @@
 				</div>
 			</div>
 		{:else if status === 'disconnected'}
-			<div class="flex h-full items-center justify-center">
+			<div class="absolute inset-0 flex items-center justify-center bg-black/80">
 				<div class="rounded-xl border border-surface-600 bg-surface-800/50 p-8 text-center">
 					<p class="text-lg font-semibold text-surface-300">Disconnected</p>
 					<p class="mt-2 text-sm text-surface-400">The console session has ended.</p>
@@ -214,8 +216,6 @@
 					</button>
 				</div>
 			</div>
-		{:else}
-			<div id="console-canvas" class="h-full w-full"></div>
 		{/if}
 	</div>
 </div>
