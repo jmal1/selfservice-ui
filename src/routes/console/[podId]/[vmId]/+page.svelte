@@ -80,6 +80,10 @@
 			// Load WMKS as a classic script (not ESM) so jQuery + jQuery UI
 			// widget factory initialise correctly in the global scope.
 			if (!(window as any).WMKS) {
+				// Prevent AMD loaders from hijacking jQuery UI's factory
+				const prevDefine = (window as any).define;
+				(window as any).define = undefined;
+
 				await new Promise<void>((resolve, reject) => {
 					const script = document.createElement('script');
 					script.src = '/wmks/wmks.js';
@@ -87,17 +91,33 @@
 					script.onerror = () => reject(new Error('Failed to load WMKS script'));
 					document.head.appendChild(script);
 				});
+
+				// Restore define if it existed
+				if (prevDefine !== undefined) (window as any).define = prevDefine;
 			}
 
-			WMKS = (window as any).WMKS;
+			const w = window as any;
+			WMKS = w.WMKS;
+
+			// Diagnostics for debugging
+			console.log('[WMKS] window.WMKS:', typeof WMKS);
+			console.log('[WMKS] window.$:', typeof w.$);
+			console.log('[WMKS] $.widget:', typeof w.$?.widget);
+			console.log('[WMKS] $.fn.nwmks:', typeof w.$?.fn?.nwmks);
+			console.log('[WMKS] WMKS.createWMKS:', typeof WMKS?.createWMKS);
+			console.log('[WMKS] #console-canvas exists:', !!document.getElementById('console-canvas'));
+
 			if (!WMKS || typeof WMKS.createWMKS !== 'function') {
-				throw new Error('WMKS.createWMKS not available after script load');
+				throw new Error(
+					`WMKS.createWMKS not available. WMKS=${typeof WMKS}, ` +
+					`$=${typeof w.$}, $.widget=${typeof w.$?.widget}, $.fn.nwmks=${typeof w.$?.fn?.nwmks}`
+				);
 			}
 
 			connect();
 		} catch (e) {
 			status = 'error';
-			errorMessage = `Failed to load WMKS SDK: ${e}`;
+			errorMessage = `Failed to initialize console: ${e}`;
 		}
 	});
 
