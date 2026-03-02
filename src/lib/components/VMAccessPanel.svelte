@@ -32,7 +32,7 @@
 
 	function downloadRdp() {
 		if (!vm.ip_address) return;
-		const content = `full address:s:${vm.ip_address}\r\nusername:s:.\\${displayUsername || 'Student'}\r\ndesktopwidth:i:1920\r\ndesktopheight:i:1080\r\nprompt for credentials:i:1\r\nadministrative session:i:1\r\nsmart sizing:i:1`;
+		const content = `full address:s:${vm.ip_address}\r\nusername:s:\\${displayUsername || 'Student'}\r\ndesktopwidth:i:1920\r\ndesktopheight:i:1080\r\nprompt for credentials:i:1\r\nadministrative session:i:1\r\nsmart sizing:i:1`;
 		const blob = new Blob([content], { type: 'application/x-rdp' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -66,7 +66,7 @@
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
 					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
 						mstsc /w:1920 /h:1080 /v:{vm.ip_address}
-						<span class="text-surface-400 ml-2">(user: <strong class="text-surface-300">.\{displayUsername || 'Student'}</strong>)</span>
+						<span class="text-surface-400 ml-2">(user: <strong class="text-surface-300">\{displayUsername || 'Student'}</strong>)</span>
 					</code>
 					<button
 						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
