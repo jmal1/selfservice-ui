@@ -20,6 +20,7 @@
 				return { bg: 'bg-surface-400/10', text: 'text-surface-500', dot: 'bg-surface-500', label: format(s), animate: false };
 			case 'error':
 			case 'failed':
+			case 'destroy_failed':
 				return { bg: 'bg-error-500/10', text: 'text-error-500', dot: 'bg-error-500', label: format(s), animate: false };
 			case 'deleting':
 			case 'suspending':

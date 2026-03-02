@@ -7,6 +7,7 @@ export type PodStatus =
 	| 'stopping'
 	| 'stopped'
 	| 'deleting'
+	| 'destroy_failed'
 	| 'error';
 
 export type VMStatus =
