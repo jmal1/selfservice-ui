@@ -12,7 +12,8 @@ import type {
 	AuditEntry,
 	AuditLogPage,
 	ActiveSession,
-	VLANPoolEntry
+	VLANPoolEntry,
+	VMSnapshot
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -321,4 +322,45 @@ export function adminUpdateVLAN(
 
 export function adminRemoveVLAN(id: number): Promise<void> {
 	return apiFetch<void>(`/api/v1/admin/vlans/${id}`, { method: 'DELETE' });
+}
+
+// --- Snapshot Operations ---
+
+export function listSnapshots(podId: string, vmId: string): Promise<VMSnapshot[]> {
+	return apiFetch<VMSnapshot[]>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots`);
+}
+
+export function createSnapshot(
+	podId: string,
+	vmId: string,
+	name: string,
+	description: string = ''
+): Promise<{ job_id: string }> {
+	return apiFetch<{ job_id: string }>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots`, {
+		method: 'POST',
+		body: JSON.stringify({ name, description })
+	});
+}
+
+export function revertToInitial(podId: string, vmId: string): Promise<{ job_id: string }> {
+	return apiFetch<{ job_id: string }>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots/revert-initial`, {
+		method: 'POST'
+	});
+}
+
+export function revertToSnapshot(
+	podId: string,
+	vmId: string,
+	snapshotId: string
+): Promise<{ job_id: string }> {
+	return apiFetch<{ job_id: string }>(
+		`/api/v1/pods/${podId}/vms/${vmId}/snapshots/${snapshotId}/revert`,
+		{ method: 'POST' }
+	);
+}
+
+export function deleteSnapshot(podId: string, vmId: string, snapshotId: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots/${snapshotId}`, {
+		method: 'DELETE'
+	});
 }

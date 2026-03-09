@@ -15,6 +15,7 @@
 	import type { Pod, Template, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
+	import SnapshotPanel from '$lib/components/SnapshotPanel.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 
 	const podId = $derived(page.params.id as string);
@@ -330,6 +331,11 @@
 								<VMAccessPanel {vm} />
 							</div>
 						{/if}
+
+						<!-- Snapshot Panel (always visible per VM) -->
+						<div class="border-t border-surface-200-800/50 bg-surface-50-950/20 px-5 py-3">
+							<SnapshotPanel podId={podId} vmId={vm.id} vmStatus={vm.status} />
+						</div>
 					</div>
 				{/each}
 			{/if}

@@ -73,6 +73,15 @@ export interface PodVM {
 	template?: Template;
 }
 
+export interface VMSnapshot {
+	id: string;
+	pod_vm_id: string;
+	name: string;
+	description: string;
+	is_initial: boolean;
+	created_at: string;
+}
+
 export interface Pod {
 	id: string;
 	owner_id: string;
