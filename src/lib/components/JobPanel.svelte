@@ -314,6 +314,7 @@
 								</div>
 							{/if}
 						</div>
+					{/each}
 				</div>
 			{/if}
 		</div>
