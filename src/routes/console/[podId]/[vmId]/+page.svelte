@@ -17,8 +17,132 @@
 	// Paste / text input state
 	let showTextDrawer = $state(false);
 	let textInput = $state('');
-	let slowMode = $state(false);
 	let sending = $state(false);
+
+	// US keyboard layout: char → [keyCode, code, needsShift]
+	const KEY_MAP: Record<string, [number, string, boolean]> = {
+		"\n": [13, "Enter", false], "\r": [13, "Enter", false],
+		"\t": [9, "Tab", false], " ": [32, "Space", false],
+		"`": [192, "Backquote", false], "~": [192, "Backquote", true],
+		"1": [49, "Digit1", false], "!": [49, "Digit1", true],
+		"2": [50, "Digit2", false], "@": [50, "Digit2", true],
+		"3": [51, "Digit3", false], "#": [51, "Digit3", true],
+		"4": [52, "Digit4", false], "$": [52, "Digit4", true],
+		"5": [53, "Digit5", false], "%": [53, "Digit5", true],
+		"6": [54, "Digit6", false], "^": [54, "Digit6", true],
+		"7": [55, "Digit7", false], "&": [55, "Digit7", true],
+		"8": [56, "Digit8", false], "*": [56, "Digit8", true],
+		"9": [57, "Digit9", false], "(": [57, "Digit9", true],
+		"0": [48, "Digit0", false], ")": [48, "Digit0", true],
+		"-": [189, "Minus", false], "_": [189, "Minus", true],
+		"=": [187, "Equal", false], "+": [187, "Equal", true],
+		"q": [81, "KeyQ", false], "Q": [81, "KeyQ", true],
+		"w": [87, "KeyW", false], "W": [87, "KeyW", true],
+		"e": [69, "KeyE", false], "E": [69, "KeyE", true],
+		"r": [82, "KeyR", false], "R": [82, "KeyR", true],
+		"t": [84, "KeyT", false], "T": [84, "KeyT", true],
+		"y": [89, "KeyY", false], "Y": [89, "KeyY", true],
+		"u": [85, "KeyU", false], "U": [85, "KeyU", true],
+		"i": [73, "KeyI", false], "I": [73, "KeyI", true],
+		"o": [79, "KeyO", false], "O": [79, "KeyO", true],
+		"p": [80, "KeyP", false], "P": [80, "KeyP", true],
+		"[": [219, "BracketLeft", false], "{": [219, "BracketLeft", true],
+		"]": [221, "BracketRight", false], "}": [221, "BracketRight", true],
+		"\\": [220, "Backslash", false], "|": [220, "Backslash", true],
+		"a": [65, "KeyA", false], "A": [65, "KeyA", true],
+		"s": [83, "KeyS", false], "S": [83, "KeyS", true],
+		"d": [68, "KeyD", false], "D": [68, "KeyD", true],
+		"f": [70, "KeyF", false], "F": [70, "KeyF", true],
+		"g": [71, "KeyG", false], "G": [71, "KeyG", true],
+		"h": [72, "KeyH", false], "H": [72, "KeyH", true],
+		"j": [74, "KeyJ", false], "J": [74, "KeyJ", true],
+		"k": [75, "KeyK", false], "K": [75, "KeyK", true],
+		"l": [76, "KeyL", false], "L": [76, "KeyL", true],
+		";": [186, "Semicolon", false], ":": [186, "Semicolon", true],
+		"'": [222, "Quote", false], '"': [222, "Quote", true],
+		"z": [90, "KeyZ", false], "Z": [90, "KeyZ", true],
+		"x": [88, "KeyX", false], "X": [88, "KeyX", true],
+		"c": [67, "KeyC", false], "C": [67, "KeyC", true],
+		"v": [86, "KeyV", false], "V": [86, "KeyV", true],
+		"b": [66, "KeyB", false], "B": [66, "KeyB", true],
+		"n": [78, "KeyN", false], "N": [78, "KeyN", true],
+		"m": [77, "KeyM", false], "M": [77, "KeyM", true],
+		",": [188, "Comma", false], "<": [188, "Comma", true],
+		".": [190, "Period", false], ">": [190, "Period", true],
+		"/": [191, "Slash", false], "?": [191, "Slash", true],
+	};
+
+	function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+
+	// Find the WMKS canvas element to dispatch keyboard events to
+	function getWmksCanvas(): HTMLElement | null {
+		return document.querySelector('#console-canvas canvas') as HTMLElement
+			|| document.getElementById('mainCanvas');
+	}
+
+	async function typeTextToVM(text: string) {
+		const target = getWmksCanvas();
+		if (!target) {
+			toastStore.error('Console canvas not found');
+			return;
+		}
+
+		const baseProps = {
+			bubbles: true,
+			cancelable: true,
+			charCode: 0,
+			altKey: false,
+			ctrlKey: false,
+			metaKey: false,
+			repeat: false,
+			location: KeyboardEvent.DOM_KEY_LOCATION_STANDARD,
+		};
+
+		let shiftHeld = false;
+		let typed = 0;
+
+		for (const char of text) {
+			const mapping = KEY_MAP[char];
+			if (!mapping) continue; // skip unmapped chars
+
+			const [keyCode, code, needsShift] = mapping;
+
+			// Press shift if needed and not already held
+			if (needsShift && !shiftHeld) {
+				target.dispatchEvent(new KeyboardEvent('keydown', {
+					...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: true,
+				}));
+				shiftHeld = true;
+				await sleep(10);
+			}
+			// Release shift if not needed but held
+			if (!needsShift && shiftHeld) {
+				target.dispatchEvent(new KeyboardEvent('keyup', {
+					...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false,
+				}));
+				shiftHeld = false;
+				await sleep(10);
+			}
+
+			target.dispatchEvent(new KeyboardEvent('keydown', {
+				...baseProps, code, key: char, keyCode, shiftKey: needsShift,
+			}));
+			target.dispatchEvent(new KeyboardEvent('keyup', {
+				...baseProps, code, key: char, keyCode, shiftKey: needsShift,
+			}));
+			typed++;
+			await sleep(10);
+		}
+
+		// Release shift if still held
+		if (shiftHeld) {
+			target.dispatchEvent(new KeyboardEvent('keyup', {
+				...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false,
+			}));
+		}
+
+		return typed;
+	}
 
 	function getConsoleWsUrl(): string {
 		const base = config.apiBaseUrl || window.location.origin;
@@ -96,44 +220,30 @@
 	}
 
 	async function handlePaste() {
-		if (!wmks || status !== 'connected') return;
+		if (status !== 'connected') return;
 		try {
 			const text = await navigator.clipboard.readText();
 			if (!text) {
 				toastStore.warning('Clipboard is empty');
 				return;
 			}
-			if (slowMode) {
-				sending = true;
-				for (const char of text) {
-					wmks.sendInputString(char);
-					await new Promise(r => setTimeout(r, 50));
-				}
-				sending = false;
-			} else {
-				wmks.sendInputString(text);
-			}
-			toastStore.success(`Pasted ${text.length} chars`);
+			sending = true;
+			const typed = await typeTextToVM(text);
+			toastStore.success(`Pasted ${typed} chars`);
 		} catch {
-			// Clipboard permission denied — open text drawer as fallback
 			showTextDrawer = true;
 			toastStore.warning('Clipboard access denied — use the text input panel');
+		} finally {
+			sending = false;
 		}
 	}
 
 	async function sendTextToVM() {
-		if (!wmks || !textInput || status !== 'connected') return;
+		if (!textInput || status !== 'connected') return;
 		sending = true;
 		try {
-			if (slowMode) {
-				for (const char of textInput) {
-					wmks.sendInputString(char);
-					await new Promise(r => setTimeout(r, 50));
-				}
-			} else {
-				wmks.sendInputString(textInput);
-			}
-			toastStore.success(`Sent ${textInput.length} chars to VM`);
+			const typed = await typeTextToVM(textInput);
+			toastStore.success(`Sent ${typed} chars to VM`);
 			textInput = '';
 		} catch {
 			toastStore.error('Failed to send text to VM');
@@ -310,11 +420,6 @@
 				</div>
 			</div>
 			<div class="mt-2 flex items-center gap-4 text-xs text-surface-500">
-				<label class="flex items-center gap-1.5 cursor-pointer">
-					<input type="checkbox" bind:checked={slowMode} class="rounded border-surface-600" />
-					Slow mode <span class="text-surface-600">(for laggy VMs — sends one char at a time)</span>
-				</label>
-				<span class="text-surface-600">|</span>
 				<span title="This version of the console SDK does not support reading text from the VM display. Use SSH or RDP to copy text out of the VM.">
 					ℹ️ Copy from VM requires SSH/RDP
 				</span>
