@@ -112,7 +112,6 @@
 		} catch {
 			// Silently ignore job polling errors
 		}
-		}
 	}
 
 	async function loadData() {
