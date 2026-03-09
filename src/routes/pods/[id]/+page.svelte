@@ -10,10 +10,12 @@
 		restartVM,
 		resetVM,
 		deleteVM,
-		getTemplates
+		getTemplates,
+		getMyJobs
 	} from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
-	import type { Pod, Template, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
+	import { toastStore } from '$lib/stores/toast.svelte';
+	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
 	import SnapshotPanel from '$lib/components/SnapshotPanel.svelte';
@@ -28,6 +30,38 @@
 	let actionLoading = $state<Record<string, boolean>>({});
 	let confirmDelete = $state<string | null>(null);
 	let expandedVMs = $state<Record<string, boolean>>({});
+	let prevJobStatuses = $state<Map<string, string>>(new Map());
+
+	const jobTypeLabels: Record<string, string> = {
+		vm_start: 'VM started',
+		vm_stop: 'VM stopped',
+		vm_restart: 'VM restarted',
+		vm_reset: 'VM reset',
+		vm_snapshot: 'Snapshot created',
+		vm_revert: 'Snapshot restored',
+		vm_snapshot_delete: 'Snapshot deleted',
+		vm_destroy: 'VM destroyed',
+	};
+
+	function checkJobTransitions(newJobs: Job[]) {
+		for (const job of newJobs) {
+			const prev = prevJobStatuses.get(job.id);
+			if (!prev) continue;
+			if (prev === job.status) continue;
+
+			const label = jobTypeLabels[job.type] ?? job.type.replace(/_/g, ' ');
+			const vmName = (job.payload?.vm_name as string) || '';
+			const detail = vmName || undefined;
+
+			if (job.status === 'completed' && prev !== 'completed') {
+				toastStore.success(label, detail);
+			} else if (job.status === 'failed' && prev !== 'failed') {
+				const errorMsg = (job.result as Record<string, unknown>)?.error;
+				toastStore.error(`${label} failed`, errorMsg ? String(errorMsg) : detail);
+			}
+		}
+		prevJobStatuses = new Map(newJobs.map(j => [j.id, j.status]));
+	}
 
 	onMount(() => {
 		loadData();
@@ -71,6 +105,13 @@
 			pod = await getPod(podId);
 		} catch {
 			// Silently ignore refresh errors
+		}
+		try {
+			const newJobs = await getMyJobs();
+			checkJobTransitions(newJobs);
+		} catch {
+			// Silently ignore job polling errors
+		}
 		}
 	}
 

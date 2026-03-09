@@ -3,6 +3,7 @@
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { page } from '$app/state';
+	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
 
@@ -196,4 +197,6 @@
 	<main class="{showSidebar ? 'ml-64' : ''} flex-1 overflow-y-auto p-6">
 		{@render children()}
 	</main>
+
+	<Toast />
 </div>

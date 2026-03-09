@@ -105,7 +105,48 @@
 			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
 		}
 
-		// Generic fallback for power ops etc.
+		// Snapshot operations
+		if (job.type === 'vm_snapshot') {
+			const steps = ['Creating snapshot', 'Saving to vCenter', 'Done'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		if (job.type === 'vm_revert') {
+			const steps = ['Reverting VM', 'Restoring state', 'Done'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		if (job.type === 'vm_snapshot_delete') {
+			const steps = ['Deleting snapshot', 'Cleanup', 'Done'];
+			if (isFailed) return steps.map((l, i) => ({ label: i === steps.length - 1 ? 'Failed' : l, status: i === steps.length - 1 ? 'failed' as const : 'completed' as const }));
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label: steps[0], status: 'running' }, ...steps.slice(1).map((l) => ({ label: l, status: 'pending' as const }))];
+			return steps.map((l, i) => ({ label: l, status: i === 0 ? 'completed' as const : 'pending' as const }));
+		}
+
+		// Power operations
+		if (job.type === 'vm_start' || job.type === 'vm_stop' || job.type === 'vm_restart' || job.type === 'vm_reset') {
+			const actionLabels: Record<string, string> = {
+				vm_start: 'Starting VM',
+				vm_stop: 'Stopping VM',
+				vm_restart: 'Restarting VM',
+				vm_reset: 'Resetting VM',
+			};
+			const label = actionLabels[job.type] ?? 'Processing';
+			const steps = [label, 'Done'];
+			if (isFailed) return [{ label, status: 'completed' as const }, { label: 'Failed', status: 'failed' as const }];
+			if (isCompleted) return steps.map((l) => ({ label: l, status: 'completed' as const }));
+			if (isRunning) return [{ label, status: 'running' as const }, { label: 'Done', status: 'pending' as const }];
+			return [{ label: 'Queued', status: 'completed' as const }, { label, status: 'pending' as const }];
+		}
+
+		// Generic fallback
 		const fallback = ['Queued', 'Processing', 'Done'];
 		if (isFailed) return [{ label: 'Queued', status: 'completed' }, { label: 'Processing', status: 'completed' }, { label: 'Failed', status: 'failed' }];
 		if (isCompleted) return fallback.map((l) => ({ label: l, status: 'completed' as const }));
@@ -119,13 +160,20 @@
 			pod_destroy: 'Destroying Pod',
 			vm_add: 'Adding VM',
 			vm_destroy: 'Destroying VM',
-			vm_power: 'Power Operation'
+			vm_start: 'Starting VM',
+			vm_stop: 'Stopping VM',
+			vm_restart: 'Restarting VM',
+			vm_reset: 'Resetting VM',
+			vm_snapshot: 'Create Snapshot',
+			vm_revert: 'Restore Snapshot',
+			vm_snapshot_delete: 'Delete Snapshot',
 		};
 		return labels[job.type] ?? job.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 	}
 
 	function jobSubtitle(job: Job): string {
 		const podName = (job.payload?.pod_name as string) || '';
+		const vmName = (job.payload?.vm_name as string) || '';
 
 		if (job.type === 'pod_create') {
 			const vms = (job.payload?.vms as Array<{ vm_name?: string; template_name?: string }>) ?? [];
@@ -142,7 +190,6 @@
 		}
 
 		if (job.type === 'vm_destroy') {
-			const vmName = (job.payload?.vm_name as string) || '';
 			return [podName, vmName].filter(Boolean).join(' · ');
 		}
 
@@ -152,12 +199,23 @@
 			return [podName, displayName || templateName].filter(Boolean).join(' · ');
 		}
 
-		if (job.type === 'vm_start' || job.type === 'vm_stop' || job.type === 'vm_restart') {
-			const vmName = (job.payload?.vm_name as string) || '';
+		if (job.type === 'vm_snapshot' || job.type === 'vm_revert' || job.type === 'vm_snapshot_delete') {
+			const snapName = (job.payload?.snapshot_name as string) || (job.payload?.name as string) || '';
+			return [vmName, snapName].filter(Boolean).join(' · ');
+		}
+
+		if (job.type === 'vm_start' || job.type === 'vm_stop' || job.type === 'vm_restart' || job.type === 'vm_reset') {
 			return [podName, vmName].filter(Boolean).join(' · ');
 		}
 
 		return podName;
+	}
+
+	function jobErrorMessage(job: Job): string | null {
+		if (job.status !== 'failed') return null;
+		const result = job.result as Record<string, unknown> | null;
+		if (!result?.error) return null;
+		return String(result.error);
 	}
 </script>
 
@@ -187,7 +245,7 @@
 	<!-- Content -->
 	<div
 		class="overflow-hidden transition-all duration-300 ease-in-out"
-		style="max-height: {expanded ? `${Math.max(activeJobs.length, 1) * 100 + 40}px` : '0px'};"
+		style="max-height: {expanded ? `${Math.max(activeJobs.length, 1) * 140 + 40}px` : '0px'};"
 	>
 		<div class="border-t border-surface-200-800 px-5 py-4">
 			{#if activeJobs.length === 0}
@@ -249,8 +307,13 @@
 									</div>
 								{/each}
 							</div>
+							<!-- Error message -->
+							{#if jobErrorMessage(job)}
+								<div class="mt-1 rounded-lg border border-error-500/20 bg-error-500/5 px-3 py-1.5">
+									<p class="text-xs text-error-400">{jobErrorMessage(job)}</p>
+								</div>
+							{/if}
 						</div>
-					{/each}
 				</div>
 			{/if}
 		</div>

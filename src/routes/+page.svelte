@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getPods, getResourceUsage, getMyJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import type { Pod, ResourceUsage, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import ResourceGauges from '$lib/components/ResourceGauges.svelte';
 	import PodList from '$lib/components/PodList.svelte';
@@ -12,6 +13,41 @@
 	let jobs = $state<Job[]>([]);
 	let loadingPods = $state(true);
 	let error = $state<string | null>(null);
+	let prevJobStatuses = $state<Map<string, string>>(new Map());
+
+	const jobTypeLabels: Record<string, string> = {
+		pod_create: 'Pod created',
+		pod_destroy: 'Pod destroyed',
+		vm_add: 'VM added',
+		vm_destroy: 'VM destroyed',
+		vm_start: 'VM started',
+		vm_stop: 'VM stopped',
+		vm_restart: 'VM restarted',
+		vm_reset: 'VM reset',
+		vm_snapshot: 'Snapshot created',
+		vm_revert: 'Snapshot restored',
+		vm_snapshot_delete: 'Snapshot deleted',
+	};
+
+	function checkJobTransitions(newJobs: Job[]) {
+		for (const job of newJobs) {
+			const prev = prevJobStatuses.get(job.id);
+			if (!prev) continue; // First time seeing this job — don't toast on initial load
+			if (prev === job.status) continue;
+
+			const label = jobTypeLabels[job.type] ?? job.type.replace(/_/g, ' ');
+			const vmName = (job.payload?.vm_name as string) || '';
+			const detail = vmName ? `${vmName}` : undefined;
+
+			if (job.status === 'completed' && prev !== 'completed') {
+				toastStore.success(label, detail);
+			} else if (job.status === 'failed' && prev !== 'failed') {
+				const errorMsg = (job.result as Record<string, unknown>)?.error;
+				toastStore.error(`${label} failed`, errorMsg ? String(errorMsg) : detail);
+			}
+		}
+		prevJobStatuses = new Map(newJobs.map(j => [j.id, j.status]));
+	}
 
 	onMount(() => {
 		loadData();
@@ -68,7 +104,9 @@
 		}
 		// Load user's jobs
 		try {
-			jobs = await getMyJobs();
+			const newJobs = await getMyJobs();
+			checkJobTransitions(newJobs);
+			jobs = newJobs;
 		} catch {
 			jobs = [];
 		}
