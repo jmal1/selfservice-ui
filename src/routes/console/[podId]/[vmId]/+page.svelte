@@ -478,16 +478,19 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
+		width: 100% !important;
+		height: 100% !important;
 		overflow: hidden !important;
 	}
 	:global(#console-canvas > div) {
+		width: 100% !important;
+		height: 100% !important;
 		overflow: hidden !important;
-		max-width: 100% !important;
-		max-height: 100% !important;
 	}
 	:global(#console-canvas canvas) {
-		max-width: 100% !important;
-		max-height: 100% !important;
+		display: block;
+		width: 100% !important;
+		height: 100% !important;
 		object-fit: contain;
 	}
 </style>
