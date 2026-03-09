@@ -110,7 +110,7 @@
 <div class="rounded-xl border border-surface-200-800/50 bg-surface-50-950/50 p-4">
 	<div class="mb-3 flex items-center justify-between">
 		<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">Snapshots</span>
-		{#if canCreate && isStopped}
+		{#if canCreate}
 			<button
 				onclick={() => {
 					showCreateForm = !showCreateForm;
@@ -119,9 +119,7 @@
 			>
 				+ New Snapshot
 			</button>
-		{:else if !isStopped}
-			<span class="text-xs italic text-surface-500">Power off VM to manage snapshots</span>
-		{:else if !canCreate}
+		{:else}
 			<span class="text-xs text-warning-500">Limit reached (2/2)</span>
 		{/if}
 	</div>

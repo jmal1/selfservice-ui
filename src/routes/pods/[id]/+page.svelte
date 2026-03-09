@@ -262,6 +262,7 @@
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 										aria-label="Start VM"
+										title="Start VM"
 										disabled={!!actionLoading[`start-${vm.id}`]}
 										onclick={() => handleAction(`start-${vm.id}`, () => startVM(podId, vm.id))}
 									>
@@ -275,6 +276,7 @@
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 										aria-label="Stop VM"
+										title="Stop VM"
 										disabled={!!actionLoading[`stop-${vm.id}`]}
 										onclick={() => handleAction(`stop-${vm.id}`, () => stopVM(podId, vm.id))}
 									>
@@ -287,6 +289,7 @@
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-primary-500/10 hover:text-primary-500 disabled:opacity-50"
 										aria-label="Restart VM"
+										title="Graceful restart"
 										disabled={!!actionLoading[`restart-${vm.id}`]}
 										onclick={() => handleAction(`restart-${vm.id}`, () => restartVM(podId, vm.id))}
 									>
@@ -324,6 +327,7 @@
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
 										aria-label="Delete VM"
+										title="Delete VM"
 										disabled={!!actionLoading[`delete-${vm.id}`]}
 										onclick={() => handleDeleteVM(vm.id)}
 									>
