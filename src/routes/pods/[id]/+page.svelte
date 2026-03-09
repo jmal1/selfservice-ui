@@ -8,6 +8,7 @@
 		startVM,
 		stopVM,
 		restartVM,
+		resetVM,
 		deleteVM,
 		getTemplates
 	} from '$lib/api/client';
@@ -257,7 +258,7 @@
 								{/if}
 							</div>
 							<div class="flex items-center gap-1">
-								{#if vm.status === 'powered_off'}
+								{#if vm.status === 'powered_off' || vm.status === 'stopped'}
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 										aria-label="Start VM"
@@ -270,7 +271,7 @@
 											<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 										{/if}
 									</button>
-								{:else if vm.status === 'powered_on'}
+								{:else if vm.status === 'powered_on' || vm.status === 'running'}
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 										aria-label="Stop VM"
@@ -293,6 +294,19 @@
 											<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
 										{:else}
 											<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+										{/if}
+									</button>
+									<button
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+										aria-label="Force Reset VM"
+										title="Hard power cycle — use if VM is unresponsive"
+										disabled={!!actionLoading[`reset-${vm.id}`]}
+										onclick={() => handleAction(`reset-${vm.id}`, () => resetVM(podId, vm.id))}
+									>
+										{#if actionLoading[`reset-${vm.id}`]}
+											<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+										{:else}
+											<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
 										{/if}
 									</button>
 								{/if}

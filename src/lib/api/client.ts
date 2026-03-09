@@ -135,6 +135,10 @@ export function restartVM(podId: string, vmId: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/restart`, { method: 'POST' });
 }
 
+export function resetVM(podId: string, vmId: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/reset`, { method: 'POST' });
+}
+
 export function deleteVM(podId: string, vmId: string): Promise<void> {
 	if (isMock) return mockApi.deleteVM(podId, vmId);
 	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}`, { method: 'DELETE' });
