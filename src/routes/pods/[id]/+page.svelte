@@ -5,6 +5,7 @@
 	import {
 		getPod,
 		deletePod,
+		extendPod,
 		startVM,
 		stopVM,
 		restartVM,
@@ -31,6 +32,43 @@
 	let confirmDelete = $state<string | null>(null);
 	let expandedVMs = $state<Record<string, boolean>>({});
 	let prevJobStatuses = $state<Map<string, string>>(new Map());
+	let extendLoading = $state(false);
+
+	function formatExpiry(expiresAt: string | null): { text: string; urgency: 'green' | 'yellow' | 'red' | 'critical' } | null {
+		if (!expiresAt) return null;
+		const now = Date.now();
+		const expiry = new Date(expiresAt).getTime();
+		const diff = expiry - now;
+		if (diff <= 0) return { text: 'Expired', urgency: 'critical' };
+		const hours = Math.floor(diff / (1000 * 60 * 60));
+		const days = Math.floor(hours / 24);
+		const remainingHours = hours % 24;
+		let text: string;
+		if (days > 0) text = `${days}d ${remainingHours}h`;
+		else if (hours > 0) text = `${hours}h`;
+		else text = `${Math.floor(diff / (1000 * 60))}m`;
+		let urgency: 'green' | 'yellow' | 'red' | 'critical';
+		if (hours > 48) urgency = 'green';
+		else if (hours > 24) urgency = 'yellow';
+		else if (hours > 1) urgency = 'red';
+		else urgency = 'critical';
+		return { text, urgency };
+	}
+
+	async function handleExtendPod() {
+		if (!pod) return;
+		if (!confirm(`Extend "${pod.name}"? This will add 7 more days.`)) return;
+		extendLoading = true;
+		try {
+			const result = await extendPod(pod.id);
+			pod.expires_at = result.expires_at;
+			toastStore.success(`Extended by ${result.extended_by_days} days`);
+		} catch (e) {
+			toastStore.error(`Failed to extend: ${e instanceof Error ? e.message : 'Unknown error'}`);
+		} finally {
+			extendLoading = false;
+		}
+	}
 
 	const jobTypeLabels: Record<string, string> = {
 		vm_start: 'VM started',
@@ -257,6 +295,53 @@
 		{#if pod.error_message}
 			<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 				{pod.error_message}
+			</div>
+		{/if}
+
+		<!-- Expiration -->
+		{#if pod.expires_at}
+			{@const exp = formatExpiry(pod.expires_at)}
+			<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<span class="text-sm font-semibold text-surface-900-100">Expiration</span>
+						{#if exp}
+							<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
+								{exp.urgency === 'green' ? 'bg-green-500/20 text-green-400' : ''}
+								{exp.urgency === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' : ''}
+								{exp.urgency === 'red' ? 'bg-red-500/20 text-red-400' : ''}
+								{exp.urgency === 'critical' ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}">
+								⏱ {exp.text} remaining
+							</span>
+						{/if}
+					</div>
+					<div class="flex items-center gap-3">
+						<span class="text-xs text-surface-400">
+							{new Date(pod.expires_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+						</span>
+						{#if pod.status === 'active'}
+							<button
+								onclick={handleExtendPod}
+								disabled={extendLoading}
+								class="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-1.5 text-xs font-semibold text-blue-400 transition-colors hover:bg-blue-500/20 disabled:opacity-50"
+							>
+								{#if extendLoading}
+									<svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+								{/if}
+								Extend 7 days
+							</button>
+						{/if}
+					</div>
+				</div>
+			</div>
+		{:else}
+			<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+				<div class="flex items-center gap-3">
+					<span class="text-sm font-semibold text-surface-900-100">Expiration</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200-800/50 text-surface-400">
+						No expiration
+					</span>
+				</div>
 			</div>
 		{/if}
 

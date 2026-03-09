@@ -184,7 +184,8 @@
 							{exp.urgency === 'green' ? 'bg-green-500/20 text-green-400' : ''}
 							{exp.urgency === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' : ''}
 							{exp.urgency === 'red' ? 'bg-red-500/20 text-red-400' : ''}
-							{exp.urgency === 'critical' ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}">
+							{exp.urgency === 'critical' ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}"
+							title="Expires: {new Date(pod.expires_at).toLocaleString()}">
 							⏱ {exp.text}
 						</span>
 					{/if}
