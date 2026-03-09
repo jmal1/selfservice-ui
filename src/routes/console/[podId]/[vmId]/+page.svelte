@@ -309,7 +309,7 @@
 </svelte:head>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="flex h-screen w-screen flex-col bg-black" onkeydown={handlePageKeydown}>
+<div class="fixed inset-0 flex flex-col overflow-hidden bg-black" onkeydown={handlePageKeydown}>
 	<!-- Toolbar -->
 	<div class="flex items-center gap-3 bg-surface-900 px-4 py-2">
 		<span class="text-sm font-semibold text-surface-200">VM Console</span>
@@ -470,27 +470,21 @@
 		height: 100%;
 		width: 100%;
 	}
-	/* Pin the WMKS container to the parent via absolute positioning
-	   so its dimensions come from the parent, not its children */
+	/* Pin the WMKS container to fill the parent exactly */
 	:global(#console-canvas) {
 		position: absolute !important;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		width: 100% !important;
-		height: 100% !important;
+		inset: 0;
 		overflow: hidden !important;
 	}
+	/* Clip the inner wrapper WMKS creates */
 	:global(#console-canvas > div) {
-		width: 100% !important;
-		height: 100% !important;
 		overflow: hidden !important;
 	}
+	/* Let WMKS manage canvas sizing via rescale transforms;
+	   max-* acts as a safety ceiling without fighting WMKS */
 	:global(#console-canvas canvas) {
 		display: block;
-		width: 100% !important;
-		height: 100% !important;
-		object-fit: contain;
+		max-width: 100% !important;
+		max-height: 100% !important;
 	}
 </style>
