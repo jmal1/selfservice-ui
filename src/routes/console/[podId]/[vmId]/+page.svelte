@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { config } from '$lib/config';
+	import { getPod } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
 
 	const podId = $derived(page.params.podId);
 	const vmId = $derived(page.params.vmId);
+	let vmName = $state('');
 
 	let canvasContainer: HTMLDivElement;
 	let wmks: any = null;
@@ -262,6 +264,12 @@
 	}
 
 	onMount(async () => {
+		// Fetch VM name (non-blocking — don't delay console init)
+		getPod(podId).then((pod) => {
+			const vm = pod.vms?.find((v) => v.id === vmId);
+			if (vm) vmName = vm.display_name || vm.vcenter_vm_name;
+		}).catch(() => {});
+
 		try {
 			// Load WMKS as a classic script (not ESM) so jQuery + jQuery UI
 			// widget factory initialise correctly in the global scope.
@@ -305,14 +313,14 @@
 </script>
 
 <svelte:head>
-	<title>VM Console</title>
+	<title>{vmName ? `Console: ${vmName}` : 'VM Console'}</title>
 </svelte:head>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="fixed inset-0 flex flex-col overflow-hidden bg-black" onkeydown={handlePageKeydown}>
 	<!-- Toolbar -->
 	<div class="flex items-center gap-3 bg-surface-900 px-4 py-2">
-		<span class="text-sm font-semibold text-surface-200">VM Console</span>
+		<span class="text-sm font-semibold text-surface-200">{vmName ? `Console: ${vmName}` : 'VM Console'}</span>
 
 		<!-- Status badge -->
 		{#if status === 'connecting'}
