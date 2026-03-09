@@ -2,6 +2,7 @@
 	import type { Pod } from '$lib/types';
 	import { deletePod, extendPod, startVM, stopVM, restartVM, deleteVM } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import StatusBadge from './StatusBadge.svelte';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
 
@@ -106,7 +107,8 @@
 	}
 
 	async function handleExtend(podId: string, podName: string) {
-		if (!confirm(`Extend "${podName}"? This will add 7 more days.`)) return;
+		const days = authStore.isAdmin ? 30 : 7;
+		if (!confirm(`Extend "${podName}"? This will add ${days} more days.`)) return;
 		try {
 			const result = await extendPod(podId);
 			toastStore.success(`Extended "${podName}" by ${result.extended_by_days} days`);

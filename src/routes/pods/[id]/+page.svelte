@@ -16,6 +16,7 @@
 	} from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
@@ -57,7 +58,8 @@
 
 	async function handleExtendPod() {
 		if (!pod) return;
-		if (!confirm(`Extend "${pod.name}"? This will add 7 more days.`)) return;
+		const days = authStore.isAdmin ? 30 : 7;
+		if (!confirm(`Extend "${pod.name}"? This will add ${days} more days.`)) return;
 		extendLoading = true;
 		try {
 			const result = await extendPod(pod.id);
@@ -328,7 +330,7 @@
 								{#if extendLoading}
 									<svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
 								{/if}
-								Extend 7 days
+								Extend {authStore.isAdmin ? '30' : '7'} days
 							</button>
 						{/if}
 					</div>
