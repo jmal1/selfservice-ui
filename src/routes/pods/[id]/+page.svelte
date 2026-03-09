@@ -207,6 +207,16 @@
 						{#if pod.subnet}
 							<span class="font-mono text-xs">{pod.subnet}</span>
 						{/if}
+						{#if pod.blueprint_id}
+							<span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">
+								📋 Blueprint
+							</span>
+						{/if}
+						{#if pod.allow_vm_additions === false}
+							<span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full" title="VM additions are locked for this environment">
+								🔒 Locked
+							</span>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -277,7 +287,14 @@
 						<!-- VM row -->
 						<div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center gap-3 px-5 py-3">
 							<div>
-								<p class="text-sm font-medium text-surface-900-100">{vm.display_name || vm.vcenter_vm_name}</p>
+								<p class="text-sm font-medium text-surface-900-100">
+									{vm.display_name || vm.vcenter_vm_name}
+									{#if vm.boot_order != null && vm.boot_order > 0}
+										<span class="ml-1 text-xs bg-surface-200-800 px-1.5 py-0.5 rounded text-surface-400" title="Boot order">
+											Boot: {vm.boot_order}
+										</span>
+									{/if}
+								</p>
 								<p class="font-mono text-xs text-surface-400">{vm.vcenter_vm_name} · {vm.template_name || vm.template?.name || templateName(vm.template_id)}</p>
 							</div>
 							<div>

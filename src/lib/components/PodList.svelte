@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { Pod } from '$lib/types';
-	import { deletePod, startVM, stopVM, restartVM, deleteVM } from '$lib/api/client';
+	import { deletePod, extendPod, startVM, stopVM, restartVM, deleteVM } from '$lib/api/client';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import StatusBadge from './StatusBadge.svelte';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
 
-	let { pods, loading = false, showOwner = false }: { pods: Pod[]; loading?: boolean; showOwner?: boolean } = $props();
+	let { pods, loading = false, showOwner = false, onrefresh }: { pods: Pod[]; loading?: boolean; showOwner?: boolean; onrefresh?: () => void } = $props();
 
 	let collapsed = $state<Record<string, boolean>>({});
 	let actionLoading = $state<Record<string, boolean>>({});
@@ -82,6 +83,38 @@
 		confirmDeletePod = null;
 		confirmDeleteVM = null;
 	}
+
+	function formatExpiry(expiresAt: string | null): { text: string; urgency: 'green' | 'yellow' | 'red' | 'critical' } | null {
+		if (!expiresAt) return null;
+		const now = Date.now();
+		const expiry = new Date(expiresAt).getTime();
+		const diff = expiry - now;
+		if (diff <= 0) return { text: 'Expired', urgency: 'critical' };
+		const hours = Math.floor(diff / (1000 * 60 * 60));
+		const days = Math.floor(hours / 24);
+		const remainingHours = hours % 24;
+		let text: string;
+		if (days > 0) text = `${days}d ${remainingHours}h`;
+		else if (hours > 0) text = `${hours}h`;
+		else text = `${Math.floor(diff / (1000 * 60))}m`;
+		let urgency: 'green' | 'yellow' | 'red' | 'critical';
+		if (hours > 48) urgency = 'green';
+		else if (hours > 24) urgency = 'yellow';
+		else if (hours > 1) urgency = 'red';
+		else urgency = 'critical';
+		return { text, urgency };
+	}
+
+	async function handleExtend(podId: string, podName: string) {
+		if (!confirm(`Extend "${podName}"? This will add 7 more days.`)) return;
+		try {
+			const result = await extendPod(podId);
+			toastStore.success(`Extended "${podName}" by ${result.extended_by_days} days`);
+			onrefresh?.();
+		} catch (e) {
+			toastStore.error(`Failed to extend: ${e instanceof Error ? e.message : 'Unknown error'}`);
+		}
+	}
 </script>
 
 <div class="glass overflow-hidden rounded-2xl">
@@ -143,8 +176,21 @@
 				{#if showOwner}
 					<span class="text-sm text-surface-600-400">{pod.owner?.display_name ?? pod.owner_id}</span>
 				{/if}
-				<div>
+				<div class="flex items-center gap-1.5 flex-wrap">
 					<StatusBadge status={pod.status} />
+					{#if formatExpiry(pod.expires_at)}
+						{@const exp = formatExpiry(pod.expires_at)!}
+						<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+							{exp.urgency === 'green' ? 'bg-green-500/20 text-green-400' : ''}
+							{exp.urgency === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' : ''}
+							{exp.urgency === 'red' ? 'bg-red-500/20 text-red-400' : ''}
+							{exp.urgency === 'critical' ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}">
+							⏱ {exp.text}
+						</span>
+					{/if}
+					{#if pod.blueprint_id}
+						<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs text-surface-500" title="Deployed from blueprint">📋</span>
+					{/if}
 				</div>
 				<span class="text-sm text-surface-600-400">{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
 				<span class="text-sm text-surface-600-400">{totalVcpus(pod)} vCPU · {totalRamGb(pod)} GB</span>
@@ -154,6 +200,13 @@
 					</span>
 				</div>
 				<div class="flex items-center justify-end gap-1">
+					<button
+						onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name); }}
+						class="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+						title="Extend pod lifetime"
+					>
+						Extend
+					</button>
 					<a
 						href="/pods/{pod.id}"
 						class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800 hover:text-surface-900-100"

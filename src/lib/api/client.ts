@@ -13,7 +13,8 @@ import type {
 	AuditLogPage,
 	ActiveSession,
 	VLANPoolEntry,
-	VMSnapshot
+	VMSnapshot,
+	Blueprint
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -116,6 +117,12 @@ export function createPod(req: CreatePodRequest): Promise<CreatePodResponse> {
 export function deletePod(id: string): Promise<void> {
 	if (isMock) return mockApi.deletePod(id);
 	return apiFetch<void>(`/api/v1/pods/${id}`, { method: 'DELETE' });
+}
+
+export function extendPod(id: string): Promise<{ pod_id: string; expires_at: string; extended_by_days: number }> {
+	return apiFetch<{ pod_id: string; expires_at: string; extended_by_days: number }>(`/api/v1/pods/${id}/extend`, {
+		method: 'POST'
+	});
 }
 
 // --- VMs ---
@@ -366,5 +373,79 @@ export function revertToSnapshot(
 export function deleteSnapshot(podId: string, vmId: string, snapshotId: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots/${snapshotId}`, {
 		method: 'DELETE'
+	});
+}
+
+// --- Blueprints ---
+
+export async function getBlueprints(): Promise<Blueprint[]> {
+	const blueprints = await apiFetch<Blueprint[]>('/api/v1/blueprints');
+	return blueprints ?? [];
+}
+
+export async function getBlueprint(id: string): Promise<Blueprint> {
+	return apiFetch<Blueprint>(`/api/v1/blueprints/${id}`);
+}
+
+export function deployBlueprint(id: string, name: string): Promise<{ job_id: string; pod_id: string; status: string }> {
+	return apiFetch<{ job_id: string; pod_id: string; status: string }>(`/api/v1/blueprints/${id}/deploy`, {
+		method: 'POST',
+		body: JSON.stringify({ name })
+	});
+}
+
+// --- Admin Blueprints ---
+
+export async function adminGetBlueprints(): Promise<Blueprint[]> {
+	const blueprints = await apiFetch<Blueprint[]>('/api/v1/admin/blueprints');
+	return blueprints ?? [];
+}
+
+export interface CreateBlueprintRequest {
+	name: string;
+	description: string;
+	allow_vm_additions: boolean;
+	vms: {
+		template_id: string;
+		display_name: string;
+		vcpus?: number;
+		ram_mb?: number;
+		disk_gb?: number;
+		boot_order: number;
+		quantity: number;
+	}[];
+}
+
+export function adminCreateBlueprint(req: CreateBlueprintRequest): Promise<Blueprint> {
+	return apiFetch<Blueprint>('/api/v1/admin/blueprints', {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminUpdateBlueprint(id: string, req: CreateBlueprintRequest): Promise<Blueprint> {
+	return apiFetch<Blueprint>(`/api/v1/admin/blueprints/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminDeleteBlueprint(id: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/blueprints/${id}`, { method: 'DELETE' });
+}
+
+export function adminSetBlueprintAccess(
+	id: string,
+	rules: { user_id?: string; role?: string }[]
+): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/blueprints/${id}/access`, {
+		method: 'POST',
+		body: JSON.stringify({ rules })
+	});
+}
+
+export function adminExtendPod(id: string): Promise<{ pod_id: string; expires_at: string; extended_by_days: number }> {
+	return apiFetch<{ pod_id: string; expires_at: string; extended_by_days: number }>(`/api/v1/admin/pods/${id}/extend`, {
+		method: 'POST'
 	});
 }

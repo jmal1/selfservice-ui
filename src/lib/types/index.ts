@@ -68,6 +68,7 @@ export interface PodVM {
 	default_password: string;
 	generated_username: string;
 	generated_password: string;
+	boot_order: number;
 	template_name: string;
 	os_type: string;
 	template?: Template;
@@ -92,8 +93,36 @@ export interface Pod {
 	status: PodStatus;
 	error_message: string;
 	expires_at: string;
+	blueprint_id?: string;
+	allow_vm_additions: boolean;
 	vms: PodVM[];
 	owner?: User;
+}
+
+export interface Blueprint {
+	id: string;
+	name: string;
+	description: string;
+	created_by: string;
+	allow_vm_additions: boolean;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+	vms: BlueprintVM[];
+	creator?: User;
+}
+
+export interface BlueprintVM {
+	id: string;
+	blueprint_id: string;
+	template_id: string;
+	display_name: string;
+	vcpus?: number;
+	ram_mb?: number;
+	disk_gb?: number;
+	boot_order: number;
+	quantity: number;
+	template_name: string;
 }
 
 export interface Job {

@@ -15,6 +15,9 @@
 	let error = $state<string | null>(null);
 	let prevJobStatuses = $state<Map<string, string>>(new Map());
 
+	// Track which pods we've already warned about (persists across polling cycles)
+	const warnedPods = new Set<string>();
+
 	const jobTypeLabels: Record<string, string> = {
 		pod_create: 'Pod created',
 		pod_destroy: 'Pod destroyed',
@@ -91,6 +94,17 @@
 	async function loadData() {
 		try {
 			pods = await getPods();
+
+			// Check for pods expiring within 24 hours
+			for (const pod of pods) {
+				if (!pod.expires_at || pod.status !== 'running' && pod.status !== 'creating') continue;
+				const hoursLeft = (new Date(pod.expires_at).getTime() - Date.now()) / (1000 * 60 * 60);
+				if (hoursLeft > 0 && hoursLeft < 24 && !warnedPods.has(pod.id)) {
+					warnedPods.add(pod.id);
+					const hours = Math.floor(hoursLeft);
+					toastStore.warning(`"${pod.name}" expires in ${hours}h — extend it to keep your work`);
+				}
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load pods';
 		} finally {

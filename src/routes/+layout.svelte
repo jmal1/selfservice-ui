@@ -21,6 +21,7 @@
 		{ href: '/admin', label: 'Overview', icon: 'dashboard' },
 		{ href: '/admin/users', label: 'Users', icon: 'users' },
 		{ href: '/admin/templates', label: 'Templates', icon: 'templates' },
+		{ href: '/admin/blueprints', label: 'Blueprints', icon: 'templates' },
 		{ href: '/admin/vlans', label: 'VLAN Pool', icon: 'vlans' },
 		{ href: '/admin/jobs', label: 'Jobs', icon: 'jobs' },
 		{ href: '/admin/audit', label: 'Audit Log', icon: 'audit' }
