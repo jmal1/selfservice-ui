@@ -262,6 +262,7 @@ export interface Action {
 	points?: number;
 	penalty?: number;
 	is_library: boolean;
+	supported_platforms: string[];
 	created_at: string;
 	updated_at: string;
 }

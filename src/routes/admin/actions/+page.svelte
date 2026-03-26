@@ -25,9 +25,20 @@
 	let formPenalty = $state<number | undefined>(undefined);
 	let formInputCtx = $state<ContextParam[]>([]);
 	let formOutputCtx = $state<ContextParam[]>([]);
+	let formPlatforms = $state<string[]>(['any']);
 
 	const categories = ['general', 'network', 'ssh', 'file', 'service', 'firewall', 'database', 'web'];
 	const actionTypes = ['command', 'http', 'ssh', 'file_check', 'service_check', 'port_check', 'dns', 'custom'];
+
+	const platformOptions = [
+		{ value: 'any', label: 'Any (network-based)' },
+		{ value: 'linux', label: 'Linux (any)' },
+		{ value: 'linux:ubuntu', label: 'Ubuntu' },
+		{ value: 'linux:debian', label: 'Debian' },
+		{ value: 'linux:rhel', label: 'RHEL/CentOS' },
+		{ value: 'windows', label: 'Windows (any)' },
+		{ value: 'windows:server', label: 'Windows Server' },
+	];
 
 	const grouped = $derived(
 		actions.reduce<Record<string, Action[]>>((acc, a) => {
@@ -47,6 +58,7 @@
 		formActionType = 'command'; formScript = ''; formTimeout = 60; formHint = '';
 		formPoints = undefined; formPenalty = undefined;
 		formInputCtx = []; formOutputCtx = [];
+		formPlatforms = ['any'];
 		editingId = null;
 	}
 
@@ -64,6 +76,7 @@
 		formPenalty = action.penalty;
 		formInputCtx = Array.isArray(action.input_context) ? [...action.input_context] : [];
 		formOutputCtx = Array.isArray(action.output_context) ? [...action.output_context] : [];
+		formPlatforms = action.supported_platforms || ['any'];
 		showForm = true;
 	}
 
@@ -104,7 +117,8 @@
 				timeout_seconds: formTimeout,
 				student_fail_hint: formHint || undefined,
 				points: formPoints,
-				penalty: formPenalty
+				penalty: formPenalty,
+				supported_platforms: formPlatforms
 			};
 
 			if (editingId) {
@@ -199,6 +213,28 @@
 					<span>Timeout (seconds)</span>
 					<input class="input" type="number" bind:value={formTimeout} min="5" max="600" />
 				</label>
+			</div>
+
+			<div>
+				<span class="text-sm font-semibold">Supported Platforms</span>
+				<p class="mb-2 text-xs text-surface-500">Which OS/distros can run this action</p>
+				<div class="flex flex-wrap gap-2">
+					{#each platformOptions as opt}
+						<label class="flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors
+							{formPlatforms.includes(opt.value) ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400' : 'border-surface-300 dark:border-surface-600 text-surface-500'}">
+							<input type="checkbox" class="hidden"
+								checked={formPlatforms.includes(opt.value)}
+								onchange={() => {
+									if (formPlatforms.includes(opt.value)) {
+										formPlatforms = formPlatforms.filter(p => p !== opt.value);
+									} else {
+										formPlatforms = [...formPlatforms, opt.value];
+									}
+								}} />
+							{opt.label}
+						</label>
+					{/each}
+				</div>
 			</div>
 
 			<label class="label">
@@ -369,6 +405,14 @@
 										{#if action.points}<span>· {action.points} pts</span>{/if}
 										{#if action.student_fail_hint}<span>· Hint: {action.student_fail_hint}</span>{/if}
 									</div>
+
+									{#if action.supported_platforms?.length}
+										<div class="mt-2 flex flex-wrap gap-1">
+											{#each action.supported_platforms as platform}
+												<span class="badge bg-secondary-500/10 text-secondary-600 dark:text-secondary-400">{platform}</span>
+											{/each}
+										</div>
+									{/if}
 
 									<div class="mt-3 flex gap-2">
 										<button class="btn btn-sm btn-secondary" onclick={() => startEdit(action)}>Edit</button>
