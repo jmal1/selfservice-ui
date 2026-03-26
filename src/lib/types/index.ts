@@ -214,3 +214,104 @@ export interface WSVMStatusEvent {
 }
 
 export type WSEvent = WSJobStatusEvent | WSPodStatusEvent | WSVMStatusEvent;
+
+// --- Testing / Workflow Engine types ---
+
+export type RunStatus = 'pending' | 'provisioning' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
+
+export type WorkflowStatus = 'draft' | 'pending_review' | 'approved' | 'active';
+
+export type ResultStatus = 'pending' | 'running' | 'pass' | 'fail' | 'error' | 'timeout' | 'skipped';
+
+export interface Workflow {
+	id: string;
+	name: string;
+	slug: string;
+	description: string;
+	category: string;
+	execution_mode: string;
+	script?: string;
+	setup_script?: string;
+	timeout_seconds: number;
+	status: WorkflowStatus;
+	creation_mode: string;
+	visible_to_students: boolean;
+	created_by: string;
+	approved_by?: string;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+	actions?: Action[];
+}
+
+export interface Action {
+	id: string;
+	workflow_id: string;
+	name: string;
+	description: string;
+	action_type: string;
+	params: Record<string, unknown>;
+	execution_order: number;
+	timeout_seconds: number;
+	student_fail_hint?: string;
+	points?: number;
+	penalty?: number;
+}
+
+export interface Playlist {
+	id: string;
+	name: string;
+	slug: string;
+	description: string;
+	scoring_mode: string;
+	created_by: string;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+	workflows?: Workflow[];
+}
+
+export interface Run {
+	id: string;
+	pod_id: string;
+	playlist_id?: string;
+	triggered_by: string;
+	status: RunStatus;
+	total_workflows: number;
+	passed_workflows: number;
+	failed_workflows: number;
+	error_message?: string;
+	started_at?: string;
+	completed_at?: string;
+	created_at: string;
+	results?: WorkflowResult[];
+}
+
+export interface WorkflowResult {
+	id: string;
+	run_id: string;
+	workflow_id: string;
+	execution_order: number;
+	execution_mode: string;
+	status: ResultStatus;
+	student_message?: string;
+	instructor_output?: Record<string, unknown>;
+	action_results?: ActionResult[];
+	duration_ms?: number;
+	started_at?: string;
+	completed_at?: string;
+	workflow_name: string;
+}
+
+export interface ActionResult {
+	action: string;
+	status: string;
+	message?: string;
+	exit_code: number;
+	duration_ms: number;
+}
+
+export interface TestingDashboard {
+	playlists: Playlist[];
+	recent_runs: Run[];
+}

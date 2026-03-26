@@ -14,7 +14,11 @@ import type {
 	ActiveSession,
 	VLANPoolEntry,
 	VMSnapshot,
-	Blueprint
+	Blueprint,
+	TestingDashboard,
+	Run,
+	Workflow,
+	Playlist
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -448,4 +452,127 @@ export function adminExtendPod(id: string): Promise<{ pod_id: string; expires_at
 	return apiFetch<{ pod_id: string; expires_at: string; extended_by_days: number }>(`/api/v1/admin/pods/${id}/extend`, {
 		method: 'POST'
 	});
+}
+
+// --- Testing / Assessments ---
+
+export function getTestingDashboard(podId: string): Promise<TestingDashboard> {
+	return apiFetch<TestingDashboard>(`/api/v1/pods/${podId}/testing`);
+}
+
+export function createTestingRun(
+	podId: string,
+	req: { playlist_id?: string; workflow_ids?: string[] }
+): Promise<{ run_id: string; status: string; message: string }> {
+	return apiFetch<{ run_id: string; status: string; message: string }>(`/api/v1/pods/${podId}/testing/run`, {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function listTestingRuns(podId: string): Promise<Run[]> {
+	return apiFetch<Run[]>(`/api/v1/pods/${podId}/testing/runs`);
+}
+
+export function getTestingRun(podId: string, runId: string): Promise<Run> {
+	return apiFetch<Run>(`/api/v1/pods/${podId}/testing/runs/${runId}`);
+}
+
+export function cancelTestingRun(podId: string, runId: string): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/pods/${podId}/testing/runs/${runId}/cancel`, {
+		method: 'POST'
+	});
+}
+
+// --- Admin Workflows ---
+
+export function adminListWorkflows(): Promise<Workflow[]> {
+	return apiFetch<Workflow[]>('/api/v1/admin/workflows');
+}
+
+export function adminGetWorkflow(id: string): Promise<Workflow> {
+	return apiFetch<Workflow>(`/api/v1/admin/workflows/${id}`);
+}
+
+export function adminCreateWorkflow(wf: Partial<Workflow>): Promise<Workflow> {
+	return apiFetch<Workflow>('/api/v1/admin/workflows', {
+		method: 'POST',
+		body: JSON.stringify(wf)
+	});
+}
+
+export function adminUpdateWorkflow(id: string, wf: Partial<Workflow>): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(wf)
+	});
+}
+
+export function adminSubmitWorkflow(id: string): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}/submit`, { method: 'POST' });
+}
+
+export function adminApproveWorkflow(id: string): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}/approve`, { method: 'POST' });
+}
+
+export function adminActivateWorkflow(id: string): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}/activate`, { method: 'POST' });
+}
+
+export function adminImportWorkflows(workflows: Partial<Workflow>[]): Promise<{ imported: number; skipped: number }> {
+	return apiFetch<{ imported: number; skipped: number }>('/api/v1/admin/workflows/import', {
+		method: 'POST',
+		body: JSON.stringify(workflows)
+	});
+}
+
+export function adminExportWorkflows(): Promise<Workflow[]> {
+	return apiFetch<Workflow[]>('/api/v1/admin/workflows/export');
+}
+
+// --- Admin Playlists ---
+
+export function adminListPlaylists(): Promise<Playlist[]> {
+	return apiFetch<Playlist[]>('/api/v1/admin/playlists');
+}
+
+export function adminGetPlaylist(id: string): Promise<Playlist> {
+	return apiFetch<Playlist>(`/api/v1/admin/playlists/${id}`);
+}
+
+export function adminCreatePlaylist(pl: { name: string; slug: string; description: string; workflow_ids: string[] }): Promise<Playlist> {
+	return apiFetch<Playlist>('/api/v1/admin/playlists', {
+		method: 'POST',
+		body: JSON.stringify(pl)
+	});
+}
+
+export function adminUpdatePlaylist(id: string, pl: Partial<{ name: string; description: string; workflow_ids: string[]; is_active: boolean }>): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/playlists/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(pl)
+	});
+}
+
+export function adminDeletePlaylist(id: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/playlists/${id}`, { method: 'DELETE' });
+}
+
+export function adminSetTemplatePlaylists(templateId: string, playlistIds: string[]): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/templates/${templateId}/playlists`, {
+		method: 'POST',
+		body: JSON.stringify({ playlist_ids: playlistIds })
+	});
+}
+
+export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number, playlistIds: string[]): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists`, {
+		method: 'POST',
+		body: JSON.stringify({ vm_slot: vmSlot, playlist_ids: playlistIds })
+	});
+}
+
+export function adminListRuns(): Promise<Run[]> {
+	return apiFetch<Run[]>('/api/v1/admin/runs');
 }
