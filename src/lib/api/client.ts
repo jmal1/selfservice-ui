@@ -18,7 +18,8 @@ import type {
 	TestingDashboard,
 	Run,
 	Workflow,
-	Playlist
+	Playlist,
+	Action
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -578,4 +579,33 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 export async function adminListRuns(): Promise<Run[]> {
 	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');
 	return Array.isArray(data) ? data : [];
+}
+
+// --- Admin Actions (Library) ---
+
+export async function adminListActions(): Promise<Action[]> {
+	const data = await apiFetch<Action[] | null>('/api/v1/admin/actions');
+	return Array.isArray(data) ? data : [];
+}
+
+export function adminGetAction(id: string): Promise<Action> {
+	return apiFetch<Action>(`/api/v1/admin/actions/${id}`);
+}
+
+export function adminCreateAction(action: Partial<Action>): Promise<Action> {
+	return apiFetch<Action>('/api/v1/admin/actions', {
+		method: 'POST',
+		body: JSON.stringify(action)
+	});
+}
+
+export function adminUpdateAction(id: string, action: Partial<Action>): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/actions/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(action)
+	});
+}
+
+export function adminDeleteAction(id: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/actions/${id}`, { method: 'DELETE' });
 }

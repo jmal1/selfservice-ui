@@ -246,16 +246,30 @@ export interface Workflow {
 
 export interface Action {
 	id: string;
-	workflow_id: string;
+	workflow_id?: string;
 	name: string;
+	slug?: string;
 	description: string;
 	action_type: string;
+	action_category: string;
 	params: Record<string, unknown>;
+	script: string;
+	input_context: ContextParam[];
+	output_context: ContextParam[];
 	execution_order: number;
 	timeout_seconds: number;
 	student_fail_hint?: string;
 	points?: number;
 	penalty?: number;
+	is_library: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface ContextParam {
+	key: string;
+	type: string;
+	description: string;
 }
 
 export interface Playlist {
