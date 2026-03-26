@@ -90,7 +90,7 @@
 
 	<!-- Create Form -->
 	{#if showCreate}
-		<div class="card variant-ghost-surface space-y-4 p-6">
+		<div class="card variant-soft-surface space-y-4 border border-surface-300 p-6 dark:border-surface-600">
 			<h2 class="text-lg font-semibold">Create Workflow</h2>
 			<div class="grid grid-cols-2 gap-4">
 				<label class="label">
@@ -128,7 +128,7 @@
 				<textarea class="textarea font-mono text-sm" rows="12" bind:value={newScript} placeholder="#!/bin/bash"></textarea>
 			</label>
 			<div class="flex justify-end gap-2">
-				<button class="btn variant-ghost-surface" onclick={() => showCreate = false}>Cancel</button>
+				<button class="btn variant-soft-surface" onclick={() => showCreate = false}>Cancel</button>
 				<button class="btn variant-filled-primary" disabled={saving || !newName || !newSlug} onclick={createWorkflow}>
 					{saving ? 'Creating...' : 'Create Workflow'}
 				</button>

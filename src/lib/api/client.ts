@@ -486,8 +486,9 @@ export function cancelTestingRun(podId: string, runId: string): Promise<{ status
 
 // --- Admin Workflows ---
 
-export function adminListWorkflows(): Promise<Workflow[]> {
-	return apiFetch<Workflow[]>('/api/v1/admin/workflows');
+export async function adminListWorkflows(): Promise<Workflow[]> {
+	const data = await apiFetch<Workflow[] | null>('/api/v1/admin/workflows');
+	return Array.isArray(data) ? data : [];
 }
 
 export function adminGetWorkflow(id: string): Promise<Workflow> {
@@ -533,8 +534,9 @@ export function adminExportWorkflows(): Promise<Workflow[]> {
 
 // --- Admin Playlists ---
 
-export function adminListPlaylists(): Promise<Playlist[]> {
-	return apiFetch<Playlist[]>('/api/v1/admin/playlists');
+export async function adminListPlaylists(): Promise<Playlist[]> {
+	const data = await apiFetch<Playlist[] | null>('/api/v1/admin/playlists');
+	return Array.isArray(data) ? data : [];
 }
 
 export function adminGetPlaylist(id: string): Promise<Playlist> {
@@ -573,6 +575,7 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 	});
 }
 
-export function adminListRuns(): Promise<Run[]> {
-	return apiFetch<Run[]>('/api/v1/admin/runs');
+export async function adminListRuns(): Promise<Run[]> {
+	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');
+	return Array.isArray(data) ? data : [];
 }

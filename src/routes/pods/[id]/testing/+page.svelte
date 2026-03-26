@@ -72,7 +72,7 @@
 			<h1 class="text-2xl font-bold">Assessments</h1>
 			<p class="text-surface-600-400">Run assessments against your pod</p>
 		</div>
-		<a href="/pods/{podId}" class="btn variant-ghost-surface">← Back to Pod</a>
+		<a href="/pods/{podId}" class="btn variant-soft-surface">← Back to Pod</a>
 	</div>
 
 	{#if loading && !dashboard}
@@ -84,13 +84,13 @@
 		<section class="space-y-4">
 			<h2 class="text-lg font-semibold">Available Playlists</h2>
 			{#if (dashboard.playlists ?? []).length === 0}
-				<div class="card variant-ghost-surface p-6 text-center">
+				<div class="card variant-soft-surface border border-surface-300 p-6 text-center dark:border-surface-600">
 					<p class="text-surface-600-400">No assessments assigned to this pod's template.</p>
 				</div>
 			{:else}
 				<div class="grid gap-4">
 					{#each dashboard.playlists ?? [] as playlist}
-						<div class="card variant-ghost-surface p-4">
+						<div class="card variant-soft-surface border border-surface-300 p-4 dark:border-surface-600">
 							<div class="flex items-center justify-between">
 								<div>
 									<h3 class="font-semibold">{playlist.name}</h3>

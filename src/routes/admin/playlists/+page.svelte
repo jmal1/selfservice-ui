@@ -83,7 +83,7 @@
 	</div>
 
 	{#if showCreate}
-		<div class="card variant-ghost-surface space-y-4 p-6">
+		<div class="card variant-soft-surface space-y-4 border border-surface-300 p-6 dark:border-surface-600">
 			<h2 class="text-lg font-semibold">Create Playlist</h2>
 			<div class="grid grid-cols-2 gap-4">
 				<label class="label">
@@ -106,9 +106,9 @@
 				{#if workflows.length === 0}
 					<p class="mt-2 text-sm text-surface-600-400">No workflows available. Create workflows first.</p>
 				{:else}
-					<div class="mt-2 max-h-60 space-y-1 overflow-y-auto rounded border border-surface-500/20 p-2">
+					<div class="mt-2 max-h-60 space-y-1 overflow-y-auto rounded border border-surface-400 p-2 dark:border-surface-600">
 						{#each workflows.filter(w => w.status === 'active' || w.status === 'approved') as wf}
-							<label class="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-surface-500/10">
+							<label class="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-surface-500/20">
 								<input type="checkbox" class="checkbox" checked={selectedWorkflowIds.includes(wf.id)} onchange={() => toggleWorkflow(wf.id)} />
 								<div>
 									<p class="text-sm font-medium">{wf.name}</p>
@@ -124,7 +124,7 @@
 			</div>
 
 			<div class="flex justify-end gap-2">
-				<button class="btn variant-ghost-surface" onclick={() => showCreate = false}>Cancel</button>
+				<button class="btn variant-soft-surface" onclick={() => showCreate = false}>Cancel</button>
 				<button class="btn variant-filled-primary" disabled={saving || !newName || !newSlug} onclick={createPlaylist}>
 					{saving ? 'Creating...' : 'Create Playlist'}
 				</button>
@@ -139,7 +139,7 @@
 	{:else if playlists.length > 0}
 		<div class="grid gap-4">
 			{#each playlists as pl}
-				<div class="card variant-ghost-surface p-4">
+				<div class="card variant-soft-surface border border-surface-300 p-4 dark:border-surface-600">
 					<div class="flex items-center justify-between">
 						<div>
 							<h3 class="font-semibold">{pl.name}</h3>
