@@ -59,26 +59,34 @@ html {
 }
 
 /* ── Component contrast overrides ──
-   Skeleton v4 variant-ghost/soft-surface blends into the oklch body bg.
-   These overrides give cards, inputs, and buttons a clearly visible
-   elevated surface in both themes. */
+   Skeleton v4 variant classes don't produce sufficient contrast with the
+   Crucible oklch theme. Uses explicit .dark selectors (not light-dark()
+   which is unreliable without color-scheme set). */
 
-/* Cards — elevated surface with solid border */
+/* Cards — white bg + shadow in light, elevated navy in dark */
 [data-theme='crucible'] .card {
-	border: 1px solid light-dark(oklch(0.78 0.012 65), oklch(0.35 0.025 270));
-	background-color: light-dark(oklch(1.0 0 0), oklch(0.20 0.02 275));
+	border: 1px solid oklch(0.55 0.015 60);
+	background-color: white;
+	box-shadow: 0 1px 4px oklch(0 0 0 / 0.1);
+}
+[data-theme='crucible'].dark .card {
+	border-color: oklch(0.35 0.025 270);
+	background-color: oklch(0.20 0.02 275);
+	box-shadow: 0 1px 4px oklch(0 0 0 / 0.4);
 }
 
-/* Form inputs — inset look with strong borders */
-[data-theme='crucible'] .input,
-[data-theme='crucible'] .textarea,
-[data-theme='crucible'] .select {
-	border: 1px solid light-dark(oklch(0.72 0.012 65), oklch(0.38 0.02 270));
-	background-color: light-dark(oklch(0.97 0.004 70), oklch(0.15 0.015 278));
+/* Form inputs — dark borders, recessed background */
+[data-theme='crucible'] :is(.input, .textarea, .select) {
+	border: 1px solid oklch(0.55 0.015 60);
+	background-color: oklch(0.97 0.004 70);
+	color: oklch(0.20 0.02 60);
 }
-[data-theme='crucible'] .input:focus,
-[data-theme='crucible'] .textarea:focus,
-[data-theme='crucible'] .select:focus {
+[data-theme='crucible'].dark :is(.input, .textarea, .select) {
+	border-color: oklch(0.42 0.02 270);
+	background-color: oklch(0.15 0.015 278);
+	color: oklch(0.92 0.005 80);
+}
+[data-theme='crucible'] :is(.input, .textarea, .select):focus {
 	border-color: var(--color-primary-500);
 	outline: 2px solid oklch(0.60 0.22 35 / 0.3);
 	outline-offset: 1px;
@@ -86,26 +94,58 @@ html {
 
 /* Checkboxes */
 [data-theme='crucible'] .checkbox {
-	border: 2px solid light-dark(oklch(0.68 0.012 65), oklch(0.42 0.02 270));
+	border: 2px solid oklch(0.50 0.015 60);
+}
+[data-theme='crucible'].dark .checkbox {
+	border-color: oklch(0.45 0.02 270);
+}
+
+/* Primary filled buttons — force orange, these are invisible otherwise */
+[data-theme='crucible'] .btn.variant-filled-primary {
+	background-color: var(--color-primary-500) !important;
+	color: white !important;
+	border: 1px solid var(--color-primary-600);
+	font-weight: 600;
+}
+[data-theme='crucible'] .btn.variant-filled-primary:hover {
+	background-color: var(--color-primary-600) !important;
+}
+[data-theme='crucible'] .btn.variant-filled-primary:disabled {
+	opacity: 0.4;
 }
 
 /* Ghost/soft surface buttons — visible secondary buttons */
 [data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface) {
-	border: 1px solid light-dark(oklch(0.78 0.012 65), oklch(0.35 0.025 270));
-	background-color: light-dark(oklch(0.93 0.008 70), oklch(0.24 0.025 275));
+	border: 1px solid oklch(0.55 0.015 60);
+	background-color: oklch(0.92 0.008 70);
+	color: oklch(0.25 0.02 60);
+}
+[data-theme='crucible'].dark .btn:is(.variant-soft-surface, .variant-ghost-surface) {
+	border-color: oklch(0.38 0.025 270);
+	background-color: oklch(0.24 0.025 275);
+	color: oklch(0.85 0.01 80);
 }
 [data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface):hover {
-	background-color: light-dark(oklch(0.88 0.012 68), oklch(0.28 0.025 275));
+	background-color: oklch(0.85 0.012 68);
+}
+[data-theme='crucible'].dark .btn:is(.variant-soft-surface, .variant-ghost-surface):hover {
+	background-color: oklch(0.30 0.025 275);
 }
 
 /* Table containers — bordered */
 [data-theme='crucible'] .table-container {
-	border: 1px solid light-dark(oklch(0.82 0.012 65), oklch(0.30 0.025 270));
+	border: 1px solid oklch(0.60 0.015 60);
 	border-radius: var(--radius-container);
 	overflow: hidden;
 }
+[data-theme='crucible'].dark .table-container {
+	border-color: oklch(0.32 0.025 270);
+}
 
-/* Table rows — subtle hover */
+/* Table rows — hover */
 [data-theme='crucible'] .table-hover tbody tr:hover {
-	background-color: light-dark(oklch(0.95 0.006 70), oklch(0.22 0.02 275));
+	background-color: oklch(0.95 0.006 70);
+}
+[data-theme='crucible'].dark .table-hover tbody tr:hover {
+	background-color: oklch(0.24 0.02 275);
 }
