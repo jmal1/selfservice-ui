@@ -347,6 +347,24 @@
 			</div>
 		{/if}
 
+		<!-- Assessments -->
+		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<span class="text-sm font-semibold text-surface-900-100">Assessments</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500/10 text-primary-400">
+						Testing
+					</span>
+				</div>
+				<a
+					href="/pods/{podId}/testing"
+					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
+				>
+					Run Assessments →
+				</a>
+			</div>
+		</div>
+
 		<!-- VM List -->
 		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
 			<div class="flex items-center justify-between border-b border-surface-200-800 px-5 py-3">
