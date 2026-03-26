@@ -6,6 +6,101 @@
 	--font-sans: 'Inter', sans-serif;
 	--color-accent: oklch(0.60 0.22 35);
 	--color-accent-glow: oklch(0.60 0.22 35 / 0.3);
+
+	/* ── Register theme colors for Tailwind v4 utility generation ──
+	   Without these, bg-primary-500, text-surface-400, etc. don't work.
+	   Values match theme-crucible.css. */
+
+	/* Primary: Fire Orange */
+	--color-primary-50: oklch(0.96 0.03 40);
+	--color-primary-100: oklch(0.92 0.06 38);
+	--color-primary-200: oklch(0.84 0.11 36);
+	--color-primary-300: oklch(0.76 0.16 34);
+	--color-primary-400: oklch(0.68 0.19 33);
+	--color-primary-500: oklch(0.60 0.22 35);
+	--color-primary-600: oklch(0.52 0.20 35);
+	--color-primary-700: oklch(0.44 0.17 35);
+	--color-primary-800: oklch(0.37 0.14 35);
+	--color-primary-900: oklch(0.30 0.11 35);
+	--color-primary-950: oklch(0.24 0.09 35);
+
+	/* Secondary: Steel Blue */
+	--color-secondary-50: oklch(0.96 0.02 250);
+	--color-secondary-100: oklch(0.92 0.05 252);
+	--color-secondary-200: oklch(0.84 0.09 254);
+	--color-secondary-300: oklch(0.76 0.14 255);
+	--color-secondary-400: oklch(0.68 0.17 255);
+	--color-secondary-500: oklch(0.60 0.18 255);
+	--color-secondary-600: oklch(0.52 0.16 255);
+	--color-secondary-700: oklch(0.44 0.14 255);
+	--color-secondary-800: oklch(0.37 0.12 255);
+	--color-secondary-900: oklch(0.30 0.09 255);
+	--color-secondary-950: oklch(0.24 0.07 255);
+
+	/* Tertiary: Molten Gold */
+	--color-tertiary-50: oklch(0.97 0.03 95);
+	--color-tertiary-100: oklch(0.94 0.06 95);
+	--color-tertiary-200: oklch(0.89 0.11 93);
+	--color-tertiary-300: oklch(0.84 0.15 92);
+	--color-tertiary-400: oklch(0.79 0.17 90);
+	--color-tertiary-500: oklch(0.74 0.16 88);
+	--color-tertiary-600: oklch(0.65 0.14 85);
+	--color-tertiary-700: oklch(0.55 0.12 85);
+	--color-tertiary-800: oklch(0.46 0.10 85);
+	--color-tertiary-900: oklch(0.38 0.08 85);
+	--color-tertiary-950: oklch(0.30 0.06 85);
+
+	/* Success: Green */
+	--color-success-50: oklch(0.96 0.04 150);
+	--color-success-100: oklch(0.91 0.08 150);
+	--color-success-200: oklch(0.84 0.13 148);
+	--color-success-300: oklch(0.76 0.17 146);
+	--color-success-400: oklch(0.68 0.18 145);
+	--color-success-500: oklch(0.60 0.17 145);
+	--color-success-600: oklch(0.53 0.15 145);
+	--color-success-700: oklch(0.46 0.13 145);
+	--color-success-800: oklch(0.39 0.11 145);
+	--color-success-900: oklch(0.32 0.09 145);
+	--color-success-950: oklch(0.25 0.07 145);
+
+	/* Warning: Amber */
+	--color-warning-50: oklch(0.96 0.04 85);
+	--color-warning-100: oklch(0.91 0.08 85);
+	--color-warning-200: oklch(0.84 0.13 83);
+	--color-warning-300: oklch(0.78 0.15 80);
+	--color-warning-400: oklch(0.72 0.16 78);
+	--color-warning-500: oklch(0.66 0.16 75);
+	--color-warning-600: oklch(0.58 0.14 75);
+	--color-warning-700: oklch(0.50 0.12 75);
+	--color-warning-800: oklch(0.43 0.10 75);
+	--color-warning-900: oklch(0.36 0.08 75);
+	--color-warning-950: oklch(0.29 0.06 75);
+
+	/* Error: Red */
+	--color-error-50: oklch(0.96 0.03 25);
+	--color-error-100: oklch(0.91 0.06 25);
+	--color-error-200: oklch(0.84 0.10 25);
+	--color-error-300: oklch(0.76 0.15 25);
+	--color-error-400: oklch(0.68 0.18 25);
+	--color-error-500: oklch(0.60 0.20 25);
+	--color-error-600: oklch(0.53 0.18 25);
+	--color-error-700: oklch(0.46 0.16 25);
+	--color-error-800: oklch(0.39 0.13 25);
+	--color-error-900: oklch(0.32 0.10 25);
+	--color-error-950: oklch(0.25 0.08 25);
+
+	/* Surface: Dark navy / Warm off-white */
+	--color-surface-50: oklch(0.965 0.005 70);
+	--color-surface-100: oklch(0.935 0.008 70);
+	--color-surface-200: oklch(0.89 0.010 68);
+	--color-surface-300: oklch(0.82 0.012 65);
+	--color-surface-400: oklch(0.45 0.015 60);
+	--color-surface-500: oklch(0.56 0.015 55);
+	--color-surface-600: oklch(0.42 0.02 265);
+	--color-surface-700: oklch(0.27 0.025 270);
+	--color-surface-800: oklch(0.20 0.02 275);
+	--color-surface-900: oklch(0.16 0.018 278);
+	--color-surface-950: oklch(0.13 0.015 278);
 }
 
 /* Scale up the entire UI ~15% so 100% zoom feels comfortable */
