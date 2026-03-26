@@ -12,7 +12,7 @@
 
 	async function loadWorkflows() {
 		try {
-			workflows = await adminListWorkflows();
+			workflows = (await adminListWorkflows()) ?? [];
 		} catch {
 			toastStore.error('Failed to load workflows');
 		} finally {

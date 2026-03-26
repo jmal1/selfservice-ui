@@ -10,7 +10,7 @@
 
 	async function loadPlaylists() {
 		try {
-			playlists = await adminListPlaylists();
+			playlists = (await adminListPlaylists()) ?? [];
 		} catch {
 			toastStore.error('Failed to load playlists');
 		} finally {

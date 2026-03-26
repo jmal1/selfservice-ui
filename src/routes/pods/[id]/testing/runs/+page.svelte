@@ -13,7 +13,7 @@
 
 	async function loadRuns() {
 		try {
-			runs = await listTestingRuns(podId);
+			runs = (await listTestingRuns(podId)) ?? [];
 		} catch {
 			// ignore
 		} finally {

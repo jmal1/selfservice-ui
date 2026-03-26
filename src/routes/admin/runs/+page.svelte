@@ -10,7 +10,7 @@
 
 	async function loadRuns() {
 		try {
-			runs = await adminListRuns();
+			runs = (await adminListRuns()) ?? [];
 		} catch { /* ignore */ }
 		finally { loading = false; }
 	}
