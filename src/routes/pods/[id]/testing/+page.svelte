@@ -83,13 +83,13 @@
 		<!-- Playlists -->
 		<section class="space-y-4">
 			<h2 class="text-lg font-semibold">Available Playlists</h2>
-			{#if dashboard.playlists.length === 0}
+			{#if (dashboard.playlists ?? []).length === 0}
 				<div class="card variant-ghost-surface p-6 text-center">
 					<p class="text-surface-600-400">No assessments assigned to this pod's template.</p>
 				</div>
 			{:else}
 				<div class="grid gap-4">
-					{#each dashboard.playlists as playlist}
+					{#each dashboard.playlists ?? [] as playlist}
 						<div class="card variant-ghost-surface p-4">
 							<div class="flex items-center justify-between">
 								<div>
@@ -120,7 +120,7 @@
 				<h2 class="text-lg font-semibold">Recent Runs</h2>
 				<a href="/pods/{podId}/testing/runs" class="text-sm text-primary-500 hover:underline">View all →</a>
 			</div>
-			{#if dashboard.recent_runs.length === 0}
+			{#if (dashboard.recent_runs ?? []).length === 0}
 				<p class="text-surface-600-400">No runs yet.</p>
 			{:else}
 				<div class="table-container">
@@ -135,7 +135,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each dashboard.recent_runs as run}
+							{#each dashboard.recent_runs ?? [] as run}
 								<tr>
 									<td><StatusBadge status={run.status} /></td>
 									<td>
