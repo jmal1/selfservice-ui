@@ -83,14 +83,14 @@
 <div class="mx-auto max-w-6xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Workflows</h1>
-		<button class="btn variant-filled-primary" onclick={() => showCreate = !showCreate}>
+		<button class="btn btn-primary" onclick={() => showCreate = !showCreate}>
 			{showCreate ? '✕ Cancel' : '+ New Workflow'}
 		</button>
 	</div>
 
 	<!-- Create Form -->
 	{#if showCreate}
-		<div class="card variant-soft-surface space-y-4 border border-surface-300 p-6 dark:border-surface-600">
+		<div class="card space-y-4 p-6">
 			<h2 class="text-lg font-semibold">Create Workflow</h2>
 			<div class="grid grid-cols-2 gap-4">
 				<label class="label">
@@ -128,8 +128,8 @@
 				<textarea class="textarea font-mono text-sm" rows="12" bind:value={newScript} placeholder="#!/bin/bash"></textarea>
 			</label>
 			<div class="flex justify-end gap-2">
-				<button class="btn variant-soft-surface" onclick={() => showCreate = false}>Cancel</button>
-				<button class="btn variant-filled-primary" disabled={saving || !newName || !newSlug} onclick={createWorkflow}>
+				<button class="btn btn-secondary" onclick={() => showCreate = false}>Cancel</button>
+				<button class="btn btn-primary" disabled={saving || !newName || !newSlug} onclick={createWorkflow}>
 					{saving ? 'Creating...' : 'Create Workflow'}
 				</button>
 			</div>
@@ -163,7 +163,7 @@
 							</td>
 							<td>{wf.category}</td>
 							<td>
-								<span class="badge {wf.execution_mode === 'vmware_tools' ? 'variant-soft-warning' : 'variant-soft-primary'}">
+								<span class="badge {wf.execution_mode === 'vmware_tools' ? 'bg-warning-500/10 text-warning-600' : 'bg-primary-500/10 text-primary-600'}">
 									{wf.execution_mode}
 								</span>
 							</td>
@@ -171,11 +171,11 @@
 							<td>
 								<div class="flex gap-2">
 									{#if wf.status === 'draft'}
-										<button class="btn btn-sm variant-ghost-primary" onclick={() => submit(wf.id)}>Submit</button>
+										<button class="btn btn-sm btn-ghost" onclick={() => submit(wf.id)}>Submit</button>
 									{:else if wf.status === 'pending_review'}
-										<button class="btn btn-sm variant-ghost-success" onclick={() => approve(wf.id)}>Approve</button>
+										<button class="btn btn-sm btn-success" onclick={() => approve(wf.id)}>Approve</button>
 									{:else if wf.status === 'approved'}
-										<button class="btn btn-sm variant-filled-success" onclick={() => activate(wf.id)}>Activate</button>
+										<button class="btn btn-sm btn-success" onclick={() => activate(wf.id)}>Activate</button>
 									{/if}
 								</div>
 							</td>

@@ -72,32 +72,32 @@
 			<h1 class="text-2xl font-bold">Assessments</h1>
 			<p class="text-surface-600-400">Run assessments against your pod</p>
 		</div>
-		<a href="/pods/{podId}" class="btn variant-soft-surface">← Back to Pod</a>
+		<a href="/pods/{podId}" class="btn btn-secondary">← Back to Pod</a>
 	</div>
 
 	{#if loading && !dashboard}
 		<LoadingSkeleton />
 	{:else if error}
-		<div class="variant-filled-error card p-4">{error}</div>
+		<div class="card bg-error-500/10 text-error-500 p-4">{error}</div>
 	{:else if dashboard}
 		<!-- Playlists -->
 		<section class="space-y-4">
 			<h2 class="text-lg font-semibold">Available Playlists</h2>
 			{#if (dashboard.playlists ?? []).length === 0}
-				<div class="card variant-soft-surface border border-surface-300 p-6 text-center dark:border-surface-600">
+				<div class="card p-6 text-center">
 					<p class="text-surface-600-400">No assessments assigned to this pod's template.</p>
 				</div>
 			{:else}
 				<div class="grid gap-4">
 					{#each dashboard.playlists ?? [] as playlist}
-						<div class="card variant-soft-surface border border-surface-300 p-4 dark:border-surface-600">
+						<div class="card p-4">
 							<div class="flex items-center justify-between">
 								<div>
 									<h3 class="font-semibold">{playlist.name}</h3>
 									<p class="text-sm text-surface-600-400">{playlist.description || 'No description'}</p>
 								</div>
 								<button
-									class="btn variant-filled-primary"
+									class="btn btn-primary"
 									disabled={runningPlaylist !== ''}
 									onclick={() => runPlaylist(playlist)}
 								>
@@ -148,7 +148,7 @@
 									<td class="text-sm">{run.started_at ? formatTime(run.started_at) : '—'}</td>
 									<td class="text-sm">{formatDuration(run.started_at, run.completed_at)}</td>
 									<td>
-										<a href="/pods/{podId}/testing/runs/{run.id}" class="btn btn-sm variant-ghost-primary">
+										<a href="/pods/{podId}/testing/runs/{run.id}" class="btn btn-sm btn-ghost">
 											Details →
 										</a>
 									</td>

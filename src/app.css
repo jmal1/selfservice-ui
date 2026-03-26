@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 @import '@fontsource/inter';
 @import './theme-crucible.css';
-@import '@skeletonlabs/skeleton';
 
 @theme {
 	--font-sans: 'Inter', sans-serif;
@@ -58,94 +57,196 @@ html {
 	animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* ── Component contrast overrides ──
-   Skeleton v4 variant classes don't produce sufficient contrast with the
-   Crucible oklch theme. Uses explicit .dark selectors (not light-dark()
-   which is unreliable without color-scheme set). */
+/* ── Component classes (replaces @skeletonlabs/skeleton) ──
+   Simple, clean styles using Crucible theme variables.
+   Light/dark handled via .dark class on <html>. */
 
-/* Cards — white bg + shadow in light, elevated navy in dark */
-[data-theme='crucible'] .card {
-	border: 1px solid oklch(0.55 0.015 60);
+/* Cards */
+.card {
+	border-radius: var(--radius-container);
+	border: 1px solid var(--color-surface-300);
 	background-color: white;
-	box-shadow: 0 1px 4px oklch(0 0 0 / 0.1);
+	box-shadow: 0 1px 3px oklch(0 0 0 / 0.08);
 }
-[data-theme='crucible'].dark .card {
-	border-color: oklch(0.35 0.025 270);
-	background-color: oklch(0.20 0.02 275);
-	box-shadow: 0 1px 4px oklch(0 0 0 / 0.4);
+.dark .card {
+	border-color: var(--color-surface-700);
+	background-color: var(--color-surface-800);
+	box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
 }
 
-/* Form inputs — dark borders, recessed background */
-[data-theme='crucible'] :is(.input, .textarea, .select) {
-	border: 1px solid oklch(0.55 0.015 60);
-	background-color: oklch(0.97 0.004 70);
-	color: oklch(0.20 0.02 60);
+/* Buttons — base */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: var(--radius-base);
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 150ms ease;
+	border: 1px solid transparent;
 }
-[data-theme='crucible'].dark :is(.input, .textarea, .select) {
-	border-color: oklch(0.42 0.02 270);
-	background-color: oklch(0.15 0.015 278);
-	color: oklch(0.92 0.005 80);
+.btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
-[data-theme='crucible'] :is(.input, .textarea, .select):focus {
+.btn-sm {
+	padding: 0.25rem 0.75rem;
+	font-size: 0.8rem;
+}
+
+/* Button variants */
+.btn-primary {
+	background-color: var(--color-primary-500);
+	color: white;
+	border-color: var(--color-primary-600);
+}
+.btn-primary:hover:not(:disabled) {
+	background-color: var(--color-primary-600);
+}
+
+.btn-secondary {
+	border-color: var(--color-surface-300);
+	background-color: var(--color-surface-100);
+	color: var(--color-surface-800);
+}
+.dark .btn-secondary {
+	border-color: var(--color-surface-600);
+	background-color: var(--color-surface-700);
+	color: var(--color-surface-100);
+}
+.btn-secondary:hover:not(:disabled) {
+	background-color: var(--color-surface-200);
+}
+.dark .btn-secondary:hover:not(:disabled) {
+	background-color: var(--color-surface-600);
+}
+
+.btn-success {
+	background-color: var(--color-success-500);
+	color: white;
+	border-color: var(--color-success-600);
+}
+.btn-success:hover:not(:disabled) {
+	background-color: var(--color-success-600);
+}
+
+.btn-danger {
+	background-color: var(--color-error-500);
+	color: white;
+	border-color: var(--color-error-600);
+}
+.btn-danger:hover:not(:disabled) {
+	background-color: var(--color-error-600);
+}
+
+.btn-ghost {
+	background-color: transparent;
+	color: var(--color-primary-500);
+	border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+	background-color: oklch(0.60 0.22 35 / 0.1);
+}
+
+/* Form inputs */
+.input, .textarea, .select {
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border-radius: var(--radius-base);
+	border: 1px solid var(--color-surface-300);
+	background-color: var(--color-surface-50);
+	color: var(--color-surface-900);
+	font-size: inherit;
+	font-family: inherit;
+}
+.dark .input, .dark .textarea, .dark .select {
+	border-color: var(--color-surface-600);
+	background-color: var(--color-surface-900);
+	color: var(--color-surface-100);
+}
+.input:focus, .textarea:focus, .select:focus {
 	border-color: var(--color-primary-500);
 	outline: 2px solid oklch(0.60 0.22 35 / 0.3);
 	outline-offset: 1px;
 }
-
-/* Checkboxes */
-[data-theme='crucible'] .checkbox {
-	border: 2px solid oklch(0.50 0.015 60);
-}
-[data-theme='crucible'].dark .checkbox {
-	border-color: oklch(0.45 0.02 270);
+.input::placeholder, .textarea::placeholder {
+	color: var(--color-surface-400);
 }
 
-/* Primary filled buttons — force orange, these are invisible otherwise */
-[data-theme='crucible'] .btn.variant-filled-primary {
-	background-color: var(--color-primary-500) !important;
-	color: white !important;
-	border: 1px solid var(--color-primary-600);
-	font-weight: 600;
+/* Labels */
+.label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
 }
-[data-theme='crucible'] .btn.variant-filled-primary:hover {
-	background-color: var(--color-primary-600) !important;
-}
-[data-theme='crucible'] .btn.variant-filled-primary:disabled {
-	opacity: 0.4;
+.label > span {
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: var(--color-surface-500);
 }
 
-/* Ghost/soft surface buttons — visible secondary buttons */
-[data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface) {
-	border: 1px solid oklch(0.55 0.015 60);
-	background-color: oklch(0.92 0.008 70);
-	color: oklch(0.25 0.02 60);
-}
-[data-theme='crucible'].dark .btn:is(.variant-soft-surface, .variant-ghost-surface) {
-	border-color: oklch(0.38 0.025 270);
-	background-color: oklch(0.24 0.025 275);
-	color: oklch(0.85 0.01 80);
-}
-[data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface):hover {
-	background-color: oklch(0.85 0.012 68);
-}
-[data-theme='crucible'].dark .btn:is(.variant-soft-surface, .variant-ghost-surface):hover {
-	background-color: oklch(0.30 0.025 275);
-}
-
-/* Table containers — bordered */
-[data-theme='crucible'] .table-container {
-	border: 1px solid oklch(0.60 0.015 60);
+/* Tables */
+.table-container {
+	border: 1px solid var(--color-surface-300);
 	border-radius: var(--radius-container);
 	overflow: hidden;
 }
-[data-theme='crucible'].dark .table-container {
-	border-color: oklch(0.32 0.025 270);
+.dark .table-container {
+	border-color: var(--color-surface-700);
+}
+.table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.table th {
+	text-align: left;
+	padding: 0.75rem 1rem;
+	font-weight: 600;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--color-surface-500);
+	border-bottom: 1px solid var(--color-surface-200);
+}
+.dark .table th {
+	color: var(--color-surface-400);
+	border-color: var(--color-surface-700);
+}
+.table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--color-surface-100);
+}
+.dark .table td {
+	border-color: var(--color-surface-800);
+}
+.table-hover tbody tr:hover {
+	background-color: var(--color-surface-100);
+}
+.dark .table-hover tbody tr:hover {
+	background-color: var(--color-surface-800);
 }
 
-/* Table rows — hover */
-[data-theme='crucible'] .table-hover tbody tr:hover {
-	background-color: oklch(0.95 0.006 70);
+/* Badge */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 500;
 }
-[data-theme='crucible'].dark .table-hover tbody tr:hover {
-	background-color: oklch(0.24 0.02 275);
+
+/* Checkbox */
+.checkbox {
+	width: 1.125rem;
+	height: 1.125rem;
+	border-radius: 0.25rem;
+	border: 2px solid var(--color-surface-400);
+	accent-color: var(--color-primary-500);
+}
+.dark .checkbox {
+	border-color: var(--color-surface-500);
 }

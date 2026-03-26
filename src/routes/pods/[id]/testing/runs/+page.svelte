@@ -27,7 +27,7 @@
 <div class="mx-auto max-w-5xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Run History</h1>
-		<a href="/pods/{podId}/testing" class="btn variant-soft-surface">← Back</a>
+		<a href="/pods/{podId}/testing" class="btn btn-secondary">← Back</a>
 	</div>
 
 	{#if loading}
@@ -56,7 +56,7 @@
 							<td>{run.total_workflows}</td>
 							<td class="text-sm">{run.started_at ? new Date(run.started_at).toLocaleString() : '—'}</td>
 							<td>
-								<a href="/pods/{podId}/testing/runs/{run.id}" class="btn btn-sm variant-ghost-primary">
+								<a href="/pods/{podId}/testing/runs/{run.id}" class="btn btn-sm btn-ghost">
 									Details →
 								</a>
 							</td>

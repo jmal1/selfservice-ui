@@ -77,13 +77,13 @@
 <div class="mx-auto max-w-6xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Playlists</h1>
-		<button class="btn variant-filled-primary" onclick={() => showCreate = !showCreate}>
+		<button class="btn btn-primary" onclick={() => showCreate = !showCreate}>
 			{showCreate ? '✕ Cancel' : '+ New Playlist'}
 		</button>
 	</div>
 
 	{#if showCreate}
-		<div class="card variant-soft-surface space-y-4 border border-surface-300 p-6 dark:border-surface-600">
+		<div class="card space-y-4 p-6">
 			<h2 class="text-lg font-semibold">Create Playlist</h2>
 			<div class="grid grid-cols-2 gap-4">
 				<label class="label">
@@ -124,8 +124,8 @@
 			</div>
 
 			<div class="flex justify-end gap-2">
-				<button class="btn variant-soft-surface" onclick={() => showCreate = false}>Cancel</button>
-				<button class="btn variant-filled-primary" disabled={saving || !newName || !newSlug} onclick={createPlaylist}>
+				<button class="btn btn-secondary" onclick={() => showCreate = false}>Cancel</button>
+				<button class="btn btn-primary" disabled={saving || !newName || !newSlug} onclick={createPlaylist}>
 					{saving ? 'Creating...' : 'Create Playlist'}
 				</button>
 			</div>
@@ -139,7 +139,7 @@
 	{:else if playlists.length > 0}
 		<div class="grid gap-4">
 			{#each playlists as pl}
-				<div class="card variant-soft-surface border border-surface-300 p-4 dark:border-surface-600">
+				<div class="card p-4">
 					<div class="flex items-center justify-between">
 						<div>
 							<h3 class="font-semibold">{pl.name}</h3>
@@ -149,7 +149,7 @@
 							</p>
 						</div>
 						<button
-							class="btn btn-sm variant-ghost-error"
+							class="btn btn-sm btn-danger"
 							onclick={() => deletePlaylist(pl.id, pl.name)}
 						>
 							Delete
