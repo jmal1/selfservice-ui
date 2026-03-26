@@ -57,14 +57,31 @@ html {
 	animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* ── Component classes (replaces @skeletonlabs/skeleton) ──
-   Simple, clean styles using Crucible theme variables.
-   Light/dark handled via .dark class on <html>. */
+/* ── Base typography (previously provided by Skeleton) ── */
+
+body {
+	color: var(--color-surface-800);
+}
+.dark body {
+	color: oklch(0.92 0.005 80);
+}
+h1, h2, h3, h4, h5, h6 {
+	color: var(--color-surface-900);
+}
+.dark :is(h1, h2, h3, h4, h5, h6) {
+	color: oklch(0.96 0.005 80);
+}
+
+/* ── Component classes ──
+   Clean styles using Crucible theme variables.
+   Light/dark handled via .dark class on <html>.
+   Note: surface-300 (oklch 0.82) is too light for borders on white,
+   so light-mode borders use a hardcoded oklch(0.72) midtone. */
 
 /* Cards */
 .card {
 	border-radius: var(--radius-container);
-	border: 1px solid var(--color-surface-300);
+	border: 1px solid oklch(0.72 0.01 65);
 	background-color: white;
 	box-shadow: 0 1px 3px oklch(0 0 0 / 0.08);
 }
@@ -108,7 +125,7 @@ html {
 }
 
 .btn-secondary {
-	border-color: var(--color-surface-300);
+	border-color: oklch(0.72 0.01 65);
 	background-color: var(--color-surface-100);
 	color: var(--color-surface-800);
 }
@@ -156,7 +173,7 @@ html {
 	width: 100%;
 	padding: 0.5rem 0.75rem;
 	border-radius: var(--radius-base);
-	border: 1px solid var(--color-surface-300);
+	border: 1px solid oklch(0.72 0.01 65);
 	background-color: var(--color-surface-50);
 	color: var(--color-surface-900);
 	font-size: inherit;
@@ -184,13 +201,16 @@ html {
 }
 .label > span {
 	font-size: 0.8rem;
-	font-weight: 500;
-	color: var(--color-surface-500);
+	font-weight: 600;
+	color: var(--color-surface-800);
+}
+.dark .label > span {
+	color: var(--color-surface-200);
 }
 
 /* Tables */
 .table-container {
-	border: 1px solid var(--color-surface-300);
+	border: 1px solid oklch(0.72 0.01 65);
 	border-radius: var(--radius-container);
 	overflow: hidden;
 }

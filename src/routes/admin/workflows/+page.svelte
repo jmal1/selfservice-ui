@@ -83,7 +83,7 @@
 <div class="mx-auto max-w-6xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Workflows</h1>
-		<button class="btn btn-primary" onclick={() => showCreate = !showCreate}>
+		<button class="btn {showCreate ? 'btn-secondary' : 'btn-primary'}" onclick={() => showCreate = !showCreate}>
 			{showCreate ? '✕ Cancel' : '+ New Workflow'}
 		</button>
 	</div>
