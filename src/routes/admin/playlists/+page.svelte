@@ -76,7 +76,12 @@
 
 <div class="mx-auto max-w-6xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold">Playlists</h1>
+		<div>
+			<h1 class="text-2xl font-bold">Playlists</h1>
+			<p class="mt-1 text-sm text-surface-500">
+				Playlists group workflows into assessment sets. Assign playlists to VM templates — students see them on their pod testing page.
+			</p>
+		</div>
 		<button class="btn {showCreate ? 'btn-secondary' : 'btn-primary'}" onclick={() => showCreate = !showCreate}>
 			{showCreate ? '✕ Cancel' : '+ New Playlist'}
 		</button>

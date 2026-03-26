@@ -142,7 +142,9 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold">Action Library</h1>
-			<p class="mt-1 text-sm text-surface-500">Reusable assessment actions with defined inputs and outputs</p>
+			<p class="mt-1 text-sm text-surface-500">
+				Reusable assessment actions with defined inputs and outputs. Actions are composed into workflows via the <a href="/admin/workflows" class="text-primary-500 hover:underline">Workflow Builder</a>.
+			</p>
 		</div>
 		<button
 			class="btn {showForm ? 'btn-secondary' : 'btn-primary'}"
@@ -203,6 +205,10 @@
 				<span>Script</span>
 				<textarea class="textarea font-mono text-sm" rows="10" bind:value={formScript}
 					placeholder={'# Action function body\n# Use ctx_get/ctx_set for context, LAST_ERROR/LAST_STUDENT_MSG for failures\n\nlocal url="" expect_status=""\nwhile [[ $# -gt 0 ]]; do\n    case "$1" in\n        --url) url="$2"; shift 2;;\n        --expect-status) expect_status="$2"; shift 2;;\n        *) shift;;\n    esac\ndone'}></textarea>
+				<p class="text-xs text-surface-500">
+					Write the action as a bash function body. Use <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get "key"</code> to read inputs and <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_set "key" "value"</code> to write outputs.
+					Set <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">LAST_ERROR</code> and <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">LAST_STUDENT_MSG</code> before returning non-zero on failure.
+				</p>
 			</label>
 
 			<div class="grid grid-cols-2 gap-4">

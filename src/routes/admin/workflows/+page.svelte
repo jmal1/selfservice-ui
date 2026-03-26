@@ -423,6 +423,10 @@
 							<option value="kali_runner">Kali Runner (network)</option>
 							<option value="vmware_tools">VMware Tools (local)</option>
 						</select>
+						<p class="mt-2 text-xs text-surface-500">
+							<strong>Kali Runner:</strong> Runs from a network-attached Kali container — use for port scans, HTTP checks, SSH tests.
+							<strong>VMware Tools:</strong> Runs commands directly inside the target VM — use for file checks, service status, local config.
+						</p>
 					</label>
 					<label class="label">
 						<span>Timeout (seconds)</span>
@@ -445,12 +449,10 @@
 					{#if loadingActions}
 						<LoadingSkeleton />
 					{:else if libraryActions.length === 0}
-						<div class="flex flex-1 flex-col items-center justify-center py-8 text-center">
-							<div class="text-3xl mb-2">📦</div>
-							<p class="text-sm text-surface-600-400 mb-3">
-								No library actions found.
-							</p>
-							<a href="/admin/actions" class="btn btn-sm btn-primary">Go to Actions →</a>
+						<div class="card p-6 text-center">
+							<p class="font-medium">No actions in the library yet</p>
+							<p class="mt-1 text-sm text-surface-500">Create reusable actions first, then compose them into workflows.</p>
+							<a href="/admin/actions" class="btn btn-primary mt-3">Go to Action Library →</a>
 						</div>
 					{:else}
 						<div class="flex-1 space-y-4 overflow-y-auto pr-1">
@@ -500,7 +502,7 @@
 
 				<!-- Right panel: Workflow Steps -->
 				<div class="card flex max-h-[70vh] flex-col overflow-hidden p-5">
-					<h2 class="mb-4 text-lg font-semibold">
+					<h2 class="mb-2 text-lg font-semibold">
 						Workflow Steps
 						{#if selectedActions.length > 0}
 							<span class="ml-2 text-sm font-normal text-surface-600-400">
@@ -508,6 +510,9 @@
 							</span>
 						{/if}
 					</h2>
+					<p class="mb-4 text-xs text-surface-500">
+						Actions run in order as a single bash process. Each action's output context becomes available to subsequent actions via <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get</code>.
+					</p>
 
 					{#if selectedActions.length === 0}
 						<div class="flex flex-1 flex-col items-center justify-center py-8 text-center">
@@ -755,6 +760,14 @@
 							class="max-h-80 overflow-auto rounded-lg bg-surface-100 p-4 font-mono text-sm dark:bg-surface-900"
 						>{generatedScript}</pre>
 					{/if}
+				</div>
+
+				<div class="mt-4 rounded-lg bg-surface-100 p-3 text-sm dark:bg-surface-800">
+					<p class="font-medium">Approval Lifecycle</p>
+					<p class="mt-1 text-surface-500">
+						Draft → Submit for Review → Approve (different user) → Activate. 
+						Active workflows can be assigned to playlists and run against student VMs.
+					</p>
 				</div>
 
 				<div class="flex justify-between">
