@@ -27,7 +27,7 @@
 <div class="mx-auto max-w-5xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Run History</h1>
-		<a href="/pods/{podId}/testing" class="btn variant-ghost-surface">← Back</a>
+		<a href="/pods/{podId}/testing" class="btn variant-soft-surface">← Back</a>
 	</div>
 
 	{#if loading}

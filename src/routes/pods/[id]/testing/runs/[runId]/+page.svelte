@@ -96,7 +96,7 @@
 		<div class="variant-filled-error card p-4">{error}</div>
 	{:else if run}
 		<!-- Run Summary -->
-		<div class="card variant-ghost-surface p-4">
+		<div class="card variant-soft-surface p-4">
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 				<div>
 					<p class="text-sm text-surface-600-400">Status</p>
@@ -129,7 +129,7 @@
 			<section class="space-y-3">
 				<h2 class="text-lg font-semibold">Workflow Results</h2>
 				{#each run.results as result}
-					<div class="card variant-ghost-surface overflow-hidden">
+					<div class="card variant-soft-surface overflow-hidden">
 						<button
 							class="flex w-full items-center justify-between p-4 text-left"
 							onclick={() => expandedWorkflow = expandedWorkflow === result.id ? '' : result.id}

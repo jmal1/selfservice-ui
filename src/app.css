@@ -57,3 +57,55 @@ html {
 .status-pulse {
 	animation: status-pulse 2s ease-in-out infinite;
 }
+
+/* ── Component contrast overrides ──
+   Skeleton v4 variant-ghost/soft-surface blends into the oklch body bg.
+   These overrides give cards, inputs, and buttons a clearly visible
+   elevated surface in both themes. */
+
+/* Cards — elevated surface with solid border */
+[data-theme='crucible'] .card {
+	border: 1px solid light-dark(oklch(0.78 0.012 65), oklch(0.35 0.025 270));
+	background-color: light-dark(oklch(1.0 0 0), oklch(0.20 0.02 275));
+}
+
+/* Form inputs — inset look with strong borders */
+[data-theme='crucible'] .input,
+[data-theme='crucible'] .textarea,
+[data-theme='crucible'] .select {
+	border: 1px solid light-dark(oklch(0.72 0.012 65), oklch(0.38 0.02 270));
+	background-color: light-dark(oklch(0.97 0.004 70), oklch(0.15 0.015 278));
+}
+[data-theme='crucible'] .input:focus,
+[data-theme='crucible'] .textarea:focus,
+[data-theme='crucible'] .select:focus {
+	border-color: var(--color-primary-500);
+	outline: 2px solid oklch(0.60 0.22 35 / 0.3);
+	outline-offset: 1px;
+}
+
+/* Checkboxes */
+[data-theme='crucible'] .checkbox {
+	border: 2px solid light-dark(oklch(0.68 0.012 65), oklch(0.42 0.02 270));
+}
+
+/* Ghost/soft surface buttons — visible secondary buttons */
+[data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface) {
+	border: 1px solid light-dark(oklch(0.78 0.012 65), oklch(0.35 0.025 270));
+	background-color: light-dark(oklch(0.93 0.008 70), oklch(0.24 0.025 275));
+}
+[data-theme='crucible'] .btn:is(.variant-soft-surface, .variant-ghost-surface):hover {
+	background-color: light-dark(oklch(0.88 0.012 68), oklch(0.28 0.025 275));
+}
+
+/* Table containers — bordered */
+[data-theme='crucible'] .table-container {
+	border: 1px solid light-dark(oklch(0.82 0.012 65), oklch(0.30 0.025 270));
+	border-radius: var(--radius-container);
+	overflow: hidden;
+}
+
+/* Table rows — subtle hover */
+[data-theme='crucible'] .table-hover tbody tr:hover {
+	background-color: light-dark(oklch(0.95 0.006 70), oklch(0.22 0.02 275));
+}
