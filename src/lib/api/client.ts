@@ -522,6 +522,10 @@ export function adminActivateWorkflow(id: string): Promise<{ status: string }> {
 	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}/activate`, { method: 'POST' });
 }
 
+export function adminDeleteWorkflow(id: string): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/workflows/${id}`, { method: 'DELETE' });
+}
+
 export function adminImportWorkflows(workflows: Partial<Workflow>[]): Promise<{ imported: number; skipped: number }> {
 	return apiFetch<{ imported: number; skipped: number }>('/api/v1/admin/workflows/import', {
 		method: 'POST',
@@ -560,6 +564,10 @@ export function adminUpdatePlaylist(id: string, pl: Partial<{ name: string; desc
 
 export function adminDeletePlaylist(id: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/admin/playlists/${id}`, { method: 'DELETE' });
+}
+
+export function adminGetTemplatePlaylists(templateId: string): Promise<{ playlist_ids: string[] }> {
+	return apiFetch<{ playlist_ids: string[] }>(`/api/v1/admin/templates/${templateId}/playlists`);
 }
 
 export function adminSetTemplatePlaylists(templateId: string, playlistIds: string[]): Promise<{ status: string }> {

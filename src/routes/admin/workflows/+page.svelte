@@ -5,6 +5,7 @@
 		adminGetWorkflow,
 		adminCreateWorkflow,
 		adminUpdateWorkflow,
+		adminDeleteWorkflow,
 		adminSubmitWorkflow,
 		adminApproveWorkflow,
 		adminActivateWorkflow,
@@ -236,6 +237,19 @@
 		}
 	}
 
+	async function deleteWorkflow(wf: Workflow) {
+		if (!confirm(`Delete workflow "${wf.name}"? This cannot be undone.`)) return;
+		try {
+			await adminDeleteWorkflow(wf.id);
+			toastStore.success('Workflow deleted');
+			expandedWfId = '';
+			expandedWf = null;
+			await loadWorkflows();
+		} catch (e: any) {
+			toastStore.error(e.message || 'Failed to delete workflow');
+		}
+	}
+
 	async function toggleDetail(id: string) {
 		if (expandedWfId === id) {
 			expandedWfId = '';
@@ -461,6 +475,9 @@
 												Activate
 											</button>
 										{/if}
+										<button class="btn btn-sm btn-ghost text-red-500 hover:text-red-700" onclick={(e) => { e.stopPropagation(); deleteWorkflow(wf); }} title="Delete workflow">
+											🗑
+										</button>
 									</div>
 								</td>
 							</tr>

@@ -5,16 +5,25 @@
 		getTemplates,
 		adminCreateTemplate,
 		adminUpdateTemplate,
-		adminDeleteTemplate
+		adminDeleteTemplate,
+		adminListPlaylists,
+		adminSetTemplatePlaylists
 	} from '$lib/api/client';
 	import type { CreateTemplateRequest } from '$lib/api/client';
-	import type { Template } from '$lib/types';
+	import type { Template, Playlist } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 
 	let templates = $state<Template[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let saving = $state(false);
+
+	// Playlist assignment state
+	let playlists = $state<Playlist[]>([]);
+	let playlistsLoaded = $state(false);
+	let templatePlaylists = $state<Record<string, string[]>>({});
+	let savingPlaylists = $state(false);
 
 	// Edit state
 	let editingId = $state<string | null>(null);
@@ -59,10 +68,53 @@
 	async function loadTemplates() {
 		try {
 			templates = await getTemplates();
+			if (!playlistsLoaded) {
+				playlists = await adminListPlaylists();
+				playlistsLoaded = true;
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load templates';
 		} finally {
 			loading = false;
+		}
+	}
+
+	// Playlist assignment for a template
+	let playlistEditingTemplateId = $state<string | null>(null);
+	let playlistSelections = $state<Set<string>>(new Set());
+
+	async function openPlaylistEditor(templateId: string) {
+		if (playlistEditingTemplateId === templateId) {
+			playlistEditingTemplateId = null;
+			return;
+		}
+		playlistEditingTemplateId = templateId;
+		try {
+			const result = await adminGetTemplatePlaylists(templateId);
+			playlistSelections = new Set(result.playlist_ids || []);
+		} catch {
+			playlistSelections = new Set();
+		}
+	}
+
+	function togglePlaylistSelection(playlistId: string) {
+		const next = new Set(playlistSelections);
+		if (next.has(playlistId)) next.delete(playlistId);
+		else next.add(playlistId);
+		playlistSelections = next;
+	}
+
+	async function savePlaylistAssignment() {
+		if (!playlistEditingTemplateId) return;
+		savingPlaylists = true;
+		try {
+			await adminSetTemplatePlaylists(playlistEditingTemplateId, [...playlistSelections]);
+			toastStore.success('Playlists updated');
+			playlistEditingTemplateId = null;
+		} catch (e: any) {
+			error = e instanceof Error ? e.message : 'Failed to save playlists';
+		} finally {
+			savingPlaylists = false;
 		}
 	}
 
@@ -477,6 +529,12 @@
 											<div class="flex items-center justify-end gap-2">
 												<button
 													class="text-xs text-primary-500 hover:text-primary-400"
+													onclick={() => openPlaylistEditor(t.id)}
+												>
+													Playlists
+												</button>
+												<button
+													class="text-xs text-primary-500 hover:text-primary-400"
 													onclick={() => startEdit(t)}
 												>
 													Edit
@@ -490,6 +548,48 @@
 											</div>
 										</td>
 									</tr>
+									{#if playlistEditingTemplateId === t.id}
+										<tr class="border-b border-primary-500/20 bg-primary-500/5">
+											<td colspan="7" class="px-5 py-4">
+												<div class="space-y-3">
+													<p class="text-sm font-semibold">Assign Playlists to {t.name}</p>
+													{#if playlists.length === 0}
+														<p class="text-xs text-surface-500">No playlists exist yet. <a href="/admin/playlists" class="text-primary-500 hover:underline">Create one</a> first.</p>
+													{:else}
+														<div class="flex flex-wrap gap-2">
+															{#each playlists as pl}
+																<button
+																	class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
+																		{playlistSelections.has(pl.id)
+																			? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
+																			: 'border-surface-200 dark:border-surface-700 text-surface-500 hover:border-primary-500/50'}"
+																	onclick={() => togglePlaylistSelection(pl.id)}
+																>
+																	{playlistSelections.has(pl.id) ? '✓ ' : ''}{pl.name}
+																</button>
+															{/each}
+														</div>
+													{/if}
+													<div class="flex items-center gap-2">
+														<button
+															class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600 disabled:opacity-50"
+															disabled={savingPlaylists}
+															onclick={savePlaylistAssignment}
+														>
+															{savingPlaylists ? 'Saving…' : 'Save Playlists'}
+														</button>
+														<button
+															class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
+															onclick={() => playlistEditingTemplateId = null}
+														>
+															Cancel
+														</button>
+														<span class="text-xs text-surface-400">{playlistSelections.size} selected</span>
+													</div>
+												</div>
+											</td>
+										</tr>
+									{/if}
 								{/if}
 							{/each}
 						{/if}
