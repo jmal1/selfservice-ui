@@ -156,6 +156,13 @@
 		formOutputCtx = Array.isArray(action.output_context) ? [...action.output_context] : [];
 		formPlatforms = action.supported_platforms || ['any'];
 		showForm = true;
+		expandedId = '';
+		// Scroll to form — main content scrolls inside <main> not window
+		setTimeout(() => {
+			const main = document.querySelector('main');
+			if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+			else window.scrollTo({ top: 0, behavior: 'smooth' });
+		}, 50);
 	}
 
 	function addCtxParam(list: ContextParam[]): ContextParam[] {
