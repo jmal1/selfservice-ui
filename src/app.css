@@ -152,13 +152,15 @@ html {
 	animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* ── Base typography (previously provided by Skeleton) ── */
+/* ── Base styles (previously provided by Skeleton) ── */
 
 body {
 	color: var(--color-surface-800);
+	background-color: var(--color-surface-50);
 }
 .dark body {
 	color: oklch(0.92 0.005 80);
+	background-color: var(--color-surface-950);
 }
 h1, h2, h3, h4, h5, h6 {
 	color: var(--color-surface-900);
