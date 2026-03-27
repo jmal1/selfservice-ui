@@ -30,7 +30,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-surface-900-100">Templates</h1>
+			<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Templates</h1>
 			<p class="mt-1 text-sm text-surface-500">Available VM templates you can deploy</p>
 		</div>
 		<a
@@ -50,7 +50,7 @@
 	{#if loading}
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 			{#each Array(3) as _}
-				<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 p-5">
+				<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 p-5">
 					<LoadingSkeleton height="1.5rem" width="60%" />
 					<div class="mt-2"><LoadingSkeleton height="0.75rem" width="90%" /></div>
 					<div class="mt-4 flex gap-2">
@@ -69,9 +69,9 @@
 						<span class="text-2xl">{osIcon(template.os_type)}</span>
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
-								<h3 class="font-semibold text-surface-900-100">{template.name}</h3>
+								<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
 								{#if !template.is_active}
-									<span class="rounded-full bg-surface-200-800 px-2 py-0.5 text-xs text-surface-500">Inactive</span>
+									<span class="rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs text-surface-500">Inactive</span>
 								{/if}
 							</div>
 							{#if template.description}
@@ -81,9 +81,9 @@
 					</div>
 
 					<div class="flex flex-wrap gap-2 text-xs text-surface-500">
-						<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
-						<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
-						<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
+						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
+						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
+						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
 						<span class="rounded-md bg-primary-500/15 px-2 py-0.5 text-primary-400">{template.os_type}</span>
 					</div>
 				</div>

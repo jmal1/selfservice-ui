@@ -109,7 +109,7 @@
 			<div>
 				<span class="text-sm font-medium">Workflows ({selectedWorkflowIds.length} selected)</span>
 				{#if workflows.length === 0}
-					<p class="mt-2 text-sm text-surface-600-400">No workflows available. Create workflows first.</p>
+					<p class="mt-2 text-sm text-surface-600 dark:text-surface-400">No workflows available. Create workflows first.</p>
 				{:else}
 					<div class="mt-2 max-h-60 space-y-1 overflow-y-auto rounded border border-surface-400 p-2 dark:border-surface-600">
 						{#each workflows.filter(w => w.status === 'active' || w.status === 'approved') as wf}
@@ -117,12 +117,12 @@
 								<input type="checkbox" class="checkbox" checked={selectedWorkflowIds.includes(wf.id)} onchange={() => toggleWorkflow(wf.id)} />
 								<div>
 									<p class="text-sm font-medium">{wf.name}</p>
-									<p class="text-xs text-surface-600-400">{wf.execution_mode} · {wf.category}</p>
+									<p class="text-xs text-surface-600 dark:text-surface-400">{wf.execution_mode} · {wf.category}</p>
 								</div>
 							</label>
 						{/each}
 						{#if workflows.filter(w => w.status === 'active' || w.status === 'approved').length === 0}
-							<p class="p-2 text-sm text-surface-600-400">No active/approved workflows. Submit and approve workflows first.</p>
+							<p class="p-2 text-sm text-surface-600 dark:text-surface-400">No active/approved workflows. Submit and approve workflows first.</p>
 						{/if}
 					</div>
 				{/if}
@@ -140,7 +140,7 @@
 	{#if loading}
 		<LoadingSkeleton />
 	{:else if playlists.length === 0 && !showCreate}
-		<p class="text-surface-600-400">No playlists created yet. Click "New Playlist" to get started.</p>
+		<p class="text-surface-600 dark:text-surface-400">No playlists created yet. Click "New Playlist" to get started.</p>
 	{:else if playlists.length > 0}
 		<div class="grid gap-4">
 			{#each playlists as pl}
@@ -148,7 +148,7 @@
 					<div class="flex items-center justify-between">
 						<div>
 							<h3 class="font-semibold">{pl.name}</h3>
-							<p class="text-sm text-surface-600-400">{pl.description || 'No description'}</p>
+							<p class="text-sm text-surface-600 dark:text-surface-400">{pl.description || 'No description'}</p>
 							<p class="mt-1 text-xs text-surface-500">
 								{pl.slug} · {pl.scoring_mode} · {pl.is_active ? 'Active' : 'Inactive'}
 							</p>

@@ -121,7 +121,7 @@
 
 <div class="glass overflow-hidden rounded-2xl">
 	<!-- Header -->
-	<div class="grid items-center gap-2 border-b border-surface-200-800 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-surface-500"
+	<div class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-surface-500"
 		class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 		class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 	>
@@ -136,7 +136,7 @@
 
 	{#if loading}
 		{#each Array(3) as _}
-			<div class="grid items-center gap-2 border-b border-surface-200-800 px-5 py-4"
+			<div class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-4"
 				class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 				class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 			>
@@ -157,7 +157,7 @@
 		{#each pods as pod (pod.id)}
 			<!-- Pod row -->
 			<div
-				class="grid cursor-pointer items-center gap-2 border-b border-surface-200-800 px-5 py-3 transition-colors hover:bg-surface-200-800/30"
+				class="grid cursor-pointer items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-3 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 				class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 				class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 				onclick={() => togglePod(pod.id)}
@@ -173,10 +173,10 @@
 					>
 						<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
 					</svg>
-					<span class="font-medium text-surface-900-100">{pod.name}</span>
+					<span class="font-medium text-surface-900 dark:text-surface-100">{pod.name}</span>
 				</div>
 				{#if showOwner}
-					<span class="text-sm text-surface-600-400">{pod.owner?.display_name ?? pod.owner_id}</span>
+					<span class="text-sm text-surface-600 dark:text-surface-400">{pod.owner?.display_name ?? pod.owner_id}</span>
 				{/if}
 				<div class="flex items-center gap-1.5 flex-wrap">
 					<StatusBadge status={pod.status} />
@@ -195,8 +195,8 @@
 						<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs text-surface-500" title="Deployed from blueprint">📋</span>
 					{/if}
 				</div>
-				<span class="text-sm text-surface-600-400">{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
-				<span class="text-sm text-surface-600-400">{totalVcpus(pod)} vCPU · {totalRamGb(pod)} GB</span>
+				<span class="text-sm text-surface-600 dark:text-surface-400">{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
+				<span class="text-sm text-surface-600 dark:text-surface-400">{totalVcpus(pod)} vCPU · {totalRamGb(pod)} GB</span>
 				<div>
 					<span class="rounded-md bg-primary-500/15 px-2.5 py-0.5 font-mono text-xs font-semibold text-primary-400">
 						VLAN {pod.vlan_id}
@@ -212,7 +212,7 @@
 					</button>
 					<a
 						href="/pods/{pod.id}"
-						class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800 hover:text-surface-900-100"
+						class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100"
 						aria-label="View pod details"
 						onclick={(e: MouseEvent) => e.stopPropagation()}
 					>
@@ -229,7 +229,7 @@
 							{actionLoading[`delete-pod-${pod.id}`] ? 'Deleting…' : 'Confirm'}
 						</button>
 						<button
-							class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800"
+							class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800"
 							aria-label="Cancel delete"
 							onclick={(e: MouseEvent) => { e.stopPropagation(); cancelDeletePod(); }}
 						>
@@ -239,7 +239,7 @@
 						</button>
 					{:else}
 						<button
-							class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+							class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
 							aria-label="Delete pod"
 							disabled={actionLoading[`delete-pod-${pod.id}`]}
 							onclick={(e: MouseEvent) => { e.stopPropagation(); handleDeletePod(pod.id); }}
@@ -263,26 +263,26 @@
 			>
 				{#each pod.vms ?? [] as vm (vm.id)}
 					<div
-						class="grid items-center gap-2 border-b border-surface-200-800/50 bg-surface-50-950/50 py-2.5 pl-12 pr-5"
+						class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 py-2.5 pl-12 pr-5"
 						class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 						class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 						role="row"
 					>
 						<div>
-							<span class="text-sm font-medium text-surface-900-100">{vm.display_name || vm.vcenter_vm_name}</span>
+							<span class="text-sm font-medium text-surface-900 dark:text-surface-100">{vm.display_name || vm.vcenter_vm_name}</span>
 							<span class="ml-2 font-mono text-xs text-surface-500">{vm.vcenter_vm_name}</span>
 						</div>
 						{#if showOwner}<span></span>{/if}
 						<div>
 							<StatusBadge status={vm.status} />
 						</div>
-						<span class="text-sm text-surface-600-400">{vm.template?.name ?? 'Unknown'}</span>
-						<span class="font-mono text-sm text-surface-600-400">{vm.ip_address || '—'}</span>
-						<span class="text-sm text-surface-600-400">{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB</span>
+						<span class="text-sm text-surface-600 dark:text-surface-400">{vm.template?.name ?? 'Unknown'}</span>
+						<span class="font-mono text-sm text-surface-600 dark:text-surface-400">{vm.ip_address || '—'}</span>
+						<span class="text-sm text-surface-600 dark:text-surface-400">{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB</span>
 						<div class="flex items-center justify-end gap-1">
 							{#if vm.status === 'powered_off'}
 								<button
-									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
+									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 									aria-label="Start VM"
 									disabled={!!actionLoading[`start-${vm.id}`]}
 									onclick={() => handleStartVM(pod.id, vm.id)}
@@ -295,7 +295,7 @@
 								</button>
 							{:else if vm.status === 'powered_on'}
 								<button
-									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
+									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 									aria-label="Stop VM"
 									disabled={!!actionLoading[`stop-${vm.id}`]}
 									onclick={() => handleStopVM(pod.id, vm.id)}
@@ -307,7 +307,7 @@
 									{/if}
 								</button>
 								<button
-									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-primary-500/10 hover:text-primary-500 disabled:opacity-50"
+									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-primary-500/10 hover:text-primary-500 disabled:opacity-50"
 									aria-label="Restart VM"
 									disabled={!!actionLoading[`restart-${vm.id}`]}
 									onclick={() => handleRestartVM(pod.id, vm.id)}
@@ -328,7 +328,7 @@
 								{actionLoading[`delete-${vm.id}`] ? 'Deleting…' : 'Confirm'}
 							</button>
 							<button
-								class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800"
+								class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800"
 								aria-label="Cancel delete"
 								onclick={() => cancelDelete()}
 							>
@@ -338,7 +338,7 @@
 							</button>
 						{:else}
 							<button
-								class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+								class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
 								aria-label="Delete VM"
 								disabled={!!actionLoading[`delete-${vm.id}`]}
 								onclick={() => handleDeleteVM(pod.id, vm.id)}

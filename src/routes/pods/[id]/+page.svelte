@@ -233,13 +233,13 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-4">
-				<a href="/" class="text-surface-500 hover:text-surface-900-100" aria-label="Back to dashboard">
+				<a href="/" class="text-surface-500 hover:text-surface-900 dark:hover:text-surface-100" aria-label="Back to dashboard">
 					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
 					</svg>
 				</a>
 				<div>
-					<h1 class="text-2xl font-bold text-surface-900-100">{pod.name}</h1>
+					<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{pod.name}</h1>
 					<div class="mt-1 flex items-center gap-3 text-sm text-surface-400">
 						<span class="rounded-md bg-primary-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-primary-400">
 							VLAN {pod.vlan_id}
@@ -272,7 +272,7 @@
 						{actionLoading['delete-pod'] ? 'Deleting…' : 'Confirm Delete'}
 					</button>
 					<button
-						class="rounded-xl border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+						class="rounded-xl border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 						onclick={cancelConfirm}
 					>
 						Cancel
@@ -303,10 +303,10 @@
 		<!-- Expiration -->
 		{#if pod.expires_at}
 			{@const exp = formatExpiry(pod.expires_at)}
-			<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
-						<span class="text-sm font-semibold text-surface-900-100">Expiration</span>
+						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
 						{#if exp}
 							<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
 								{exp.urgency === 'green' ? 'bg-green-500/20 text-green-400' : ''}
@@ -337,10 +337,10 @@
 				</div>
 			</div>
 		{:else}
-			<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-semibold text-surface-900-100">Expiration</span>
-					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200-800/50 text-surface-400">
+					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200/50 dark:bg-surface-800/50 text-surface-400">
 						No expiration
 					</span>
 				</div>
@@ -348,10 +348,10 @@
 		{/if}
 
 		<!-- Assessments -->
-		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl px-5 py-4">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-semibold text-surface-900-100">Assessments</span>
+					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Assessments</span>
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500/10 text-primary-400">
 						Testing
 					</span>
@@ -366,9 +366,9 @@
 		</div>
 
 		<!-- VM List -->
-		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
-			<div class="flex items-center justify-between border-b border-surface-200-800 px-5 py-3">
-				<h2 class="text-sm font-semibold text-surface-900-100">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+			<div class="flex items-center justify-between border-b border-surface-200 dark:border-surface-800 px-5 py-3">
+				<h2 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
 					Virtual Machines ({(pod.vms ?? []).length})
 				</h2>
 				<a
@@ -388,14 +388,14 @@
 				</div>
 			{:else}
 				{#each pod.vms ?? [] as vm (vm.id)}
-					<div class="border-b border-surface-200-800 last:border-b-0">
+					<div class="border-b border-surface-200 dark:border-surface-800 last:border-b-0">
 						<!-- VM row -->
 						<div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center gap-3 px-5 py-3">
 							<div>
-								<p class="text-sm font-medium text-surface-900-100">
+								<p class="text-sm font-medium text-surface-900 dark:text-surface-100">
 									{vm.display_name || vm.vcenter_vm_name}
 									{#if vm.boot_order != null && vm.boot_order > 0}
-										<span class="ml-1 text-xs bg-surface-200-800 px-1.5 py-0.5 rounded text-surface-400" title="Boot order">
+										<span class="ml-1 text-xs bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 rounded text-surface-400" title="Boot order">
 											Boot: {vm.boot_order}
 										</span>
 									{/if}
@@ -405,8 +405,8 @@
 							<div>
 								<StatusBadge status={vm.status} />
 							</div>
-							<div class="font-mono text-sm text-surface-600-400">{vm.ip_address || '—'}</div>
-							<div class="text-sm text-surface-600-400">
+							<div class="font-mono text-sm text-surface-600 dark:text-surface-400">{vm.ip_address || '—'}</div>
+							<div class="text-sm text-surface-600 dark:text-surface-400">
 								{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB · {vm.disk_gb} GB
 							</div>
 							<div>
@@ -422,7 +422,7 @@
 							<div class="flex items-center gap-1">
 								{#if vm.status === 'powered_off' || vm.status === 'stopped'}
 									<button
-										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 										aria-label="Start VM"
 										title="Start VM"
 										disabled={!!actionLoading[`start-${vm.id}`]}
@@ -436,7 +436,7 @@
 									</button>
 								{:else if vm.status === 'powered_on' || vm.status === 'running'}
 									<button
-										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 										aria-label="Stop VM"
 										title="Stop VM"
 										disabled={!!actionLoading[`stop-${vm.id}`]}
@@ -449,7 +449,7 @@
 										{/if}
 									</button>
 									<button
-										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-primary-500/10 hover:text-primary-500 disabled:opacity-50"
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-primary-500/10 hover:text-primary-500 disabled:opacity-50"
 										aria-label="Restart VM"
 										title="Graceful restart"
 										disabled={!!actionLoading[`restart-${vm.id}`]}
@@ -462,7 +462,7 @@
 										{/if}
 									</button>
 									<button
-										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
 										aria-label="Force Reset VM"
 										title="Hard power cycle — use if VM is unresponsive"
 										disabled={!!actionLoading[`reset-${vm.id}`]}
@@ -482,12 +482,12 @@
 										onclick={() => handleDeleteVM(vm.id)}
 									>Confirm</button>
 									<button
-										class="rounded-lg border border-surface-200-800 px-2 py-1 text-xs text-surface-500"
+										class="rounded-lg border border-surface-200 dark:border-surface-800 px-2 py-1 text-xs text-surface-500"
 										onclick={cancelConfirm}
 									>Cancel</button>
 								{:else}
 									<button
-										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
 										aria-label="Delete VM"
 										title="Delete VM"
 										disabled={!!actionLoading[`delete-${vm.id}`]}
@@ -507,13 +507,13 @@
 
 						<!-- VM Access Panel (expandable) -->
 						{#if expandedVMs[vm.id]}
-							<div class="border-t border-surface-200-800/50 bg-surface-50-950/30 px-5 py-3">
+							<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/30 px-5 py-3">
 								<VMAccessPanel {vm} />
 							</div>
 						{/if}
 
 						<!-- Snapshot Panel (always visible per VM) -->
-						<div class="border-t border-surface-200-800/50 bg-surface-50-950/20 px-5 py-3">
+						<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/20 px-5 py-3">
 							<SnapshotPanel podId={podId} vmId={vm.id} vmStatus={vm.status} />
 						</div>
 					</div>

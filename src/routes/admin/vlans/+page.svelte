@@ -186,16 +186,16 @@
 	});
 
 	const inputClass =
-		'w-full rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none';
+		'w-full rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 </script>
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">VLAN Pool</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">VLAN Pool</h1>
 		{#if authStore.isAdmin}
 			<div class="flex gap-2">
 				<button
-					class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm font-semibold text-surface-900-100 hover:bg-surface-200-800"
+					class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm font-semibold text-surface-900 dark:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-800"
 					onclick={() => { showBatchAdd = !showBatchAdd; showAdd = false; }}
 				>
 					Batch Add
@@ -217,21 +217,21 @@
 	{:else}
 		<!-- Stats -->
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-			<div class="rounded-xl border border-surface-200-800 bg-surface-100-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
 				<div class="text-xs font-medium text-surface-500">Total VLANs</div>
-				<div class="text-2xl font-bold text-surface-900-100">{stats.total}</div>
+				<div class="text-2xl font-bold text-surface-900 dark:text-surface-100">{stats.total}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200-800 bg-surface-100-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
 				<div class="text-xs font-medium text-surface-500">Available</div>
 				<div class="text-2xl font-bold text-success-500">{stats.available}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200-800 bg-surface-100-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
 				<div class="text-xs font-medium text-surface-500">Allocated</div>
 				<div class="text-2xl font-bold text-warning-500">{stats.allocated}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200-800 bg-surface-100-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
 				<div class="text-xs font-medium text-surface-500">All Hosts / Switch1 Only</div>
-				<div class="text-2xl font-bold text-surface-900-100">
+				<div class="text-2xl font-bold text-surface-900 dark:text-surface-100">
 					{stats.allScope} <span class="text-sm font-normal text-surface-500">/</span> {stats.switch1Scope}
 				</div>
 			</div>
@@ -252,8 +252,8 @@
 
 		<!-- Add single VLAN form -->
 		{#if showAdd}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100-900/50 p-5 backdrop-blur-xl">
-				<h2 class="mb-4 text-lg font-semibold text-surface-900-100">Add VLAN</h2>
+			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">Add VLAN</h2>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">VLAN Tag</span>
@@ -280,7 +280,7 @@
 						{saving ? 'Adding…' : 'Add VLAN'}
 					</button>
 					<button
-						class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+						class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 						onclick={() => (showAdd = false)}
 					>
 						Cancel
@@ -291,8 +291,8 @@
 
 		<!-- Batch add form -->
 		{#if showBatchAdd}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100-900/50 p-5 backdrop-blur-xl">
-				<h2 class="mb-4 text-lg font-semibold text-surface-900-100">Batch Add VLANs</h2>
+			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">Batch Add VLANs</h2>
 				<p class="mb-3 text-sm text-surface-500">
 					Add a range of VLANs with auto-generated subnets (10.100.{'{tag-100}'}.0/24). Existing VLANs in the range will be skipped.
 				</p>
@@ -322,7 +322,7 @@
 						{saving ? 'Adding…' : `Add ${Math.max(0, batchTo - batchFrom + 1)} VLANs`}
 					</button>
 					<button
-						class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+						class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 						onclick={() => (showBatchAdd = false)}
 					>
 						Cancel
@@ -333,12 +333,12 @@
 
 		<!-- Filters -->
 		<div class="flex gap-3">
-			<select bind:value={filterScope} class="rounded border border-surface-200-800 bg-surface-50-950 px-3 py-1.5 text-sm text-surface-900-100">
+			<select bind:value={filterScope} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100">
 				<option value="all-scopes">All Scopes</option>
 				<option value="all">All Hosts</option>
 				<option value="switch1">Switch 1 Only</option>
 			</select>
-			<select bind:value={filterStatus} class="rounded border border-surface-200-800 bg-surface-50-950 px-3 py-1.5 text-sm text-surface-900-100">
+			<select bind:value={filterStatus} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100">
 				<option value="all-status">All Status</option>
 				<option value="available">Available</option>
 				<option value="allocated">Allocated</option>
@@ -347,11 +347,11 @@
 		</div>
 
 		<!-- VLAN table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>
-						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
 							<th class="px-5 py-3">VLAN Tag</th>
 							<th class="px-5 py-3">Subnet</th>
 							<th class="px-5 py-3">Host Scope</th>
@@ -362,7 +362,7 @@
 					<tbody>
 						{#if loading}
 							{#each Array(6) as _}
-								<tr class="border-b border-surface-200-800">
+								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(5) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
@@ -376,10 +376,10 @@
 							{#each filteredVlans as v (v.id)}
 								{#if editingId === v.id}
 									<tr class="border-b border-primary-500/20 bg-primary-500/5">
-										<td class="px-5 py-3 font-mono text-surface-900-100">{v.vlan_tag}</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400">{v.subnet}</td>
+										<td class="px-5 py-3 font-mono text-surface-900 dark:text-surface-100">{v.vlan_tag}</td>
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">{v.subnet}</td>
 										<td class="px-5 py-3">
-											<select bind:value={editScope} class="rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100">
+											<select bind:value={editScope} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100">
 												<option value="all">All Hosts</option>
 												<option value="switch1">Switch 1 Only</option>
 											</select>
@@ -401,7 +401,7 @@
 													{saving ? 'Saving…' : 'Save'}
 												</button>
 												<button
-													class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200-800"
+													class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 													onclick={() => (editingId = null)}
 												>
 													Cancel
@@ -413,7 +413,7 @@
 									<tr class="border-b border-error-500/20 bg-error-500/5">
 										<td colspan="5" class="px-5 py-3">
 											<div class="flex items-center justify-between">
-												<span class="text-sm text-surface-900-100">
+												<span class="text-sm text-surface-900 dark:text-surface-100">
 													Remove VLAN <strong>{v.vlan_tag}</strong> ({v.subnet})?
 													{#if v.pod_id}
 														<span class="ml-2 text-xs text-error-500">⚠ Currently allocated — cannot remove.</span>
@@ -430,7 +430,7 @@
 														</button>
 													{/if}
 													<button
-														class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200-800"
+														class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 														onclick={() => (deletingId = null)}
 													>
 														Cancel
@@ -440,13 +440,13 @@
 										</td>
 									</tr>
 								{:else}
-									<tr class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30">
-										<td class="px-5 py-3 font-mono font-medium text-surface-900-100">{v.vlan_tag}</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400">{v.subnet}</td>
+									<tr class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30">
+										<td class="px-5 py-3 font-mono font-medium text-surface-900 dark:text-surface-100">{v.vlan_tag}</td>
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">{v.subnet}</td>
 										<td class="px-5 py-3">
 											<span class="rounded-full px-2 py-0.5 text-xs font-medium {v.host_scope === 'all'
 												? 'bg-primary-500/10 text-primary-500'
-												: 'bg-surface-300-700/50 text-surface-600-400'}">
+												: 'bg-surface-300/50 dark:bg-surface-700/50 text-surface-600 dark:text-surface-400'}">
 												{v.host_scope === 'all' ? 'All Hosts' : 'Switch 1'}
 											</span>
 										</td>

@@ -18,7 +18,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-surface-50-950">
+<div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
 	<!-- Background gradients — fire + blue -->
 	<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
 		<div class="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-primary-500/10 blur-3xl"></div>
@@ -26,7 +26,7 @@
 	</div>
 
 	<div class="w-full max-w-sm">
-		<div class="rounded-2xl border border-surface-200-800/50 bg-surface-100-900/80 p-8 shadow-xl backdrop-blur-xl">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800/50 bg-surface-100/80 dark:bg-surface-900/80 p-8 shadow-xl backdrop-blur-xl">
 			<!-- Logo — Crucible flame (design 2) -->
 			<div class="mb-6 flex flex-col items-center gap-3">
 				<div class="flex h-16 w-16 items-center justify-center">
@@ -53,7 +53,7 @@
 					</svg>
 				</div>
 				<div class="text-center">
-					<h1 class="text-xl font-bold text-surface-900-100">Crucible</h1>
+					<h1 class="text-xl font-bold text-surface-900 dark:text-surface-100">Crucible</h1>
 					<p class="mt-1 text-sm text-surface-500">Sign in to manage your labs</p>
 				</div>
 			</div>

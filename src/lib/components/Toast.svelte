@@ -27,7 +27,7 @@
 		{#each toastStore.toasts as toast (toast.id)}
 			{@const styles = typeStyles[toast.type] ?? typeStyles.info}
 			<div
-				class="flex items-start gap-3 rounded-xl border {styles.border} {styles.bg} bg-surface-100-900 px-4 py-3 shadow-lg backdrop-blur-xl"
+				class="flex items-start gap-3 rounded-xl border {styles.border} {styles.bg} bg-surface-100 dark:bg-surface-900 px-4 py-3 shadow-lg backdrop-blur-xl"
 				transition:fly={{ x: 100, duration: 300 }}
 				role="alert"
 			>
@@ -93,14 +93,14 @@
 				</div>
 				<!-- Content -->
 				<div class="min-w-0 flex-1">
-					<p class="text-sm font-medium text-surface-900-100">{toast.title}</p>
+					<p class="text-sm font-medium text-surface-900 dark:text-surface-100">{toast.title}</p>
 					{#if toast.message}
 						<p class="mt-0.5 text-xs text-surface-500">{toast.message}</p>
 					{/if}
 				</div>
 				<!-- Close button -->
 				<button
-					class="flex-shrink-0 text-surface-400 transition-colors hover:text-surface-900-100"
+					class="flex-shrink-0 text-surface-400 transition-colors hover:text-surface-900 dark:hover:text-surface-100"
 					onclick={() => toastStore.removeToast(toast.id)}
 					aria-label="Dismiss"
 				>

@@ -57,10 +57,10 @@
 				<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">
 					{gauge.label}
 				</p>
-				<p class="mt-2 text-[28px] font-bold tracking-tight text-surface-900-100">
+				<p class="mt-2 text-[28px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
 					{gauge.used} <span class="text-base font-normal text-surface-500">/ {gauge.max}{gauge.unit ? ` ${gauge.unit}` : ''}</span>
 				</p>
-				<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-200-800/60">
+				<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800/60">
 					<div
 						class="h-full rounded-full transition-all duration-1000 {barColor(pct)}"
 						style="width: {pct}%"

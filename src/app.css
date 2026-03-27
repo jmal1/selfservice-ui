@@ -152,47 +152,6 @@ html {
 	animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* ── Responsive color utilities (light/dark compound classes) ──
-   Replaces Skeleton's "surface-200-800" pattern.
-   Format: {property}-surface-{light}-{dark}
-   All 6 patterns used across the app, defined once here. */
-
-.bg-surface-50-950     { background-color: var(--color-surface-50); }
-.dark .bg-surface-50-950 { background-color: var(--color-surface-950); }
-
-.bg-surface-200-800    { background-color: var(--color-surface-200); }
-.dark .bg-surface-200-800 { background-color: var(--color-surface-800); }
-
-.\!bg-surface-200-800\/50,
-.bg-surface-200-800\/50 { background-color: oklch(0.89 0.010 68 / 0.5); }
-.dark .bg-surface-200-800\/50,
-.dark .\!bg-surface-200-800\/50 { background-color: oklch(0.20 0.02 275 / 0.5); }
-
-.bg-surface-100-900\/50 { background-color: oklch(0.935 0.008 70 / 0.5); }
-.dark .bg-surface-100-900\/50 { background-color: oklch(0.16 0.018 278 / 0.5); }
-
-.text-surface-900-100  { color: var(--color-surface-900); }
-.dark .text-surface-900-100 { color: var(--color-surface-100); }
-
-.text-surface-600-400  { color: var(--color-surface-600); }
-.dark .text-surface-600-400 { color: var(--color-surface-400); }
-
-.border-surface-200-800 { border-color: var(--color-surface-200); }
-.dark .border-surface-200-800 { border-color: var(--color-surface-800); }
-
-.border-surface-200-800\/30 { border-color: oklch(0.89 0.010 68 / 0.3); }
-.dark .border-surface-200-800\/30 { border-color: oklch(0.20 0.02 275 / 0.3); }
-
-/* Hover variants */
-.hover\:bg-surface-200-800:hover { background-color: var(--color-surface-200); }
-.dark .hover\:bg-surface-200-800:hover { background-color: var(--color-surface-800); }
-
-.hover\:bg-surface-200-800\/50:hover { background-color: oklch(0.89 0.010 68 / 0.5); }
-.dark .hover\:bg-surface-200-800\/50:hover { background-color: oklch(0.20 0.02 275 / 0.5); }
-
-.hover\:text-surface-900-100:hover { color: var(--color-surface-900); }
-.dark .hover\:text-surface-900-100:hover { color: var(--color-surface-100); }
-
 /* ── Base typography (previously provided by Skeleton) ── */
 
 body {

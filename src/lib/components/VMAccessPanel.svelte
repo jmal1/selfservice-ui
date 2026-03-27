@@ -44,13 +44,13 @@
 </script>
 
 {#if vm.ip_address || hasVCenter}
-	<div class="rounded-xl border border-surface-200-800/50 bg-surface-50-950/50 p-4">
+	<div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
 		{#if vm.ip_address}
 			{#if isLinux}
 				<!-- SSH: primary command -->
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">SSH</span>
-					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
 						ssh {displayUsername || 'user'}@{vm.ip_address}
 					</code>
 					<button
@@ -64,7 +64,7 @@
 				<!-- RDP: primary command -->
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
-					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
 						mstsc /w:1920 /h:1080 /v:{vm.ip_address}
 						<span class="text-surface-400 ml-2">(user: <strong class="text-surface-300">\{displayUsername || 'Student'}</strong>)</span>
 					</code>
@@ -79,7 +79,7 @@
 				<!-- Generic: just IP -->
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">IP</span>
-					<code class="flex-1 rounded-lg bg-surface-200-800 px-3 py-1.5 font-mono text-sm text-surface-900-100">
+					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
 						{vm.ip_address}
 					</code>
 					<button
@@ -97,11 +97,11 @@
 			{#if hasCredentials}
 				<div class="flex items-center gap-3 text-xs text-surface-400">
 					{#if displayUsername}
-						<span>User: <code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{displayUsername}</code></span>
+						<span>User: <code class="rounded bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 font-mono text-surface-900 dark:text-surface-100">{displayUsername}</code></span>
 					{/if}
 					{#if displayPassword}
 						<span>Pass:
-							<code class="rounded bg-surface-200-800 px-1.5 py-0.5 font-mono text-surface-900-100">{showPassword ? displayPassword : '••••••••'}</code>
+							<code class="rounded bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 font-mono text-surface-900 dark:text-surface-100">{showPassword ? displayPassword : '••••••••'}</code>
 							<button
 								class="ml-0.5 text-surface-400 hover:text-surface-300"
 								onclick={() => (showPassword = !showPassword)}
@@ -117,7 +117,7 @@
 			<div class="ml-auto flex gap-2">
 				{#if hasVCenter}
 					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
+						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
 						onclick={openConsole}
 						disabled={!isPoweredOn}
 						title={isPoweredOn ? 'Open VM console in new tab' : 'VM must be powered on'}
@@ -127,7 +127,7 @@
 				{/if}
 				{#if isWindows && vm.ip_address}
 					<button
-						class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
+						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
 						onclick={downloadRdp}
 					>
 						Download .rdp

@@ -10,7 +10,7 @@
 
 		{#if i > 0}
 			<div
-				class="h-0.5 w-8 rounded-full transition-colors sm:w-12 {isComplete ? 'bg-primary-500' : 'bg-surface-300-700'}"
+				class="h-0.5 w-8 rounded-full transition-colors sm:w-12 {isComplete ? 'bg-primary-500' : 'bg-surface-300 dark:bg-surface-700'}"
 			></div>
 		{/if}
 
@@ -21,7 +21,7 @@
 					? 'bg-primary-500 text-white'
 					: isCurrent
 						? 'bg-primary-500/20 text-primary-500 ring-2 ring-primary-500'
-						: 'bg-surface-200-800 text-surface-500'}"
+						: 'bg-surface-200 dark:bg-surface-800 text-surface-500'}"
 			>
 				{#if isComplete}
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -33,7 +33,7 @@
 			</div>
 			<span
 				class="hidden text-sm font-medium sm:inline
-					{isCurrent ? 'text-surface-900-100' : 'text-surface-500'}"
+					{isCurrent ? 'text-surface-900 dark:text-surface-100' : 'text-surface-500'}"
 			>
 				{label}
 			</span>

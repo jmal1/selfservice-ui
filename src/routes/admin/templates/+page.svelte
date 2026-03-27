@@ -154,14 +154,14 @@
 	}
 
 	const inputClass =
-		'w-full rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none';
+		'w-full rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 	const inputSmClass =
-		'w-20 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none';
+		'w-20 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 </script>
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">Template Management</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Template Management</h1>
 		{#if authStore.isAdmin && !showCreate}
 			<button
 				class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
@@ -191,9 +191,9 @@
 		<!-- Create form -->
 		{#if showCreate}
 			<div
-				class="rounded-2xl border border-primary-500/30 bg-surface-100-900/50 p-5 backdrop-blur-xl"
+				class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl"
 			>
-				<h2 class="mb-4 text-lg font-semibold text-surface-900-100">New Template</h2>
+				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">New Template</h2>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">Name</span>
@@ -260,7 +260,7 @@
 					</label>
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={createValues.is_active} class="accent-primary-500" />
-						<span class="text-sm text-surface-900-100">Active</span>
+						<span class="text-sm text-surface-900 dark:text-surface-100">Active</span>
 					</label>
 				</div>
 				<div class="mt-4 flex gap-2">
@@ -272,7 +272,7 @@
 						{saving ? 'Creating…' : 'Create Template'}
 					</button>
 					<button
-						class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+						class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 						onclick={cancelCreate}
 					>
 						Cancel
@@ -283,13 +283,13 @@
 
 		<!-- Templates table -->
 		<div
-			class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl"
+			class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl"
 		>
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>
 						<tr
-							class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500"
+							class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500"
 						>
 							<th class="px-5 py-3">Name</th>
 							<th class="px-5 py-3">vCenter Template</th>
@@ -303,7 +303,7 @@
 					<tbody>
 						{#if loading}
 							{#each Array(4) as _}
-								<tr class="border-b border-surface-200-800">
+								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(7) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
@@ -399,7 +399,7 @@
 													{saving ? 'Saving…' : 'Save'}
 												</button>
 												<button
-													class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200-800"
+													class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 													onclick={cancelEdit}
 												>
 													Cancel
@@ -412,7 +412,7 @@
 									<tr class="border-b border-error-500/20 bg-error-500/5">
 										<td colspan="7" class="px-5 py-3">
 											<div class="flex items-center justify-between">
-												<span class="text-sm text-surface-900-100">
+												<span class="text-sm text-surface-900 dark:text-surface-100">
 													Delete <strong>{t.name}</strong>? This cannot be undone.
 												</span>
 												<div class="flex gap-1">
@@ -424,7 +424,7 @@
 														{saving ? 'Deleting…' : 'Confirm Delete'}
 													</button>
 													<button
-														class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200-800"
+														class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 														onclick={() => (deletingId = null)}
 													>
 														Cancel
@@ -436,10 +436,10 @@
 								{:else}
 									<!-- Normal display row -->
 									<tr
-										class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30"
+										class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 									>
-										<td class="px-5 py-3 font-medium text-surface-900-100">{t.name}</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400"
+										<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">{t.name}</td>
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400"
 											>{t.vcenter_template}</td
 										>
 										<td class="px-5 py-3">
@@ -451,17 +451,17 @@
 												{t.os_type}
 											</span>
 										</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400">
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">
 											{t.default_vcpus} vCPU / {t.default_ram_mb} MB / {t.default_disk_gb} GB
 										</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400">
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">
 											{t.min_vcpus} vCPU / {t.min_ram_mb} MB
 										</td>
 										<td class="px-5 py-3">
 											<button
 												class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {t.is_active
 													? 'bg-success-500'
-													: 'bg-surface-300-700'}"
+													: 'bg-surface-300 dark:bg-surface-700'}"
 												onclick={() => toggleActive(t)}
 												disabled={saving}
 												title={t.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'}

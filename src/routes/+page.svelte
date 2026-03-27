@@ -131,7 +131,7 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight text-surface-900-100">Dashboard</h1>
+			<h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100">Dashboard</h1>
 			<p class="mt-1 text-sm text-surface-500">Overview of your lab resources</p>
 		</div>
 		<a
@@ -159,7 +159,7 @@
 
 	<!-- Pod List -->
 	<div>
-		<h2 class="mb-3 text-lg font-semibold text-surface-900-100">My Environments</h2>
+		<h2 class="mb-3 text-lg font-semibold text-surface-900 dark:text-surface-100">My Environments</h2>
 		<PodList {pods} loading={loadingPods} />
 	</div>
 </div>

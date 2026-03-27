@@ -33,7 +33,7 @@
 	{#if loading}
 		<LoadingSkeleton />
 	{:else if runs.length === 0}
-		<p class="text-surface-600-400">No assessment runs yet.</p>
+		<p class="text-surface-600 dark:text-surface-400">No assessment runs yet.</p>
 	{:else}
 		<div class="table-container">
 			<table class="table table-hover">

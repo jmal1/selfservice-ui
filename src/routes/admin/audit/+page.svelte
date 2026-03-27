@@ -98,7 +98,7 @@
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">Audit Log</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Audit Log</h1>
 		<span class="text-sm text-surface-500">
 			{#if page}{page.total.toLocaleString()} total entries{/if}
 		</span>
@@ -114,7 +114,7 @@
 		</div>
 	{:else}
 		<!-- Active Sessions Card -->
-		<div class="rounded-2xl border border-surface-200-800 bg-surface-100-900/50 p-5 backdrop-blur-xl">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
 			<div class="mb-3 flex items-center gap-2">
 				<span class="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
 				<h2 class="text-sm font-semibold uppercase tracking-wider text-surface-500">Active Sessions</h2>
@@ -130,12 +130,12 @@
 			{:else}
 				<div class="flex flex-wrap gap-3">
 					{#each sessions as session (session.id)}
-						<div class="flex items-center gap-3 rounded-xl border border-surface-200-800 bg-surface-50-950 px-4 py-2.5">
+						<div class="flex items-center gap-3 rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-4 py-2.5">
 							<div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500/15 text-xs font-bold text-primary-500">
 								{(session.display_name ?? session.username).charAt(0).toUpperCase()}
 							</div>
 							<div>
-								<div class="text-sm font-medium text-surface-900-100">{session.display_name ?? session.username}</div>
+								<div class="text-sm font-medium text-surface-900 dark:text-surface-100">{session.display_name ?? session.username}</div>
 								<div class="text-xs text-surface-500">Active {relativeTime(session.last_activity)}</div>
 							</div>
 						</div>
@@ -151,7 +151,7 @@
 					onclick={() => applyFilter(qf.value)}
 					class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {actionFilter === qf.value
 						? 'bg-primary-500 text-white'
-						: 'bg-surface-200-800/50 text-surface-600-400 hover:bg-surface-200-800'}"
+						: 'bg-surface-200/50 dark:bg-surface-800/50 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-800'}"
 				>
 					{qf.label}
 				</button>
@@ -161,17 +161,17 @@
 					type="date"
 					bind:value={sinceFilter}
 					onchange={() => { currentPage = 1; loading = true; loadAuditLog(); }}
-					class="rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-1.5 text-xs text-surface-900-100 focus:border-primary-500 focus:outline-none"
+					class="rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-xs text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
 				/>
 			</div>
 		</div>
 
 		<!-- Audit Table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>
-						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
 							<th class="px-5 py-3">Timestamp</th>
 							<th class="px-5 py-3">User</th>
 							<th class="px-5 py-3">Action</th>
@@ -182,7 +182,7 @@
 					<tbody>
 						{#if loading}
 							{#each Array(8) as _}
-								<tr class="border-b border-surface-200-800">
+								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(5) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
@@ -196,9 +196,9 @@
 							</tr>
 						{:else}
 							{#each page.entries as entry (entry.id)}
-								<tr class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30">
-									<td class="px-5 py-3 text-xs text-surface-600-400">{formatTime(entry.created_at)}</td>
-									<td class="px-5 py-3 text-surface-600-400">
+								<tr class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30">
+									<td class="px-5 py-3 text-xs text-surface-600 dark:text-surface-400">{formatTime(entry.created_at)}</td>
+									<td class="px-5 py-3 text-surface-600 dark:text-surface-400">
 										{#if entry.user_display_name}
 											<span class="text-sm font-medium">{entry.user_display_name}</span>
 											{#if entry.user_email}
@@ -209,17 +209,17 @@
 										{/if}
 									</td>
 									<td class="px-5 py-3">
-										<span class="inline-block rounded-md bg-surface-200-800/50 px-2 py-0.5 font-mono text-xs font-medium text-surface-900-100">
+										<span class="inline-block rounded-md bg-surface-200/50 dark:bg-surface-800/50 px-2 py-0.5 font-mono text-xs font-medium text-surface-900 dark:text-surface-100">
 											{entry.action}
 										</span>
 									</td>
-									<td class="px-5 py-3 text-surface-600-400">
+									<td class="px-5 py-3 text-surface-600 dark:text-surface-400">
 										<span class="text-xs">{entry.resource_type}</span>
 										{#if entry.resource_id}
 											<span class="font-mono text-xs text-surface-500">/{entry.resource_id.slice(0, 8)}</span>
 										{/if}
 									</td>
-									<td class="px-5 py-3 font-mono text-xs text-surface-600-400">{entry.ip_address}</td>
+									<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">{entry.ip_address}</td>
 								</tr>
 							{/each}
 						{/if}
@@ -229,7 +229,7 @@
 
 			<!-- Pagination -->
 			{#if totalPages > 1}
-				<div class="flex items-center justify-between border-t border-surface-200-800 px-5 py-3">
+				<div class="flex items-center justify-between border-t border-surface-200 dark:border-surface-800 px-5 py-3">
 					<span class="text-xs text-surface-500">
 						Page {currentPage} of {totalPages}
 					</span>
@@ -237,7 +237,7 @@
 						<button
 							onclick={() => goToPage(currentPage - 1)}
 							disabled={currentPage <= 1}
-							class="rounded-lg px-3 py-1 text-xs font-medium text-surface-600-400 hover:bg-surface-200-800 disabled:opacity-30 disabled:cursor-not-allowed"
+							class="rounded-lg px-3 py-1 text-xs font-medium text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-800 disabled:opacity-30 disabled:cursor-not-allowed"
 						>
 							← Prev
 						</button>
@@ -248,7 +248,7 @@
 									onclick={() => goToPage(p)}
 									class="rounded-lg px-3 py-1 text-xs font-medium transition-colors {p === currentPage
 										? 'bg-primary-500 text-white'
-										: 'text-surface-600-400 hover:bg-surface-200-800'}"
+										: 'text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-800'}"
 								>
 									{p}
 								</button>
@@ -257,7 +257,7 @@
 						<button
 							onclick={() => goToPage(currentPage + 1)}
 							disabled={currentPage >= totalPages}
-							class="rounded-lg px-3 py-1 text-xs font-medium text-surface-600-400 hover:bg-surface-200-800 disabled:opacity-30 disabled:cursor-not-allowed"
+							class="rounded-lg px-3 py-1 text-xs font-medium text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-800 disabled:opacity-30 disabled:cursor-not-allowed"
 						>
 							Next →
 						</button>

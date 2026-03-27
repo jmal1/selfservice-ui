@@ -7,7 +7,7 @@
 </script>
 
 <div
-	class="animate-pulse bg-surface-200-800 {rounded}"
+	class="animate-pulse bg-surface-200 dark:bg-surface-800 {rounded}"
 	style="width: {width}; height: {height};"
 	aria-hidden="true"
 ></div>

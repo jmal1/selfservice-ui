@@ -93,12 +93,12 @@
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">Job Monitor</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Job Monitor</h1>
 		<div class="flex items-center gap-2">
-			<div class="flex rounded-lg border border-surface-200-800 overflow-hidden">
+			<div class="flex rounded-lg border border-surface-200 dark:border-surface-800 overflow-hidden">
 				{#each ['all', 'failed', 'in_progress', 'completed'] as status}
 					<button
-						class="px-3 py-1.5 text-xs font-medium transition-colors {statusFilter === status ? 'bg-primary-500 text-white' : 'text-surface-500 hover:bg-surface-200-800'}"
+						class="px-3 py-1.5 text-xs font-medium transition-colors {statusFilter === status ? 'bg-primary-500 text-white' : 'text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800'}"
 						onclick={() => statusFilter = status}
 					>
 						{status === 'all' ? 'All' : status === 'in_progress' ? 'Running' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -106,7 +106,7 @@
 				{/each}
 			</div>
 			<button
-				class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs font-medium text-surface-500 transition-colors hover:bg-surface-200-800"
+				class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs font-medium text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800"
 				onclick={loadJobs}
 			>
 				Refresh
@@ -123,11 +123,11 @@
 			{error}
 		</div>
 	{:else}
-		<div class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>
-						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
 							<th class="px-5 py-3">ID</th>
 							<th class="px-5 py-3">Type</th>
 							<th class="px-5 py-3">Status</th>
@@ -139,7 +139,7 @@
 					<tbody>
 						{#if loading}
 							{#each Array(5) as _}
-								<tr class="border-b border-surface-200-800">
+								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(6) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
@@ -152,25 +152,25 @@
 						{:else}
 							{#each filteredJobs as job (job.id)}
 								<tr
-									class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30 cursor-pointer {job.status === 'failed' ? 'bg-error-500/5' : ''}"
+									class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30 cursor-pointer {job.status === 'failed' ? 'bg-error-500/5' : ''}"
 									onclick={() => toggleExpand(job.id)}
 								>
-									<td class="px-5 py-3 font-mono text-xs text-surface-600-400" title={job.id}>
+									<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400" title={job.id}>
 										{truncateId(job.id)}
 									</td>
 									<td class="px-5 py-3">
-										<div class="font-medium text-surface-900-100">{formatType(job.type)}</div>
+										<div class="font-medium text-surface-900 dark:text-surface-100">{formatType(job.type)}</div>
 										{#if job.payload?.vm_name}
 											<div class="text-xs text-surface-500">{job.payload.vm_name}{job.payload.pod_name ? ` · ${job.payload.pod_name}` : ''}</div>
 										{/if}
 									</td>
 									<td class="px-5 py-3"><StatusBadge status={job.status} /></td>
-									<td class="px-5 py-3 font-mono text-xs text-surface-600-400">{job.claimed_by || '—'}</td>
-									<td class="px-5 py-3 text-surface-600-400">{formatDuration(job)}</td>
-									<td class="px-5 py-3 text-xs text-surface-600-400">{formatTime(job.created_at)}</td>
+									<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">{job.claimed_by || '—'}</td>
+									<td class="px-5 py-3 text-surface-600 dark:text-surface-400">{formatDuration(job)}</td>
+									<td class="px-5 py-3 text-xs text-surface-600 dark:text-surface-400">{formatTime(job.created_at)}</td>
 								</tr>
 								{#if expandedJob === job.id}
-									<tr class="border-b border-surface-200-800">
+									<tr class="border-b border-surface-200 dark:border-surface-800">
 										<td colspan="6" class="px-5 py-4">
 											<div class="space-y-3">
 												<!-- Error message -->

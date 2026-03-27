@@ -268,7 +268,7 @@
 			<div class="card p-12 text-center">
 				<div class="text-4xl mb-3">📋</div>
 				<p class="text-lg font-medium mb-1">No workflows yet</p>
-				<p class="text-sm text-surface-600-400 mb-4">
+				<p class="text-sm text-surface-600 dark:text-surface-400 mb-4">
 					Create your first workflow to define automated assessment steps.
 				</p>
 				<button class="btn btn-primary" onclick={enterCreateMode}>+ New Workflow</button>
@@ -291,7 +291,7 @@
 								<td>
 									<div>
 										<p class="font-medium">{wf.name}</p>
-										<p class="text-xs text-surface-600-400">{wf.slug}</p>
+										<p class="text-xs text-surface-600 dark:text-surface-400">{wf.slug}</p>
 									</div>
 								</td>
 								<td>{wf.category}</td>
@@ -458,7 +458,7 @@
 						<div class="flex-1 space-y-4 overflow-y-auto pr-1">
 							{#each Object.entries(groupedLibraryActions) as [category, actions]}
 								<div>
-									<h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-600-400">
+									<h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-600 dark:text-surface-400">
 										{category}
 									</h3>
 									<div class="space-y-2">
@@ -468,7 +468,7 @@
 											>
 												<div class="min-w-0 flex-1">
 													<p class="text-sm font-medium">{action.name}</p>
-													<p class="mt-0.5 text-xs text-surface-600-400 line-clamp-2">
+													<p class="mt-0.5 text-xs text-surface-600 dark:text-surface-400 line-clamp-2">
 														{action.description}
 													</p>
 													{#if (action.output_context ?? []).length > 0}
@@ -505,7 +505,7 @@
 					<h2 class="mb-2 text-lg font-semibold">
 						Workflow Steps
 						{#if selectedActions.length > 0}
-							<span class="ml-2 text-sm font-normal text-surface-600-400">
+							<span class="ml-2 text-sm font-normal text-surface-600 dark:text-surface-400">
 								({selectedActions.length} action{selectedActions.length !== 1 ? 's' : ''})
 							</span>
 						{/if}
@@ -517,7 +517,7 @@
 					{#if selectedActions.length === 0}
 						<div class="flex flex-1 flex-col items-center justify-center py-8 text-center">
 							<div class="text-3xl mb-2">🔗</div>
-							<p class="text-sm text-surface-600-400">
+							<p class="text-sm text-surface-600 dark:text-surface-400">
 								Add actions from the left panel to build your workflow.
 							</p>
 						</div>
@@ -535,7 +535,7 @@
 											</span>
 											<div class="min-w-0">
 												<p class="text-sm font-medium">{action.name}</p>
-												<p class="mt-0.5 text-xs text-surface-600-400 line-clamp-1">
+												<p class="mt-0.5 text-xs text-surface-600 dark:text-surface-400 line-clamp-1">
 													{action.description}
 												</p>
 											</div>
@@ -602,7 +602,7 @@
 							]}
 							{#if allOutputKeys.length > 0}
 								<div class="mt-4 border-t border-surface-100 pt-3 dark:border-surface-700">
-									<p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-surface-600-400">
+									<p class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-surface-600 dark:text-surface-400">
 										Accumulated Context
 									</p>
 									<div class="flex flex-wrap gap-1.5">
@@ -636,19 +636,19 @@
 					<h2 class="mb-4 text-lg font-semibold">Workflow Summary</h2>
 					<dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
 						<div>
-							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">Name</dt>
+							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">Name</dt>
 							<dd class="mt-0.5 font-medium">{wfName}</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">Slug</dt>
+							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">Slug</dt>
 							<dd class="mt-0.5 font-mono text-sm">{wfSlug}</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">Category</dt>
+							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">Category</dt>
 							<dd class="mt-0.5">{wfCategory}</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">Execution Mode</dt>
+							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">Execution Mode</dt>
 							<dd class="mt-0.5">
 								<span
 									class="badge {wfExecMode === 'vmware_tools'
@@ -660,12 +660,12 @@
 							</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">Timeout</dt>
+							<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">Timeout</dt>
 							<dd class="mt-0.5">{wfTimeout}s</dd>
 						</div>
 						{#if wfDescription}
 							<div class="col-span-full">
-								<dt class="text-xs font-medium uppercase tracking-wider text-surface-600-400">
+								<dt class="text-xs font-medium uppercase tracking-wider text-surface-600 dark:text-surface-400">
 									Description
 								</dt>
 								<dd class="mt-0.5">{wfDescription}</dd>
@@ -695,7 +695,7 @@
 								</div>
 								<div class="min-w-0 flex-1 pb-1">
 									<p class="text-sm font-medium">{action.name}</p>
-									<p class="text-xs text-surface-600-400">{action.description}</p>
+									<p class="text-xs text-surface-600 dark:text-surface-400">{action.description}</p>
 									<div class="mt-1.5 flex flex-wrap gap-1">
 										{#each action.input_context ?? [] as ctx}
 											{@const satisfied = flow?.available.has(ctx.key)}
@@ -726,7 +726,7 @@
 					<div class="mb-4 flex items-center justify-between">
 						<h2 class="text-lg font-semibold">Script</h2>
 						<label class="flex cursor-pointer items-center gap-2 text-sm">
-							<span class="text-surface-600-400">
+							<span class="text-surface-600 dark:text-surface-400">
 								{useScriptMode ? 'Edit directly' : 'Visual mode'}
 							</span>
 							<button

@@ -222,11 +222,11 @@
 <div class="glass overflow-hidden rounded-2xl">
 	<!-- Header -->
 	<button
-		class="flex w-full items-center justify-between px-5 py-3 transition-colors hover:bg-surface-200-800/30"
+		class="flex w-full items-center justify-between px-5 py-3 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 		onclick={() => (expanded = !expanded)}
 	>
 		<div class="flex items-center gap-2">
-			<span class="text-sm font-semibold text-surface-900-100">Active Jobs</span>
+			<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Active Jobs</span>
 			{#if activeJobs.length > 0}
 				<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5 text-xs font-bold text-white">
 					{activeJobs.length}
@@ -247,7 +247,7 @@
 		class="overflow-hidden transition-all duration-300 ease-in-out"
 		style="max-height: {expanded ? `${Math.max(activeJobs.length, 1) * 140 + 40}px` : '0px'};"
 	>
-		<div class="border-t border-surface-200-800 px-5 py-4">
+		<div class="border-t border-surface-200 dark:border-surface-800 px-5 py-4">
 			{#if activeJobs.length === 0}
 				<div class="flex items-center gap-3 py-4 text-surface-400">
 					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -261,7 +261,7 @@
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-2">
-									<span class="text-sm font-medium text-surface-900-100">{jobLabel(job)}</span>
+									<span class="text-sm font-medium text-surface-900 dark:text-surface-100">{jobLabel(job)}</span>
 									{#if jobSubtitle(job)}
 										<span class="text-xs text-surface-400">· {jobSubtitle(job)}</span>
 									{/if}
@@ -276,7 +276,7 @@
 											step.status === 'completed' ? 'bg-success-500' :
 											step.status === 'failed' ? 'bg-error-500' :
 											step.status === 'running' ? 'bg-warning-500/50' :
-											'bg-surface-300-700'
+											'bg-surface-300 dark:bg-surface-700'
 										}"></div>
 									{/if}
 									<div class="flex flex-col items-center gap-1">
@@ -285,7 +285,7 @@
 												step.status === 'completed' ? 'bg-success-500' :
 												step.status === 'running' ? 'bg-warning-500' :
 												step.status === 'failed' ? 'bg-error-500' :
-												'bg-surface-300-700'
+												'bg-surface-300 dark:bg-surface-700'
 											}"
 										>
 											{#if step.status === 'completed'}

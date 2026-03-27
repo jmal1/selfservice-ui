@@ -260,9 +260,9 @@
 	}
 
 	const inputClass =
-		'w-full rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none';
+		'w-full rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 	const inputSmClass =
-		'w-20 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none';
+		'w-20 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 </script>
 
 {#snippet vmFormRow(vms: typeof createVMs, isCreate: boolean)}
@@ -282,7 +282,7 @@
 		</div>
 
 		{#each vms as vm, i (i)}
-			<div class="rounded-xl border border-surface-200-800 p-3 space-y-2">
+			<div class="rounded-xl border border-surface-200 dark:border-surface-800 p-3 space-y-2">
 				<div class="flex items-center justify-between">
 					<span class="text-xs text-surface-500">VM #{i + 1}</span>
 					{#if vms.length > 1}
@@ -345,12 +345,12 @@
 		{#if true}
 			{@const totals = computeTotals(vms)}
 			{@const groups = bootGroups(vms)}
-			<div class="rounded-xl bg-surface-200-800/50 px-4 py-3 space-y-2">
+			<div class="rounded-xl bg-surface-200/50 dark:bg-surface-800/50 px-4 py-3 space-y-2">
 				<div class="flex gap-4 text-sm">
-					<span class="text-surface-500">Total VMs: <strong class="text-surface-900-100">{totals.vmCount}</strong></span>
-					<span class="text-surface-500">vCPUs: <strong class="text-surface-900-100">{totals.vcpus}</strong></span>
-					<span class="text-surface-500">RAM: <strong class="text-surface-900-100">{Math.round(totals.ram_mb / 1024)} GB</strong></span>
-					<span class="text-surface-500">Disk: <strong class="text-surface-900-100">{totals.disk_gb} GB</strong></span>
+					<span class="text-surface-500">Total VMs: <strong class="text-surface-900 dark:text-surface-100">{totals.vmCount}</strong></span>
+					<span class="text-surface-500">vCPUs: <strong class="text-surface-900 dark:text-surface-100">{totals.vcpus}</strong></span>
+					<span class="text-surface-500">RAM: <strong class="text-surface-900 dark:text-surface-100">{Math.round(totals.ram_mb / 1024)} GB</strong></span>
+					<span class="text-surface-500">Disk: <strong class="text-surface-900 dark:text-surface-100">{totals.disk_gb} GB</strong></span>
 				</div>
 				{#if groups.size > 0}
 					<div class="flex flex-wrap items-center gap-2 text-xs text-surface-400">
@@ -358,7 +358,7 @@
 							{#if gi > 0}
 								<span class="text-surface-600">→</span>
 							{/if}
-							<span class="rounded bg-surface-200-800 px-2 py-0.5">
+							<span class="rounded bg-surface-200 dark:bg-surface-800 px-2 py-0.5">
 								Boot {order}: {names.join(', ')}
 							</span>
 						{/each}
@@ -371,7 +371,7 @@
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">Blueprint Management</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Blueprint Management</h1>
 		{#if authStore.isAdmin && !showCreate}
 			<button
 				class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
@@ -396,8 +396,8 @@
 
 		<!-- Create form -->
 		{#if showCreate}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100-900/50 p-5 backdrop-blur-xl">
-				<h2 class="mb-4 text-lg font-semibold text-surface-900-100">New Blueprint</h2>
+			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">New Blueprint</h2>
 				<div class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<label class="block">
@@ -407,11 +407,11 @@
 						<div class="flex items-center gap-4">
 							<label class="flex items-center gap-2">
 								<input type="checkbox" bind:checked={createAllowVMAdditions} class="accent-primary-500" />
-								<span class="text-sm text-surface-900-100">Allow VM Additions</span>
+								<span class="text-sm text-surface-900 dark:text-surface-100">Allow VM Additions</span>
 							</label>
 							<label class="flex items-center gap-2">
 								<input type="checkbox" bind:checked={createIsActive} class="accent-primary-500" />
-								<span class="text-sm text-surface-900-100">Active</span>
+								<span class="text-sm text-surface-900 dark:text-surface-100">Active</span>
 							</label>
 						</div>
 					</div>
@@ -431,7 +431,7 @@
 							{saving ? 'Creating…' : 'Create Blueprint'}
 						</button>
 						<button
-							class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+							class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 							onclick={cancelCreate}
 						>
 							Cancel
@@ -442,11 +442,11 @@
 		{/if}
 
 		<!-- Blueprints table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>
-						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
 							<th class="px-5 py-3">Name</th>
 							<th class="px-5 py-3">VMs</th>
 							<th class="px-5 py-3">Total Resources</th>
@@ -458,7 +458,7 @@
 					<tbody>
 						{#if loading}
 							{#each Array(3) as _}
-								<tr class="border-b border-surface-200-800">
+								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(6) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
@@ -483,11 +483,11 @@
 													<div class="flex items-center gap-4">
 														<label class="flex items-center gap-2">
 															<input type="checkbox" bind:checked={editAllowVMAdditions} class="accent-primary-500" />
-															<span class="text-sm text-surface-900-100">Allow VM Additions</span>
+															<span class="text-sm text-surface-900 dark:text-surface-100">Allow VM Additions</span>
 														</label>
 														<label class="flex items-center gap-2">
 															<input type="checkbox" bind:checked={editIsActive} class="accent-primary-500" />
-															<span class="text-sm text-surface-900-100">Active</span>
+															<span class="text-sm text-surface-900 dark:text-surface-100">Active</span>
 														</label>
 													</div>
 												</div>
@@ -507,7 +507,7 @@
 														{saving ? 'Saving…' : 'Save'}
 													</button>
 													<button
-														class="rounded-lg border border-surface-200-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200-800"
+														class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 														onclick={cancelEdit}
 													>
 														Cancel
@@ -521,7 +521,7 @@
 									<tr class="border-b border-error-500/20 bg-error-500/5">
 										<td colspan="6" class="px-5 py-3">
 											<div class="flex items-center justify-between">
-												<span class="text-sm text-surface-900-100">
+												<span class="text-sm text-surface-900 dark:text-surface-100">
 													Delete <strong>{bp.name}</strong>? This cannot be undone.
 												</span>
 												<div class="flex gap-1">
@@ -533,7 +533,7 @@
 														{saving ? 'Deleting…' : 'Confirm Delete'}
 													</button>
 													<button
-														class="rounded-lg border border-surface-200-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200-800"
+														class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
 														onclick={() => (deletingId = null)}
 													>
 														Cancel
@@ -544,10 +544,10 @@
 									</tr>
 								{:else}
 									<!-- Normal display row -->
-									<tr class="border-b border-surface-200-800 transition-colors hover:bg-surface-200-800/30">
+									<tr class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30">
 										<td class="px-5 py-3">
 											<div>
-												<p class="font-medium text-surface-900-100">{bp.name}</p>
+												<p class="font-medium text-surface-900 dark:text-surface-100">{bp.name}</p>
 												{#if bp.description}
 													<p class="text-xs text-surface-500 mt-0.5">{bp.description}</p>
 												{/if}
@@ -555,29 +555,29 @@
 										</td>
 										<td class="px-5 py-3">
 											<div class="space-y-1">
-												<span class="text-sm text-surface-600-400">
+												<span class="text-sm text-surface-600 dark:text-surface-400">
 													{bp.vms.reduce((a, v) => a + v.quantity, 0)} VMs
 												</span>
 												<div class="flex flex-wrap gap-1">
 													{#each bp.vms as vm}
-														<span class="rounded bg-surface-200-800 px-1.5 py-0.5 text-xs text-surface-400">
+														<span class="rounded bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 text-xs text-surface-400">
 															{vm.display_name || templateName(vm.template_id)}{vm.quantity > 1 ? ` ×${vm.quantity}` : ''}
 														</span>
 													{/each}
 												</div>
 											</div>
 										</td>
-										<td class="px-5 py-3 font-mono text-xs text-surface-600-400">
+										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400">
 											{formatBlueprintTotals(bp)}
 										</td>
 										<td class="px-5 py-3">
-											<span class="rounded-full px-2 py-0.5 text-xs font-medium {bp.allow_vm_additions ? 'bg-emerald-500/10 text-emerald-500' : 'bg-surface-200-800 text-surface-500'}">
+											<span class="rounded-full px-2 py-0.5 text-xs font-medium {bp.allow_vm_additions ? 'bg-emerald-500/10 text-emerald-500' : 'bg-surface-200 dark:bg-surface-800 text-surface-500'}">
 												{bp.allow_vm_additions ? 'Allowed' : 'Locked'}
 											</span>
 										</td>
 										<td class="px-5 py-3">
 											<button
-												class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {bp.is_active ? 'bg-success-500' : 'bg-surface-300-700'}"
+												class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {bp.is_active ? 'bg-success-500' : 'bg-surface-300 dark:bg-surface-700'}"
 												onclick={() => toggleActive(bp)}
 												disabled={saving}
 												title={bp.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'}

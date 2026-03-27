@@ -99,11 +99,11 @@
 		<div class="card p-4">
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 				<div>
-					<p class="text-sm text-surface-600-400">Status</p>
+					<p class="text-sm text-surface-600 dark:text-surface-400">Status</p>
 					<StatusBadge status={run.status} />
 				</div>
 				<div>
-					<p class="text-sm text-surface-600-400">Workflows</p>
+					<p class="text-sm text-surface-600 dark:text-surface-400">Workflows</p>
 					<p class="font-mono">
 						<span class="text-success-500">{run.passed_workflows}</span> /
 						<span class="text-error-500">{run.failed_workflows}</span> /
@@ -111,11 +111,11 @@
 					</p>
 				</div>
 				<div>
-					<p class="text-sm text-surface-600-400">Started</p>
+					<p class="text-sm text-surface-600 dark:text-surface-400">Started</p>
 					<p class="text-sm">{run.started_at ? new Date(run.started_at).toLocaleString() : 'Pending'}</p>
 				</div>
 				<div>
-					<p class="text-sm text-surface-600-400">Completed</p>
+					<p class="text-sm text-surface-600 dark:text-surface-400">Completed</p>
 					<p class="text-sm">{run.completed_at ? new Date(run.completed_at).toLocaleString() : '—'}</p>
 				</div>
 			</div>
@@ -139,12 +139,12 @@
 								<div>
 									<p class="font-medium">{result.workflow_name}</p>
 									{#if result.student_message}
-										<p class="text-sm text-surface-600-400">{result.student_message}</p>
+										<p class="text-sm text-surface-600 dark:text-surface-400">{result.student_message}</p>
 									{/if}
 								</div>
 							</div>
 							<div class="flex items-center gap-4">
-								<span class="text-sm text-surface-600-400">{formatDuration(result.duration_ms)}</span>
+								<span class="text-sm text-surface-600 dark:text-surface-400">{formatDuration(result.duration_ms)}</span>
 								<span class="text-surface-400">{expandedWorkflow === result.id ? '▼' : '▶'}</span>
 							</div>
 						</button>
@@ -166,7 +166,7 @@
 												<td class="font-mono text-sm">{action.action}</td>
 												<td>{statusIcon(action.status)} {action.status}</td>
 												<td class="text-sm">{formatDuration(action.duration_ms)}</td>
-												<td class="text-sm text-surface-600-400">{action.message || '—'}</td>
+												<td class="text-sm text-surface-600 dark:text-surface-400">{action.message || '—'}</td>
 											</tr>
 										{/each}
 									</tbody>

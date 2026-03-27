@@ -32,7 +32,7 @@
 
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-surface-900-100">My Labs</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">My Labs</h1>
 		<a
 			href="/deploy"
 			class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"

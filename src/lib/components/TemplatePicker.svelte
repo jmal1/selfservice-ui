@@ -35,13 +35,13 @@
 			class="rounded-2xl border p-5 transition-colors
 				{qty > 0
 				? 'border-primary-500/50 bg-primary-500/5'
-				: 'border-surface-200-800 bg-surface-100-900/50'}"
+				: 'border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50'}"
 		>
 			<!-- Template info -->
 			<div class="mb-3 flex items-start gap-3">
 				<span class="text-2xl">{osIcon(template.os_type)}</span>
 				<div class="min-w-0 flex-1">
-					<h3 class="font-semibold text-surface-900-100">{template.name}</h3>
+					<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
 					{#if template.description}
 						<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
 					{/if}
@@ -50,9 +50,9 @@
 
 			<!-- Specs -->
 			<div class="mb-4 flex flex-wrap gap-2 text-xs text-surface-500">
-				<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
-				<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
-				<span class="rounded-md bg-surface-200-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
+				<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
+				<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
+				<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
 			</div>
 
 			<!-- Quantity selector -->
@@ -60,7 +60,7 @@
 				<label class="text-sm text-surface-500" for="qty-{template.id}">Quantity</label>
 				<div class="flex items-center gap-1">
 					<button
-						class="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800 disabled:opacity-30"
+						class="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800 disabled:opacity-30"
 						disabled={qty === 0}
 						onclick={() => updateQuantity(template.id, -1)}
 						aria-label="Decrease quantity"
@@ -70,10 +70,10 @@
 						type="text"
 						readonly
 						value={qty}
-						class="h-8 w-10 rounded-lg border border-surface-200-800 bg-transparent text-center text-sm font-semibold text-surface-900-100"
+						class="h-8 w-10 rounded-lg border border-surface-200 dark:border-surface-800 bg-transparent text-center text-sm font-semibold text-surface-900 dark:text-surface-100"
 					/>
 					<button
-						class="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800 disabled:opacity-30"
+						class="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800 disabled:opacity-30"
 						disabled={qty >= 5}
 						onclick={() => updateQuantity(template.id, 1)}
 						aria-label="Increase quantity"

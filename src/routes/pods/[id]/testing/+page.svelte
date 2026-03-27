@@ -70,7 +70,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold">Assessments</h1>
-			<p class="text-surface-600-400">Run assessments against your pod</p>
+			<p class="text-surface-600 dark:text-surface-400">Run assessments against your pod</p>
 		</div>
 		<a href="/pods/{podId}" class="btn btn-secondary">← Back to Pod</a>
 	</div>
@@ -85,7 +85,7 @@
 			<h2 class="text-lg font-semibold">Available Playlists</h2>
 			{#if (dashboard.playlists ?? []).length === 0}
 				<div class="card p-6 text-center">
-					<p class="text-surface-600-400">No assessments assigned to this pod's template.</p>
+					<p class="text-surface-600 dark:text-surface-400">No assessments assigned to this pod's template.</p>
 				</div>
 			{:else}
 				<div class="grid gap-4">
@@ -94,7 +94,7 @@
 							<div class="flex items-center justify-between">
 								<div>
 									<h3 class="font-semibold">{playlist.name}</h3>
-									<p class="text-sm text-surface-600-400">{playlist.description || 'No description'}</p>
+									<p class="text-sm text-surface-600 dark:text-surface-400">{playlist.description || 'No description'}</p>
 								</div>
 								<button
 									class="btn btn-primary"
@@ -121,7 +121,7 @@
 				<a href="/pods/{podId}/testing/runs" class="text-sm text-primary-500 hover:underline">View all →</a>
 			</div>
 			{#if (dashboard.recent_runs ?? []).length === 0}
-				<p class="text-surface-600-400">No runs yet.</p>
+				<p class="text-surface-600 dark:text-surface-400">No runs yet.</p>
 			{:else}
 				<div class="table-container">
 					<table class="table table-hover">
@@ -143,7 +143,7 @@
 										{#if run.failed_workflows > 0}
 											/ <span class="text-error-500">{run.failed_workflows} failed</span>
 										{/if}
-										<span class="text-surface-600-400">/ {run.total_workflows} total</span>
+										<span class="text-surface-600 dark:text-surface-400">/ {run.total_workflows} total</span>
 									</td>
 									<td class="text-sm">{run.started_at ? formatTime(run.started_at) : '—'}</td>
 									<td class="text-sm">{formatDuration(run.started_at, run.completed_at)}</td>

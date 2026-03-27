@@ -107,7 +107,7 @@
 	}
 </script>
 
-<div class="rounded-xl border border-surface-200-800/50 bg-surface-50-950/50 p-4">
+<div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
 	<div class="mb-3 flex items-center justify-between">
 		<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">Snapshots</span>
 		{#if canCreate}
@@ -136,13 +136,13 @@
 				bind:value={newName}
 				placeholder="Snapshot name"
 				maxlength={64}
-				class="mb-2 w-full rounded-lg border border-surface-200-800 bg-surface-100-900 px-3 py-1.5 text-sm text-surface-900-100 placeholder:text-surface-500"
+				class="mb-2 w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-500"
 			/>
 			<input
 				bind:value={newDescription}
 				placeholder="Description (optional)"
 				maxlength={256}
-				class="mb-2 w-full rounded-lg border border-surface-200-800 bg-surface-100-900 px-3 py-1.5 text-sm text-surface-900-100 placeholder:text-surface-500"
+				class="mb-2 w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-500"
 			/>
 			<div class="flex gap-2">
 				<button
@@ -156,7 +156,7 @@
 					onclick={() => {
 						showCreateForm = false;
 					}}
-					class="rounded-lg border border-surface-200-800 px-3 py-1 text-xs text-surface-500"
+					class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs text-surface-500"
 				>
 					Cancel
 				</button>
@@ -168,9 +168,9 @@
 		<p class="text-xs text-surface-500">Loading snapshots…</p>
 	{:else}
 		{#if initialSnap}
-			<div class="mb-2 flex items-center justify-between rounded-lg bg-surface-200-800/30 px-3 py-2">
+			<div class="mb-2 flex items-center justify-between rounded-lg bg-surface-200 dark:bg-surface-800/30 px-3 py-2">
 				<div>
-					<span class="text-sm font-medium text-surface-900-100">🔄 Restore to Original</span>
+					<span class="text-sm font-medium text-surface-900 dark:text-surface-100">🔄 Restore to Original</span>
 					<span class="ml-2 text-xs text-surface-400"
 						>Created {new Date(initialSnap.created_at).toLocaleDateString()}</span
 					>
@@ -188,7 +188,7 @@
 							onclick={() => {
 								confirmRevert = null;
 							}}
-							class="rounded-lg border border-surface-200-800 px-2 py-1 text-xs text-surface-500"
+							class="rounded-lg border border-surface-200 dark:border-surface-800 px-2 py-1 text-xs text-surface-500"
 							>Cancel</button
 						>
 					</div>
@@ -212,10 +212,10 @@
 		{:else}
 			{#each userSnaps as snap (snap.id)}
 				<div
-					class="mb-1 flex items-center justify-between rounded-lg bg-surface-200-800/20 px-3 py-2"
+					class="mb-1 flex items-center justify-between rounded-lg bg-surface-200 dark:bg-surface-800/20 px-3 py-2"
 				>
 					<div>
-						<span class="text-sm font-medium text-surface-900-100">📸 {snap.name}</span>
+						<span class="text-sm font-medium text-surface-900 dark:text-surface-100">📸 {snap.name}</span>
 						{#if snap.description}
 							<span class="ml-2 text-xs text-surface-400">{snap.description}</span>
 						{/if}
@@ -236,7 +236,7 @@
 								onclick={() => {
 									confirmRevert = null;
 								}}
-								class="rounded-lg border border-surface-200-800 px-2 py-1 text-xs text-surface-500"
+								class="rounded-lg border border-surface-200 dark:border-surface-800 px-2 py-1 text-xs text-surface-500"
 								>Cancel</button
 							>
 						{:else if confirmDelete === snap.id}
@@ -251,7 +251,7 @@
 								onclick={() => {
 									confirmDelete = null;
 								}}
-								class="rounded-lg border border-surface-200-800 px-2 py-1 text-xs text-surface-500"
+								class="rounded-lg border border-surface-200 dark:border-surface-800 px-2 py-1 text-xs text-surface-500"
 								>Cancel</button
 							>
 						{:else}
