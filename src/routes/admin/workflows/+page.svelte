@@ -13,6 +13,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import ContextBadge from '$lib/components/ContextBadge.svelte';
 	import type { Workflow, Action } from '$lib/types';
 
 	// ── List mode state ──
@@ -89,27 +90,31 @@
 	const step1Valid = $derived(wfName.trim().length > 0 && wfSlug.trim().length > 0);
 	const step2Valid = $derived(selectedActions.length > 0);
 
+	// Validate that all input context keys are provided by a previous action's output
+	const unsatisfiedInputs = $derived.by(() => {
+		const issues: Array<{ step: number; actionName: string; key: string }> = [];
+		const available = new Set<string>();
+		selectedActions.forEach((action, i) => {
+			for (const ctx of action.input_context ?? []) {
+				if (!available.has(ctx.key)) {
+					issues.push({ step: i + 1, actionName: action.name, key: ctx.key });
+				}
+			}
+			for (const ctx of action.output_context ?? []) {
+				available.add(ctx.key);
+			}
+		});
+		return issues;
+	});
+
+	const hasContextErrors = $derived(unsatisfiedInputs.length > 0);
+
 	// ── Helpers ──
 	function slugify(name: string): string {
 		return name
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, '-')
 			.replace(/^-|-$/g, '');
-	}
-
-	function contextColor(key: string): string {
-		let hash = 0;
-		for (let i = 0; i < key.length; i++) hash = key.charCodeAt(i) + ((hash << 5) - hash);
-		const colors = [
-			'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-			'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-			'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-			'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-			'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
-			'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-			'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-		];
-		return colors[Math.abs(hash) % colors.length];
 	}
 
 	// ── API calls ──
@@ -369,6 +374,14 @@
 															<p class="text-sm">{expandedWf.timeout_seconds}s</p>
 														</div>
 														{#if expandedWf.actions && expandedWf.actions.length > 0}
+															{@const detailContextFlow = (() => {
+																const accumulated = new Set<string>();
+																return expandedWf.actions.map((a) => {
+																	const available = new Set(accumulated);
+																	for (const ctx of a.output_context ?? []) accumulated.add(ctx.key);
+																	return available;
+																});
+															})()}
 															<div>
 																<p class="mb-2 text-xs font-semibold uppercase text-surface-500">
 																	Actions ({expandedWf.actions.length})
@@ -379,10 +392,20 @@
 																			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-xs font-bold text-primary-600 dark:text-primary-400">
 																				{i + 1}
 																			</span>
-																			<div>
+																			<div class="min-w-0 flex-1">
 																				<p class="text-sm font-medium text-primary-600 dark:text-primary-400">{action.name}</p>
 																				{#if action.description}
 																					<p class="text-xs text-surface-500">{action.description}</p>
+																				{/if}
+																				{#if (action.input_context ?? []).length > 0 || (action.output_context ?? []).length > 0}
+																					<div class="mt-1.5 flex flex-wrap gap-1">
+																						{#each action.input_context ?? [] as ctx}
+																							<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={detailContextFlow[i].has(ctx.key)} />
+																						{/each}
+																						{#each action.output_context ?? [] as ctx}
+																							<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
+																						{/each}
+																					</div>
 																				{/if}
 																				{#if action.student_fail_hint}
 																					<p class="mt-1 text-xs text-warning-600 dark:text-warning-400">💡 {action.student_fail_hint}</p>
@@ -560,15 +583,13 @@
 													<p class="mt-0.5 text-xs text-surface-600 dark:text-surface-400 line-clamp-2">
 														{action.description}
 													</p>
-													{#if (action.output_context ?? []).length > 0}
+													{#if (action.input_context ?? []).length > 0 || (action.output_context ?? []).length > 0}
 														<div class="mt-1.5 flex flex-wrap gap-1">
-															{#each action.output_context as ctx}
-																<span
-																	class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {contextColor(ctx.key)}"
-																	title="Outputs: {ctx.description}"
-																>
-																	↑ {ctx.key}
-																</span>
+															{#each action.input_context ?? [] as ctx}
+																<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} />
+															{/each}
+															{#each action.output_context ?? [] as ctx}
+																<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
 															{/each}
 														</div>
 													{/if}
@@ -660,23 +681,10 @@
 									{#if (action.input_context ?? []).length > 0 || (action.output_context ?? []).length > 0}
 										<div class="mt-2 flex flex-wrap gap-1.5 border-t border-surface-100 pt-2 dark:border-surface-700">
 											{#each action.input_context ?? [] as ctx}
-												{@const isSatisfied = flow?.available.has(ctx.key)}
-												<span
-													class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {isSatisfied
-														? contextColor(ctx.key)
-														: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}"
-													title="Reads: {ctx.description}{isSatisfied ? '' : ' ⚠ not yet provided'}"
-												>
-													↓ {ctx.key}
-												</span>
+												<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} />
 											{/each}
 											{#each action.output_context ?? [] as ctx}
-												<span
-													class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {contextColor(ctx.key)}"
-													title="Writes: {ctx.description}"
-												>
-													↑ {ctx.key}
-												</span>
+												<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
 											{/each}
 										</div>
 									{/if}
@@ -696,13 +704,26 @@
 									</p>
 									<div class="flex flex-wrap gap-1.5">
 										{#each allOutputKeys as key}
-											<span
-												class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium {contextColor(key)}"
-											>
-												{key}
-											</span>
+											<ContextBadge ctxKey={key} direction="out" />
 										{/each}
 									</div>
+								</div>
+							{/if}
+
+							<!-- Context validation warning -->
+							{#if hasContextErrors}
+								<div class="mt-3 rounded-lg border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+									<p class="text-xs font-semibold text-red-700 dark:text-red-400">⚠ Unsatisfied Context Inputs</p>
+									<ul class="mt-1 space-y-0.5">
+										{#each unsatisfiedInputs as issue}
+											<li class="text-xs text-red-600 dark:text-red-400">
+												Step {issue.step} ({issue.actionName}): <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">{issue.key}</code> is not provided by any previous action
+											</li>
+										{/each}
+									</ul>
+									<p class="mt-2 text-xs text-red-500 dark:text-red-400/80">
+										Workflows with unsatisfied inputs will be saved as <strong>draft</strong> and cannot be activated until resolved.
+									</p>
 								</div>
 							{/if}
 						{/if}
@@ -787,21 +808,10 @@
 									<p class="text-xs text-surface-600 dark:text-surface-400">{action.description}</p>
 									<div class="mt-1.5 flex flex-wrap gap-1">
 										{#each action.input_context ?? [] as ctx}
-											{@const satisfied = flow?.available.has(ctx.key)}
-											<span
-												class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {satisfied
-													? contextColor(ctx.key)
-													: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}"
-											>
-												↓ {ctx.key}
-											</span>
+											<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} />
 										{/each}
 										{#each action.output_context ?? [] as ctx}
-											<span
-												class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {contextColor(ctx.key)}"
-											>
-												↑ {ctx.key}
-											</span>
+											<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
 										{/each}
 									</div>
 								</div>
@@ -851,6 +861,23 @@
 					{/if}
 				</div>
 
+				<!-- Context validation warning on review -->
+				{#if hasContextErrors}
+					<div class="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+						<p class="text-sm font-semibold text-red-700 dark:text-red-400">⚠ Context Validation Errors</p>
+						<ul class="mt-2 space-y-1">
+							{#each unsatisfiedInputs as issue}
+								<li class="text-sm text-red-600 dark:text-red-400">
+									<strong>Step {issue.step}</strong> ({issue.actionName}): input <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">{issue.key}</code> is not output by any previous action
+								</li>
+							{/each}
+						</ul>
+						<p class="mt-2 text-xs text-red-500 dark:text-red-400/80">
+							You can still save as a draft, but this workflow cannot be submitted for review until all inputs are satisfied.
+						</p>
+					</div>
+				{/if}
+
 				<div class="mt-4 rounded-lg bg-surface-100 p-3 text-sm dark:bg-surface-800">
 					<p class="font-medium">Approval Lifecycle</p>
 					<p class="mt-1 text-surface-500">
@@ -859,11 +886,16 @@
 					</p>
 				</div>
 
-				<div class="flex justify-between">
+				<div class="flex items-center justify-between">
 					<button class="btn btn-secondary" onclick={() => (step = 2)}>← Back</button>
-					<button class="btn btn-primary" disabled={saving} onclick={createWorkflow}>
-						{saving ? 'Creating...' : 'Create Workflow'}
-					</button>
+					<div class="flex items-center gap-3">
+						{#if hasContextErrors}
+							<span class="text-xs text-warning-600 dark:text-warning-400">⚠ Will save as draft</span>
+						{/if}
+						<button class="btn {hasContextErrors ? 'btn-warning' : 'btn-primary'}" disabled={saving} onclick={createWorkflow}>
+							{saving ? 'Creating...' : hasContextErrors ? 'Save as Draft' : 'Create Workflow'}
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
