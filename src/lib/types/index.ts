@@ -233,6 +233,7 @@ export interface Workflow {
 	script?: string;
 	setup_script?: string;
 	timeout_seconds: number;
+	metadata?: Record<string, unknown>;
 	status: WorkflowStatus;
 	creation_mode: string;
 	visible_to_students: boolean;

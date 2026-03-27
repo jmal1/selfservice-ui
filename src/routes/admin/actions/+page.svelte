@@ -237,7 +237,17 @@
 	onMount(async () => {
 		await loadActions();
 		const highlight = page.url.searchParams.get('highlight');
-		if (highlight) expandedId = highlight;
+		if (highlight) {
+			// Try matching by ID first, then by slug (workflow actions have different IDs than library actions)
+			const match = actions.find(a => a.id === highlight || a.slug === highlight);
+			if (match) {
+				expandedId = match.id;
+				// Scroll to the expanded action after DOM updates
+				setTimeout(() => {
+					document.getElementById(`action-${match.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				}, 100);
+			}
+		}
 	});
 </script>
 
@@ -444,7 +454,7 @@
 				<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-surface-500">{category}</h2>
 				<div class="grid gap-3">
 					{#each catActions as action}
-						<div class="card overflow-hidden">
+						<div class="card overflow-hidden" id="action-{action.id}">
 							<button
 								class="flex w-full items-center justify-between p-4 text-left"
 								onclick={() => expandedId = expandedId === action.id ? '' : action.id}

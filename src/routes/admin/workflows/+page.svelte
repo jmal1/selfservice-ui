@@ -4,6 +4,7 @@
 		adminListWorkflows,
 		adminGetWorkflow,
 		adminCreateWorkflow,
+		adminUpdateWorkflow,
 		adminSubmitWorkflow,
 		adminApproveWorkflow,
 		adminActivateWorkflow,
@@ -24,8 +25,9 @@
 	let loadingDetail = $state(false);
 
 	// ── Create/edit mode state ──
-	type Mode = 'list' | 'create';
+	type Mode = 'list' | 'create' | 'edit';
 	let mode: Mode = $state('list');
+	let editingWorkflowId = $state('');
 	let step = $state(1);
 	let saving = $state(false);
 
@@ -37,10 +39,15 @@
 	let wfExecMode = $state('kali_runner');
 	let wfTimeout = $state(300);
 
+	// Workflow variables — seed the context before the first action
+	interface WorkflowVar { key: string; value: string; description: string; }
+	let wfVariables: WorkflowVar[] = $state([]);
+
 	// Step 2: actions
 	let libraryActions: Action[] = $state([]);
 	let loadingActions = $state(false);
 	let selectedActions: Action[] = $state([]);
+	let editingActionIndex = $state<number | null>(null);
 
 	// Step 3: review
 	let useScriptMode = $state(false);
@@ -57,6 +64,15 @@
 
 	const generatedScript = $derived.by(() => {
 		const lines = ['#!/bin/bash', 'source /opt/crucible/lib/actions.sh', ''];
+		// Seed workflow variables into context
+		const varsWithValues = wfVariables.filter(v => v.key.trim());
+		if (varsWithValues.length > 0) {
+			lines.push('# ── Workflow Variables ──');
+			varsWithValues.forEach(v => {
+				lines.push(`ctx_set "${v.key}" "${v.value}"`);
+			});
+			lines.push('');
+		}
 		selectedActions.forEach((action, i) => {
 			lines.push(`# Step ${i + 1}: ${action.name}`);
 			const identifier = action.slug || action.action_type;
@@ -70,9 +86,10 @@
 	});
 
 	// Context accumulation: at each step, what context keys are available
+	// (includes workflow variables as initial context)
 	const contextFlow = $derived.by(() => {
 		const flow: Array<{ step: number; available: Set<string>; reads: string[]; writes: string[] }> = [];
-		const accumulated = new Set<string>();
+		const accumulated = new Set<string>(wfVariables.filter(v => v.key.trim()).map(v => v.key));
 		selectedActions.forEach((action, i) => {
 			const reads = (action.input_context ?? []).map((c) => c.key);
 			const writes = (action.output_context ?? []).map((c) => c.key);
@@ -90,10 +107,10 @@
 	const step1Valid = $derived(wfName.trim().length > 0 && wfSlug.trim().length > 0);
 	const step2Valid = $derived(selectedActions.length > 0);
 
-	// Validate that all input context keys are provided by a previous action's output
+	// Validate that all input context keys are provided by a previous action's output or workflow variables
 	const unsatisfiedInputs = $derived.by(() => {
 		const issues: Array<{ step: number; actionName: string; key: string }> = [];
-		const available = new Set<string>();
+		const available = new Set<string>(wfVariables.filter(v => v.key.trim()).map(v => v.key));
 		selectedActions.forEach((action, i) => {
 			for (const ctx of action.input_context ?? []) {
 				if (!available.has(ctx.key)) {
@@ -191,13 +208,16 @@
 	function enterCreateMode() {
 		mode = 'create';
 		step = 1;
+		editingWorkflowId = '';
 		wfName = '';
 		wfSlug = '';
 		wfDescription = '';
 		wfCategory = 'general';
 		wfExecMode = 'kali_runner';
 		wfTimeout = 300;
+		wfVariables = [];
 		selectedActions = [];
+		editingActionIndex = null;
 		useScriptMode = false;
 		customScript = '';
 		loadLibraryActions();
@@ -206,6 +226,36 @@
 	function cancelCreate() {
 		mode = 'list';
 		step = 1;
+		editingWorkflowId = '';
+	}
+
+	async function enterEditMode(wf: Workflow) {
+		let fullWf = wf;
+		if (!wf.actions || wf.actions.length === 0) {
+			try {
+				fullWf = await adminGetWorkflow(wf.id);
+			} catch {
+				toastStore.error('Failed to load workflow details');
+				return;
+			}
+		}
+		mode = 'edit';
+		editingWorkflowId = fullWf.id;
+		step = 1;
+		wfName = fullWf.name;
+		wfSlug = fullWf.slug;
+		wfDescription = fullWf.description || '';
+		wfCategory = fullWf.category || 'general';
+		wfExecMode = fullWf.execution_mode || 'kali_runner';
+		wfTimeout = fullWf.timeout_seconds || 300;
+		wfVariables = ((fullWf.metadata as any)?.variables as WorkflowVar[]) || [];
+		selectedActions = (fullWf.actions || []).map((a, i) => ({ ...a, execution_order: i + 1 }));
+		editingActionIndex = null;
+		useScriptMode = fullWf.creation_mode === 'script';
+		customScript = fullWf.script || '';
+		expandedWfId = '';
+		expandedWf = null;
+		await loadLibraryActions();
 	}
 
 	function goToStep(target: number) {
@@ -233,7 +283,7 @@
 		selectedActions = copy;
 	}
 
-	async function createWorkflow() {
+	async function saveWorkflow() {
 		if (!step1Valid || !step2Valid) return;
 		saving = true;
 		try {
@@ -255,7 +305,7 @@
 				penalty: a.penalty || 0,
 				is_library: false
 			}));
-			await adminCreateWorkflow({
+			const payload = {
 				name: wfName,
 				slug: wfSlug,
 				description: wfDescription,
@@ -264,13 +314,21 @@
 				script,
 				timeout_seconds: wfTimeout,
 				creation_mode: useScriptMode ? 'script' : 'visual',
+				metadata: { variables: wfVariables.filter(v => v.key.trim()) },
 				actions
-			});
-			toastStore.success('Workflow created');
+			};
+			if (mode === 'edit' && editingWorkflowId) {
+				await adminUpdateWorkflow(editingWorkflowId, payload);
+				toastStore.success('Workflow updated');
+			} else {
+				await adminCreateWorkflow(payload);
+				toastStore.success('Workflow created');
+			}
 			mode = 'list';
+			editingWorkflowId = '';
 			await loadWorkflows();
 		} catch (e: any) {
-			toastStore.error(e.message || 'Failed to create workflow');
+			toastStore.error(e.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} workflow`);
 		} finally {
 			saving = false;
 		}
@@ -337,6 +395,9 @@
 										<button class="btn btn-sm btn-secondary" onclick={(e) => { e.stopPropagation(); toggleDetail(wf.id); }}>
 											{expandedWfId === wf.id ? 'Hide' : 'View'}
 										</button>
+										<button class="btn btn-sm btn-ghost" onclick={(e) => { e.stopPropagation(); enterEditMode(wf); }}>
+											Edit
+										</button>
 										{#if wf.status === 'draft'}
 											<button class="btn btn-sm btn-ghost" onclick={(e) => { e.stopPropagation(); submit(wf.id); }}>
 												Submit
@@ -388,7 +449,7 @@
 																</p>
 																<div class="space-y-2">
 																	{#each expandedWf.actions as action, i}
-																		<a href="/admin/actions?highlight={action.id}" class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 transition-colors hover:border-primary-500/50 hover:bg-primary-500/5 dark:border-surface-700 dark:hover:border-primary-500/50">
+																		<a href="/admin/actions?highlight={action.slug || action.id}" class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 transition-colors hover:border-primary-500/50 hover:bg-primary-500/5 dark:border-surface-700 dark:hover:border-primary-500/50">
 																			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-xs font-bold text-primary-600 dark:text-primary-400">
 																				{i + 1}
 																			</span>
@@ -442,12 +503,12 @@
 		{/if}
 	</div>
 
-<!-- ━━━ CREATE MODE ━━━ -->
+<!-- ━━━ CREATE / EDIT MODE ━━━ -->
 {:else}
 	<div class="mx-auto max-w-6xl space-y-6 p-6">
 		<!-- Header -->
 		<div class="flex items-center justify-between">
-			<h1 class="text-2xl font-bold">New Workflow</h1>
+			<h1 class="text-2xl font-bold">{mode === 'edit' ? 'Edit Workflow' : 'New Workflow'}</h1>
 			<button class="btn btn-secondary" onclick={cancelCreate}>✕ Cancel</button>
 		</div>
 
@@ -545,6 +606,61 @@
 						<input class="input" type="number" bind:value={wfTimeout} min="10" max="3600" />
 					</label>
 				</div>
+
+				<!-- Workflow Variables -->
+				<div class="space-y-3">
+					<div class="flex items-center justify-between">
+						<div>
+							<h3 class="text-sm font-semibold">Workflow Variables</h3>
+							<p class="text-xs text-surface-500">
+								Initial values injected into context before the first action runs. Use these for target URLs, usernames, ports, etc. Actions read them via <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get</code>.
+							</p>
+						</div>
+						<button
+							class="btn btn-sm btn-ghost"
+							onclick={() => wfVariables = [...wfVariables, { key: '', value: '', description: '' }]}
+						>
+							+ Add Variable
+						</button>
+					</div>
+					{#if wfVariables.length > 0}
+						<div class="space-y-2">
+							{#each wfVariables as variable, i}
+								<div class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+									<div class="grid flex-1 grid-cols-3 gap-2">
+										<input
+											class="input text-sm"
+											type="text"
+											bind:value={variable.key}
+											placeholder="target_url"
+										/>
+										<input
+											class="input text-sm"
+											type="text"
+											bind:value={variable.value}
+											placeholder="/login"
+										/>
+										<input
+											class="input text-sm"
+											type="text"
+											bind:value={variable.description}
+											placeholder="URL path to check"
+										/>
+									</div>
+									<button
+										class="rounded p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+										onclick={() => wfVariables = wfVariables.filter((_, j) => j !== i)}
+										title="Remove variable"
+									>
+										✕
+									</button>
+								</div>
+							{/each}
+							<p class="text-[10px] text-surface-400">Key · Default Value · Description</p>
+						</div>
+					{/if}
+				</div>
+
 				<div class="flex justify-end">
 					<button class="btn btn-primary" disabled={!step1Valid} onclick={() => (step = 2)}>
 						Next →
@@ -637,7 +753,7 @@
 								{@const flow = contextFlow[i]}
 								<div class="rounded-lg border border-surface-200 p-3 dark:border-surface-700">
 									<div class="flex items-start justify-between gap-2">
-										<div class="flex items-start gap-3">
+										<button class="flex items-start gap-3 text-left" onclick={() => editingActionIndex = editingActionIndex === i ? null : i}>
 											<span
 												class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
 											>
@@ -647,9 +763,12 @@
 												<p class="text-sm font-medium">{action.name}</p>
 												<p class="mt-0.5 text-xs text-surface-600 dark:text-surface-400 line-clamp-1">
 													{action.description}
+													{#if Object.keys(action.params || {}).length > 0}
+														<span class="ml-1 text-primary-500">· {Object.keys(action.params).length} params</span>
+													{/if}
 												</p>
 											</div>
-										</div>
+										</button>
 										<div class="flex shrink-0 items-center gap-1">
 											<button
 												class="rounded p-1 text-surface-400 transition-colors hover:bg-surface-100 hover:text-surface-700 disabled:opacity-30 dark:hover:bg-surface-700"
@@ -676,6 +795,62 @@
 											</button>
 										</div>
 									</div>
+
+									<!-- Per-action parameter overrides -->
+									{#if editingActionIndex === i}
+										<div class="mt-3 space-y-2 border-t border-surface-100 pt-3 dark:border-surface-700">
+											<p class="text-xs font-semibold text-surface-500">Parameter Overrides</p>
+											{#each Object.entries(action.params || {}) as [key, val], pi}
+												<div class="flex items-center gap-2">
+													<input
+														class="input text-xs"
+														type="text"
+														value={key}
+														placeholder="key"
+														onchange={(e) => {
+															const newParams = { ...action.params };
+															const oldVal = newParams[key];
+															delete newParams[key];
+															newParams[(e.target as HTMLInputElement).value] = oldVal;
+															selectedActions[i] = { ...action, params: newParams };
+															selectedActions = [...selectedActions];
+														}}
+													/>
+													<input
+														class="input text-xs"
+														type="text"
+														value={String(val ?? '')}
+														placeholder="value"
+														onchange={(e) => {
+															const newParams = { ...action.params };
+															newParams[key] = (e.target as HTMLInputElement).value;
+															selectedActions[i] = { ...action, params: newParams };
+															selectedActions = [...selectedActions];
+														}}
+													/>
+													<button
+														class="rounded p-1 text-red-400 hover:text-red-600"
+														onclick={() => {
+															const newParams = { ...action.params };
+															delete newParams[key];
+															selectedActions[i] = { ...action, params: newParams };
+															selectedActions = [...selectedActions];
+														}}
+													>✕</button>
+												</div>
+											{/each}
+											<button
+												class="btn btn-sm btn-ghost text-xs"
+												onclick={() => {
+													const newParams = { ...action.params, '': '' };
+													selectedActions[i] = { ...action, params: newParams };
+													selectedActions = [...selectedActions];
+												}}
+											>
+												+ Add Parameter
+											</button>
+										</div>
+									{/if}
 
 									<!-- Context tags -->
 									{#if (action.input_context ?? []).length > 0 || (action.output_context ?? []).length > 0}
@@ -892,8 +1067,8 @@
 						{#if hasContextErrors}
 							<span class="text-xs text-warning-600 dark:text-warning-400">⚠ Will save as draft</span>
 						{/if}
-						<button class="btn {hasContextErrors ? 'btn-warning' : 'btn-primary'}" disabled={saving} onclick={createWorkflow}>
-							{saving ? 'Creating...' : hasContextErrors ? 'Save as Draft' : 'Create Workflow'}
+						<button class="btn {hasContextErrors ? 'btn-warning' : 'btn-primary'}" disabled={saving} onclick={saveWorkflow}>
+							{saving ? 'Saving...' : hasContextErrors ? 'Save as Draft' : mode === 'edit' ? 'Update Workflow' : 'Create Workflow'}
 						</button>
 					</div>
 				</div>
