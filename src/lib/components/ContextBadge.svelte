@@ -3,12 +3,14 @@
 		ctxKey,
 		direction,
 		description = '',
-		satisfied = true
+		satisfied = true,
+		runtime = false
 	}: {
 		ctxKey: string;
 		direction: 'in' | 'out';
 		description?: string;
 		satisfied?: boolean;
+		runtime?: boolean;
 	} = $props();
 
 	function colorForKey(key: string): string {
@@ -27,10 +29,19 @@
 	}
 
 	const unsatisfiedClass = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+	const runtimeClass = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
 	const arrow = $derived(direction === 'in' ? '↓' : '↑');
-	const colorClass = $derived(direction === 'in' && !satisfied ? unsatisfiedClass : colorForKey(ctxKey));
+	const colorClass = $derived(
+		direction === 'in' && !satisfied ? unsatisfiedClass
+		: direction === 'in' && runtime ? runtimeClass
+		: colorForKey(ctxKey)
+	);
 	const titlePrefix = $derived(direction === 'in' ? 'Reads' : 'Writes');
-	const titleSuffix = $derived(direction === 'in' && !satisfied ? ' ⚠ not provided by a previous action' : '');
+	const titleSuffix = $derived(
+		direction === 'in' && !satisfied ? ' ⚠ not provided by a previous action'
+		: runtime ? ' (runtime-provided by Crucible)'
+		: ''
+	);
 	const title = $derived(`${titlePrefix}: ${description}${titleSuffix}`);
 </script>
 
@@ -38,7 +49,7 @@
 	class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {colorClass}"
 	{title}
 >
-	{arrow} {ctxKey}
+	{#if runtime}⚡{/if}{arrow} {ctxKey}
 	{#if direction === 'in' && !satisfied}
 		<span class="ml-0.5">⚠</span>
 	{/if}

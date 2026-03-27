@@ -64,6 +64,21 @@
 
 	const generatedScript = $derived.by(() => {
 		const lines = ['#!/bin/bash', 'source /opt/crucible/lib/actions.sh', ''];
+		// Map runtime env vars into context keys used by actions
+		const usedRuntimeKeys = new Set<string>();
+		selectedActions.forEach(a => {
+			for (const ctx of a.input_context ?? []) {
+				if (runtimeKeys.has(ctx.key)) usedRuntimeKeys.add(ctx.key);
+			}
+		});
+		if (usedRuntimeKeys.size > 0) {
+			lines.push('# ── Runtime Context (auto-mapped from Crucible environment) ──');
+			usedRuntimeKeys.forEach(key => {
+				const rt = RUNTIME_CONTEXT[key];
+				lines.push(`ctx_set "${key}" "${rt.envVar}"`);
+			});
+			lines.push('');
+		}
 		// Seed workflow variables into context
 		const varsWithValues = wfVariables.filter(v => v.key.trim());
 		if (varsWithValues.length > 0) {
@@ -85,11 +100,30 @@
 		return lines.join('\n');
 	});
 
+	// Runtime-provided context keys — always available from the Crucible runner environment
+	const RUNTIME_CONTEXT: Record<string, { envVar: string; description: string }> = {
+		host:     { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
+		ip:       { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
+		target_ip: { envVar: '$CRUCIBLE_TARGET_IP',      description: 'Target VM IP address' },
+		user:     { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
+		username: { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
+		password: { envVar: '$CRUCIBLE_TARGET_PASSWORD',  description: 'VM login password' },
+		os:       { envVar: '$CRUCIBLE_TARGET_OS',        description: 'Target OS (linux/windows)' },
+		target_os: { envVar: '$CRUCIBLE_TARGET_OS',       description: 'Target OS (linux/windows)' },
+		subnet:   { envVar: '$CRUCIBLE_POD_SUBNET',       description: 'Pod network subnet' },
+		pod_index: { envVar: '$CRUCIBLE_POD_INDEX',       description: 'Pod index number' },
+		port:     { envVar: '22',                         description: 'Default SSH port (override in workflow variables if different)' },
+	};
+	const runtimeKeys = new Set(Object.keys(RUNTIME_CONTEXT));
+
 	// Context accumulation: at each step, what context keys are available
-	// (includes workflow variables as initial context)
+	// (includes runtime context + workflow variables)
 	const contextFlow = $derived.by(() => {
 		const flow: Array<{ step: number; available: Set<string>; reads: string[]; writes: string[] }> = [];
-		const accumulated = new Set<string>(wfVariables.filter(v => v.key.trim()).map(v => v.key));
+		const accumulated = new Set<string>([
+			...runtimeKeys,
+			...wfVariables.filter(v => v.key.trim()).map(v => v.key)
+		]);
 		selectedActions.forEach((action, i) => {
 			const reads = (action.input_context ?? []).map((c) => c.key);
 			const writes = (action.output_context ?? []).map((c) => c.key);
@@ -107,10 +141,13 @@
 	const step1Valid = $derived(wfName.trim().length > 0 && wfSlug.trim().length > 0);
 	const step2Valid = $derived(selectedActions.length > 0);
 
-	// Validate that all input context keys are provided by a previous action's output or workflow variables
+	// Validate that all input context keys are provided by runtime, workflow variables, or a previous action
 	const unsatisfiedInputs = $derived.by(() => {
 		const issues: Array<{ step: number; actionName: string; key: string }> = [];
-		const available = new Set<string>(wfVariables.filter(v => v.key.trim()).map(v => v.key));
+		const available = new Set<string>([
+			...runtimeKeys,
+			...wfVariables.filter(v => v.key.trim()).map(v => v.key)
+		]);
 		selectedActions.forEach((action, i) => {
 			for (const ctx of action.input_context ?? []) {
 				if (!available.has(ctx.key)) {
@@ -607,13 +644,32 @@
 					</label>
 				</div>
 
+				<!-- Runtime Context Info -->
+				<div class="rounded-lg bg-surface-100 p-4 dark:bg-surface-800">
+					<h3 class="text-sm font-semibold mb-2">Runtime Context (auto-provided)</h3>
+					<p class="text-xs text-surface-500 mb-3">
+						These context keys are automatically available to all actions from the Crucible runner environment. You don't need to define them as workflow variables.
+					</p>
+					<div class="flex flex-wrap gap-2">
+						{#each Object.entries(RUNTIME_CONTEXT) as [key, info]}
+							<span
+								class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+								title="{info.description} → {info.envVar}"
+							>
+								⚡ {key}
+								<span class="text-[10px] opacity-60">= {info.envVar}</span>
+							</span>
+						{/each}
+					</div>
+				</div>
+
 				<!-- Workflow Variables -->
 				<div class="space-y-3">
 					<div class="flex items-center justify-between">
 						<div>
 							<h3 class="text-sm font-semibold">Workflow Variables</h3>
 							<p class="text-xs text-surface-500">
-								Initial values injected into context before the first action runs. Use these for target URLs, usernames, ports, etc. Actions read them via <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get</code>.
+								Additional values beyond the runtime defaults. Use for custom paths, ports, expected strings, etc. Actions read them via <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get</code>.
 							</p>
 						</div>
 						<button
@@ -856,7 +912,7 @@
 									{#if (action.input_context ?? []).length > 0 || (action.output_context ?? []).length > 0}
 										<div class="mt-2 flex flex-wrap gap-1.5 border-t border-surface-100 pt-2 dark:border-surface-700">
 											{#each action.input_context ?? [] as ctx}
-												<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} />
+												<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} runtime={runtimeKeys.has(ctx.key)} />
 											{/each}
 											{#each action.output_context ?? [] as ctx}
 												<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
@@ -983,7 +1039,7 @@
 									<p class="text-xs text-surface-600 dark:text-surface-400">{action.description}</p>
 									<div class="mt-1.5 flex flex-wrap gap-1">
 										{#each action.input_context ?? [] as ctx}
-											<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} />
+											<ContextBadge ctxKey={ctx.key} direction="in" description={ctx.description} satisfied={flow?.available.has(ctx.key) ?? false} runtime={runtimeKeys.has(ctx.key)} />
 										{/each}
 										{#each action.output_context ?? [] as ctx}
 											<ContextBadge ctxKey={ctx.key} direction="out" description={ctx.description} />
