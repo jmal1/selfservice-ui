@@ -125,13 +125,20 @@ html {
 
 /* Glass panel effect */
 .glass {
-	background: light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.05));
+	background: rgba(255, 255, 255, 0.7);
 	backdrop-filter: blur(20px);
-	border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+	border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.dark .glass {
+	background: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.08);
 }
 
 .glass-hover:hover {
-	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.1));
+	background: rgba(0, 0, 0, 0.03);
+}
+.dark .glass-hover:hover {
+	background: rgba(255, 255, 255, 0.1);
 }
 
 /* Glow effect for primary buttons — fire orange */
@@ -155,12 +162,12 @@ html {
 /* ── Base styles (previously provided by Skeleton) ── */
 
 body {
-	color: var(--color-surface-800);
-	background-color: var(--color-surface-50);
+	color: oklch(0.20 0.02 275);
+	background-color: oklch(0.965 0.005 70);
 }
 .dark body {
 	color: oklch(0.92 0.005 80);
-	background-color: var(--color-surface-950);
+	background-color: oklch(0.13 0.015 278);
 }
 h1, h2, h3, h4, h5, h6 {
 	color: var(--color-surface-900);
