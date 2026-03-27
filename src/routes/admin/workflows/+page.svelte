@@ -90,8 +90,18 @@
 		}
 		selectedActions.forEach((action, i) => {
 			lines.push(`# Step ${i + 1}: ${action.name}`);
+			// Inject param overrides as context values before running the action
+			const inputKeys = new Set((action.input_context ?? []).map(c => c.key));
+			const paramEntries = Object.entries(action.params || {}).filter(([k, v]) => k.trim() && v !== '');
+			const contextParams = paramEntries.filter(([k]) => inputKeys.has(k));
+			const cliParams = paramEntries.filter(([k]) => !inputKeys.has(k));
+			if (contextParams.length > 0) {
+				contextParams.forEach(([k, v]) => {
+					lines.push(`ctx_set "${k}" "${v}"`);
+				});
+			}
 			const identifier = action.slug || action.action_type;
-			const paramsStr = Object.entries(action.params || {})
+			const paramsStr = cliParams
 				.map(([k, v]) => `${k}="${v}"`)
 				.join(' ');
 			lines.push(`run_action "${action.name}" ${identifier}${paramsStr ? ' ' + paramsStr : ''}`);
@@ -102,22 +112,21 @@
 
 	// Runtime-provided context keys — always available from the Crucible runner environment
 	const RUNTIME_CONTEXT: Record<string, { envVar: string; description: string }> = {
-		host:     { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
-		ip:       { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
-		target_ip: { envVar: '$CRUCIBLE_TARGET_IP',      description: 'Target VM IP address' },
-		user:     { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
-		username: { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
-		password: { envVar: '$CRUCIBLE_TARGET_PASSWORD',  description: 'VM login password' },
-		os:       { envVar: '$CRUCIBLE_TARGET_OS',        description: 'Target OS (linux/windows)' },
-		target_os: { envVar: '$CRUCIBLE_TARGET_OS',       description: 'Target OS (linux/windows)' },
-		subnet:   { envVar: '$CRUCIBLE_POD_SUBNET',       description: 'Pod network subnet' },
-		pod_index: { envVar: '$CRUCIBLE_POD_INDEX',       description: 'Pod index number' },
-		port:     { envVar: '22',                         description: 'Default SSH port (override in workflow variables if different)' },
+		host:      { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
+		ip:        { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
+		target_ip: { envVar: '$CRUCIBLE_TARGET_IP',       description: 'Target VM IP address' },
+		user:      { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
+		username:  { envVar: '$CRUCIBLE_TARGET_USERNAME',  description: 'VM login username' },
+		password:  { envVar: '$CRUCIBLE_TARGET_PASSWORD',  description: 'VM login password' },
+		os:        { envVar: '$CRUCIBLE_TARGET_OS',        description: 'Target OS (linux/windows)' },
+		target_os: { envVar: '$CRUCIBLE_TARGET_OS',        description: 'Target OS (linux/windows)' },
+		subnet:    { envVar: '$CRUCIBLE_POD_SUBNET',       description: 'Pod network subnet' },
+		pod_index: { envVar: '$CRUCIBLE_POD_INDEX',        description: 'Pod index number' },
 	};
 	const runtimeKeys = new Set(Object.keys(RUNTIME_CONTEXT));
 
 	// Context accumulation: at each step, what context keys are available
-	// (includes runtime context + workflow variables)
+	// (includes runtime context + workflow variables + per-action param overrides)
 	const contextFlow = $derived.by(() => {
 		const flow: Array<{ step: number; available: Set<string>; reads: string[]; writes: string[] }> = [];
 		const accumulated = new Set<string>([
@@ -125,11 +134,14 @@
 			...wfVariables.filter(v => v.key.trim()).map(v => v.key)
 		]);
 		selectedActions.forEach((action, i) => {
+			// Params with non-empty keys that match input_context keys count as provided for this action
+			const paramKeys = new Set(Object.entries(action.params || {}).filter(([k, v]) => k.trim() && v !== '').map(([k]) => k));
+			const availableForThis = new Set([...accumulated, ...paramKeys]);
 			const reads = (action.input_context ?? []).map((c) => c.key);
 			const writes = (action.output_context ?? []).map((c) => c.key);
 			flow.push({
 				step: i + 1,
-				available: new Set(accumulated),
+				available: availableForThis,
 				reads,
 				writes
 			});
@@ -141,21 +153,22 @@
 	const step1Valid = $derived(wfName.trim().length > 0 && wfSlug.trim().length > 0);
 	const step2Valid = $derived(selectedActions.length > 0);
 
-	// Validate that all input context keys are provided by runtime, workflow variables, or a previous action
+	// Validate that all input context keys are provided by runtime, workflow variables, params, or a previous action
 	const unsatisfiedInputs = $derived.by(() => {
 		const issues: Array<{ step: number; actionName: string; key: string }> = [];
-		const available = new Set<string>([
+		const accumulated = new Set<string>([
 			...runtimeKeys,
 			...wfVariables.filter(v => v.key.trim()).map(v => v.key)
 		]);
 		selectedActions.forEach((action, i) => {
+			const paramKeys = new Set(Object.entries(action.params || {}).filter(([k, v]) => k.trim() && v !== '').map(([k]) => k));
 			for (const ctx of action.input_context ?? []) {
-				if (!available.has(ctx.key)) {
+				if (!accumulated.has(ctx.key) && !paramKeys.has(ctx.key)) {
 					issues.push({ step: i + 1, actionName: action.name, key: ctx.key });
 				}
 			}
 			for (const ctx of action.output_context ?? []) {
-				available.add(ctx.key);
+				accumulated.add(ctx.key);
 			}
 		});
 		return issues;
