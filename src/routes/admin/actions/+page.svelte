@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { adminListActions, adminCreateAction, adminUpdateAction, adminDeleteAction } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
@@ -226,7 +227,11 @@
 		}
 	}
 
-	onMount(() => { loadActions(); });
+	onMount(async () => {
+		await loadActions();
+		const highlight = page.url.searchParams.get('highlight');
+		if (highlight) expandedId = highlight;
+	});
 </script>
 
 <div class="mx-auto max-w-6xl space-y-6 p-6">

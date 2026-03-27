@@ -375,12 +375,12 @@
 																</p>
 																<div class="space-y-2">
 																	{#each expandedWf.actions as action, i}
-																		<div class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+																		<a href="/admin/actions?highlight={action.id}" class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 transition-colors hover:border-primary-500/50 hover:bg-primary-500/5 dark:border-surface-700 dark:hover:border-primary-500/50">
 																			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-xs font-bold text-primary-600 dark:text-primary-400">
 																				{i + 1}
 																			</span>
 																			<div>
-																				<p class="text-sm font-medium">{action.name}</p>
+																				<p class="text-sm font-medium text-primary-600 dark:text-primary-400">{action.name}</p>
 																				{#if action.description}
 																					<p class="text-xs text-surface-500">{action.description}</p>
 																				{/if}
@@ -388,7 +388,8 @@
 																					<p class="mt-1 text-xs text-warning-600 dark:text-warning-400">💡 {action.student_fail_hint}</p>
 																				{/if}
 																			</div>
-																		</div>
+																			<span class="ml-auto shrink-0 text-xs text-surface-400">→</span>
+																		</a>
 																	{/each}
 																</div>
 															</div>
