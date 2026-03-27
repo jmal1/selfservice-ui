@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import {
 		adminListWorkflows,
+		adminGetWorkflow,
 		adminCreateWorkflow,
 		adminSubmitWorkflow,
 		adminApproveWorkflow,
@@ -17,6 +18,9 @@
 	// ── List mode state ──
 	let workflows: Workflow[] = $state([]);
 	let loading = $state(true);
+	let expandedWfId = $state('');
+	let expandedWf: Workflow | null = $state(null);
+	let loadingDetail = $state(false);
 
 	// ── Create/edit mode state ──
 	type Mode = 'list' | 'create';
@@ -160,6 +164,24 @@
 		}
 	}
 
+	async function toggleDetail(id: string) {
+		if (expandedWfId === id) {
+			expandedWfId = '';
+			expandedWf = null;
+			return;
+		}
+		expandedWfId = id;
+		loadingDetail = true;
+		try {
+			expandedWf = await adminGetWorkflow(id);
+		} catch {
+			toastStore.error('Failed to load workflow details');
+			expandedWfId = '';
+		} finally {
+			loadingDetail = false;
+		}
+	}
+
 	// ── Create-mode helpers ──
 	function enterCreateMode() {
 		mode = 'create';
@@ -287,7 +309,7 @@
 					</thead>
 					<tbody>
 						{#each workflows as wf}
-							<tr>
+							<tr class="cursor-pointer" onclick={() => toggleDetail(wf.id)}>
 								<td>
 									<div>
 										<p class="font-medium">{wf.name}</p>
@@ -307,22 +329,88 @@
 								<td><StatusBadge status={wf.status} /></td>
 								<td>
 									<div class="flex gap-2">
+										<button class="btn btn-sm btn-secondary" onclick={(e) => { e.stopPropagation(); toggleDetail(wf.id); }}>
+											{expandedWfId === wf.id ? 'Hide' : 'View'}
+										</button>
 										{#if wf.status === 'draft'}
-											<button class="btn btn-sm btn-ghost" onclick={() => submit(wf.id)}>
+											<button class="btn btn-sm btn-ghost" onclick={(e) => { e.stopPropagation(); submit(wf.id); }}>
 												Submit
 											</button>
 										{:else if wf.status === 'pending_review'}
-											<button class="btn btn-sm btn-success" onclick={() => approve(wf.id)}>
+											<button class="btn btn-sm btn-success" onclick={(e) => { e.stopPropagation(); approve(wf.id); }}>
 												Approve
 											</button>
 										{:else if wf.status === 'approved'}
-											<button class="btn btn-sm btn-success" onclick={() => activate(wf.id)}>
+											<button class="btn btn-sm btn-success" onclick={(e) => { e.stopPropagation(); activate(wf.id); }}>
 												Activate
 											</button>
 										{/if}
 									</div>
 								</td>
 							</tr>
+							{#if expandedWfId === wf.id}
+								<tr>
+									<td colspan="5" class="!p-0">
+										<div class="border-t border-surface-200 p-5 dark:border-surface-700">
+											{#if loadingDetail}
+												<LoadingSkeleton />
+											{:else if expandedWf}
+												<div class="grid grid-cols-2 gap-6">
+													<!-- Left: Info + Actions -->
+													<div class="space-y-4">
+														{#if expandedWf.description}
+															<div>
+																<p class="mb-1 text-xs font-semibold uppercase text-surface-500">Description</p>
+																<p class="text-sm">{expandedWf.description}</p>
+															</div>
+														{/if}
+														<div>
+															<p class="mb-1 text-xs font-semibold uppercase text-surface-500">Timeout</p>
+															<p class="text-sm">{expandedWf.timeout_seconds}s</p>
+														</div>
+														{#if expandedWf.actions && expandedWf.actions.length > 0}
+															<div>
+																<p class="mb-2 text-xs font-semibold uppercase text-surface-500">
+																	Actions ({expandedWf.actions.length})
+																</p>
+																<div class="space-y-2">
+																	{#each expandedWf.actions as action, i}
+																		<div class="flex items-start gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+																			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-xs font-bold text-primary-600 dark:text-primary-400">
+																				{i + 1}
+																			</span>
+																			<div>
+																				<p class="text-sm font-medium">{action.name}</p>
+																				{#if action.description}
+																					<p class="text-xs text-surface-500">{action.description}</p>
+																				{/if}
+																				{#if action.student_fail_hint}
+																					<p class="mt-1 text-xs text-warning-600 dark:text-warning-400">💡 {action.student_fail_hint}</p>
+																				{/if}
+																			</div>
+																		</div>
+																	{/each}
+																</div>
+															</div>
+														{:else}
+															<p class="text-sm text-surface-500">No actions defined (script-only workflow)</p>
+														{/if}
+													</div>
+													<!-- Right: Script -->
+													<div>
+														<p class="mb-2 text-xs font-semibold uppercase text-surface-500">Script</p>
+														{#if expandedWf.script}
+															<pre class="max-h-96 overflow-auto rounded-lg bg-surface-100 p-4 text-xs dark:bg-surface-900">{expandedWf.script}</pre>
+														{:else}
+															<p class="text-sm text-surface-500">No script</p>
+														{/if}
+													</div>
+												</div>
+											{/if}
+										</div>
+									</td>
+								</tr>
+							{/if}
 						{/each}
 					</tbody>
 				</table>
