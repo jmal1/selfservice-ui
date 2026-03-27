@@ -27,6 +27,83 @@
 	let formOutputCtx = $state<ContextParam[]>([]);
 	let formPlatforms = $state<string[]>(['any']);
 
+	interface ValidationIssue {
+		level: 'error' | 'warning';
+		message: string;
+	}
+
+	function validateAction(
+		script: string,
+		inputCtx: ContextParam[],
+		outputCtx: ContextParam[],
+		platforms: string[]
+	): ValidationIssue[] {
+		const issues: ValidationIssue[] = [];
+		if (!script.trim()) return issues;
+
+		const isWindows = platforms.some(p => p.startsWith('windows'));
+		const isLinux = platforms.some(p => p === 'any' || p.startsWith('linux'));
+
+		// Parse ctx_get/ctx_set usage from script
+		const ctxGetMatches = [...script.matchAll(/ctx_get\s+["']([^"']+)["']/g)].map(m => m[1]);
+		const ctxSetMatches = [...script.matchAll(/ctx_set\s+["']([^"']+)["']/g)].map(m => m[1]);
+
+		const declaredInputs = new Set(inputCtx.map(p => p.key).filter(k => k));
+		const declaredOutputs = new Set(outputCtx.map(p => p.key).filter(k => k));
+		const usedInputs = new Set(ctxGetMatches);
+		const usedOutputs = new Set(ctxSetMatches);
+
+		for (const key of usedInputs) {
+			if (!declaredInputs.has(key)) {
+				issues.push({ level: 'error', message: `Undeclared input: \`${key}\` — add it to Input Context` });
+			}
+		}
+
+		for (const key of usedOutputs) {
+			if (!declaredOutputs.has(key)) {
+				issues.push({ level: 'error', message: `Undeclared output: \`${key}\` — add it to Output Context` });
+			}
+		}
+
+		for (const key of declaredInputs) {
+			if (!usedInputs.has(key)) {
+				issues.push({ level: 'warning', message: `Unused input: \`${key}\` is declared but never read via ctx_get` });
+			}
+		}
+
+		for (const key of declaredOutputs) {
+			if (!usedOutputs.has(key)) {
+				issues.push({ level: 'warning', message: `Unused output: \`${key}\` is declared but never written via ctx_set` });
+			}
+		}
+
+		// Bash-specific checks
+		if (isLinux || !isWindows) {
+			if (!script.includes('return 0') && !script.includes('return 1') && !script.includes('return $')) {
+				issues.push({ level: 'warning', message: 'No return statement found — action should return 0 (pass) or 1 (fail)' });
+			}
+			if (script.includes('return 1') && !script.includes('LAST_ERROR')) {
+				issues.push({ level: 'warning', message: 'return 1 without setting LAST_ERROR — failures should set LAST_ERROR and LAST_STUDENT_MSG' });
+			}
+		}
+
+		// PowerShell-specific checks
+		if (isWindows) {
+			if (!script.includes('exit 0') && !script.includes('exit 1')) {
+				issues.push({ level: 'warning', message: 'No exit statement found — PowerShell action should exit 0 (pass) or exit 1 (fail)' });
+			}
+			if (script.includes('exit 1') && !script.includes('LAST_ERROR')) {
+				issues.push({ level: 'warning', message: 'exit 1 without setting $env:LAST_ERROR — failures should set error messages' });
+			}
+		}
+
+		return issues;
+	}
+
+	const validationIssues = $derived(validateAction(formScript, formInputCtx, formOutputCtx, formPlatforms));
+	const errorCount = $derived(validationIssues.filter(i => i.level === 'error').length);
+	const warningCount = $derived(validationIssues.filter(i => i.level === 'warning').length);
+
 	const categories = ['general', 'network', 'ssh', 'file', 'service', 'firewall', 'database', 'web'];
 	const actionTypes = ['command', 'http', 'ssh', 'file_check', 'service_check', 'port_check', 'dns', 'custom'];
 
@@ -245,6 +322,23 @@
 					Write the action as a bash function body. Use <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_get "key"</code> to read inputs and <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">ctx_set "key" "value"</code> to write outputs.
 					Set <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">LAST_ERROR</code> and <code class="rounded bg-surface-100 px-1 dark:bg-surface-800">LAST_STUDENT_MSG</code> before returning non-zero on failure.
 				</p>
+				{#if validationIssues.length > 0}
+					<div class="mt-2 space-y-1.5">
+						{#if errorCount > 0}
+							<p class="text-xs font-semibold text-error-500">{errorCount} error{errorCount > 1 ? 's' : ''}</p>
+						{/if}
+						{#if warningCount > 0}
+							<p class="text-xs font-semibold text-warning-500">{warningCount} warning{warningCount > 1 ? 's' : ''}</p>
+						{/if}
+						{#each validationIssues as issue}
+							<div class="flex items-start gap-2 rounded px-2 py-1 text-xs
+								{issue.level === 'error' ? 'bg-error-500/10 text-error-600 dark:text-error-400' : 'bg-warning-500/10 text-warning-600 dark:text-warning-400'}">
+								<span class="mt-0.5 shrink-0">{issue.level === 'error' ? '✕' : '⚠'}</span>
+								<span>{@html issue.message.replace(/`([^`]+)`/g, '<code class="rounded bg-surface-200 px-1 dark:bg-surface-700">$1</code>')}</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</label>
 
 			<div class="grid grid-cols-2 gap-4">
@@ -317,7 +411,7 @@
 
 			<div class="flex justify-end gap-2">
 				<button class="btn btn-secondary" onclick={() => { showForm = false; resetForm(); }}>Cancel</button>
-				<button class="btn btn-primary" disabled={saving || !formName || !formSlug} onclick={handleSave}>
+				<button class="btn btn-primary" disabled={saving || !formName || !formSlug || errorCount > 0} onclick={handleSave}>
 					{saving ? 'Saving...' : editingId ? 'Update Action' : 'Create Action'}
 				</button>
 			</div>
