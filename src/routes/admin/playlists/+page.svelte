@@ -243,7 +243,7 @@
 			{#each playlists as pl}
 				<!-- ── EDIT MODE ── -->
 				{#if editingId === pl.id}
-					<div class="card space-y-4 border-2 border-primary-500/30 p-6">
+					<div class="card space-y-4 p-6">
 						<div class="flex items-center justify-between">
 							<h2 class="text-lg font-semibold">Edit Playlist</h2>
 							<button class="btn btn-sm btn-secondary" onclick={cancelEdit}>✕ Cancel</button>

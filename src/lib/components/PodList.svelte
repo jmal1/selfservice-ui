@@ -119,7 +119,7 @@
 	}
 </script>
 
-<div class="glass overflow-hidden rounded-2xl">
+<div class="card overflow-hidden rounded-2xl">
 	<!-- Header -->
 	<div class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-surface-500"
 		class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}

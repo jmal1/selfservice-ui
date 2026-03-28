@@ -55,23 +55,23 @@
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 			{#if loading}
 				{#each Array(3) as _}
-					<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 p-5">
+					<div class="card rounded-2xl p-5">
 						<LoadingSkeleton width="4rem" height="0.75rem" />
 						<div class="mt-2"><LoadingSkeleton width="3rem" height="2rem" /></div>
 					</div>
 				{/each}
 			{:else}
-				<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 p-5">
+				<div class="card rounded-2xl p-5">
 					<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Users</p>
-					<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">{users.length}</p>
+					<p class="mt-1 text-2xl font-semibold text-surface-900 dark:text-surface-100">{users.length}</p>
 				</div>
-				<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 p-5">
+				<div class="card rounded-2xl p-5">
 					<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Total Environments</p>
-					<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">{pods.length}</p>
+					<p class="mt-1 text-2xl font-semibold text-surface-900 dark:text-surface-100">{pods.length}</p>
 				</div>
-				<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 p-5">
+				<div class="card rounded-2xl p-5">
 					<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Total VMs</p>
-					<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">{totalVMs}</p>
+					<p class="mt-1 text-2xl font-semibold text-surface-900 dark:text-surface-100">{totalVMs}</p>
 				</div>
 			{/if}
 		</div>

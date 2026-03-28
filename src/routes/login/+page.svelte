@@ -19,14 +19,8 @@
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
-	<!-- Background gradients — fire + blue -->
-	<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-		<div class="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-primary-500/10 blur-3xl"></div>
-		<div class="absolute -bottom-1/4 -right-1/4 h-[600px] w-[600px] rounded-full bg-secondary-500/10 blur-3xl"></div>
-	</div>
-
 	<div class="w-full max-w-sm">
-		<div class="rounded-2xl border border-surface-200 dark:border-surface-800/50 bg-surface-100/80 dark:bg-surface-900/80 p-8 shadow-xl backdrop-blur-xl">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 p-8 shadow-sm">
 			<!-- Logo — Crucible flame (design 2) -->
 			<div class="mb-6 flex flex-col items-center gap-3">
 				<div class="flex h-16 w-16 items-center justify-center">

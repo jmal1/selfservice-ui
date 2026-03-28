@@ -192,7 +192,7 @@
 		</div>
 	{/if}
 
-	<div class="glass rounded-2xl p-6">
+	<div class="card rounded-2xl p-6">
 		{#if loading}
 			<div class="space-y-4">
 				<LoadingSkeleton height="2rem" />

@@ -1,12 +1,12 @@
 @import 'tailwindcss';
-@import '@fontsource/inter';
+@import '@fontsource/space-grotesk';
 @import './theme-crucible.css';
 
 /* Use .dark class for dark mode, not OS prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-	--font-sans: 'Inter', sans-serif;
+	--font-sans: 'Space Grotesk', sans-serif;
 	--color-accent: oklch(0.60 0.22 35);
 	--color-accent-glow: oklch(0.60 0.22 35 / 0.3);
 
@@ -111,45 +111,14 @@ html {
 	font-size: 18px;
 }
 
-/* Animated background blobs */
-@keyframes blob-drift {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	33% { transform: translate(30px, -20px) scale(1.05); }
-	66% { transform: translate(-15px, 15px) scale(0.95); }
+/* Solid panel — sidebar and similar fixed panels */
+.panel {
+	background-color: var(--color-surface-50);
+	border-right: 1px solid var(--color-surface-200);
 }
-
-.bg-blob {
-	animation: blob-drift 20s ease-in-out infinite;
-}
-
-.bg-blob-delayed {
-	animation: blob-drift 25s ease-in-out infinite reverse;
-}
-
-/* Glass panel effect */
-.glass {
-	background: rgba(255, 255, 255, 0.7);
-	backdrop-filter: blur(20px);
-	border: 1px solid rgba(0, 0, 0, 0.06);
-}
-.dark .glass {
-	background: rgba(255, 255, 255, 0.05);
-	border-color: rgba(255, 255, 255, 0.08);
-}
-
-.glass-hover:hover {
-	background: rgba(0, 0, 0, 0.03);
-}
-.dark .glass-hover:hover {
-	background: rgba(255, 255, 255, 0.1);
-}
-
-/* Glow effect for primary buttons — fire orange */
-.glow-primary {
-	box-shadow: 0 0 20px oklch(0.60 0.22 35 / 0.3);
-}
-.glow-primary:hover {
-	box-shadow: 0 0 30px oklch(0.60 0.22 35 / 0.4);
+.dark .panel {
+	background-color: var(--color-surface-900);
+	border-right-color: var(--color-surface-700);
 }
 
 /* Pulse animation for status dots */

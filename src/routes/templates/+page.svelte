@@ -64,7 +64,7 @@
 	{:else}
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 			{#each templates as template (template.id)}
-				<div class="glass rounded-2xl p-5 {template.is_active ? '' : 'opacity-50'}">
+				<div class="card rounded-2xl p-5 {template.is_active ? '' : 'opacity-50'}">
 					<div class="mb-3 flex items-start gap-3">
 						<span class="text-2xl">{osIcon(template.os_type)}</span>
 						<div class="min-w-0 flex-1">

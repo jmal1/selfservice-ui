@@ -303,7 +303,7 @@
 		<!-- Expiration -->
 		{#if pod.expires_at}
 			{@const exp = formatExpiry(pod.expires_at)}
-			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-5 py-4">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
 						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
@@ -337,7 +337,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-5 py-4">
 				<div class="flex items-center gap-3">
 					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200/50 dark:bg-surface-800/50 text-surface-400">
@@ -348,7 +348,7 @@
 		{/if}
 
 		<!-- Assessments -->
-		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-5 py-4">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
 					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Assessments</span>
@@ -366,7 +366,7 @@
 		</div>
 
 		<!-- VM List -->
-		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
 			<div class="flex items-center justify-between border-b border-surface-200 dark:border-surface-800 px-5 py-3">
 				<h2 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
 					Virtual Machines ({(pod.vms ?? []).length})

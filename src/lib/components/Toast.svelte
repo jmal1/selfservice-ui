@@ -27,7 +27,7 @@
 		{#each toastStore.toasts as toast (toast.id)}
 			{@const styles = typeStyles[toast.type] ?? typeStyles.info}
 			<div
-				class="flex items-start gap-3 rounded-xl border {styles.border} {styles.bg} bg-surface-100 dark:bg-surface-900 px-4 py-3 shadow-lg backdrop-blur-xl"
+				class="flex items-start gap-3 rounded-xl border {styles.border} {styles.bg} bg-surface-100 dark:bg-surface-900 px-4 py-3 shadow-lg"
 				transition:fly={{ x: 100, duration: 300 }}
 				role="alert"
 			>

@@ -11,7 +11,7 @@
 	--text-scaling: 1;
 	--base-font-color: var(--color-surface-800);
 	--base-font-color-dark: oklch(0.92 0.005 80);
-	--base-font-family: 'Inter', system-ui, sans-serif;
+	--base-font-family: 'Space Grotesk', system-ui, sans-serif;
 	--base-font-size: inherit;
 	--base-line-height: inherit;
 	--base-font-weight: normal;
@@ -19,7 +19,7 @@
 	--base-letter-spacing: 0em;
 	--heading-font-color: var(--color-surface-900);
 	--heading-font-color-dark: oklch(0.96 0.005 80);
-	--heading-font-family: 'Inter', system-ui, sans-serif;
+	--heading-font-family: 'Space Grotesk', system-ui, sans-serif;
 	--heading-font-weight: bold;
 	--heading-font-style: normal;
 	--heading-letter-spacing: -0.02em;

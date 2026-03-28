@@ -37,7 +37,7 @@
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 	{#if usage === null}
 		{#each Array(4) as _}
-			<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg">
+			<div class="card rounded-2xl p-5">
 				<LoadingSkeleton width="4rem" height="0.75rem" rounded="rounded" />
 				<div class="mt-3">
 					<LoadingSkeleton width="6rem" height="1.75rem" rounded="rounded" />
@@ -53,12 +53,12 @@
 	{:else}
 		{#each gauges as gauge}
 			{@const pct = percentage(gauge.used, gauge.max)}
-			<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg hover:shadow-primary-500/5">
+			<div class="card rounded-2xl p-5">
 				<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">
 					{gauge.label}
 				</p>
-				<p class="mt-2 text-[28px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
-					{gauge.used} <span class="text-base font-normal text-surface-500">/ {gauge.max}{gauge.unit ? ` ${gauge.unit}` : ''}</span>
+				<p class="mt-2 text-2xl font-semibold tracking-tight text-surface-900 dark:text-surface-100">
+					{gauge.used} <span class="text-sm font-normal text-surface-500">/ {gauge.max}{gauge.unit ? ` ${gauge.unit}` : ''}</span>
 				</p>
 				<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800/60">
 					<div

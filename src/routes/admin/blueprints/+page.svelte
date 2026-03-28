@@ -396,7 +396,7 @@
 
 		<!-- Create form -->
 		{#if showCreate}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+			<div class="card rounded-2xl p-5">
 				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">New Blueprint</h2>
 				<div class="space-y-4">
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -442,7 +442,7 @@
 		{/if}
 
 		<!-- Blueprints table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>

@@ -76,7 +76,7 @@
 			{error}
 		</div>
 	{:else}
-		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>

@@ -217,21 +217,21 @@
 	{:else}
 		<!-- Stats -->
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="card rounded-xl px-4 py-3">
 				<div class="text-xs font-medium text-surface-500">Total VLANs</div>
-				<div class="text-2xl font-bold text-surface-900 dark:text-surface-100">{stats.total}</div>
+				<div class="text-xl font-semibold text-surface-900 dark:text-surface-100">{stats.total}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="card rounded-xl px-4 py-3">
 				<div class="text-xs font-medium text-surface-500">Available</div>
-				<div class="text-2xl font-bold text-success-500">{stats.available}</div>
+				<div class="text-xl font-semibold text-success-600 dark:text-success-400">{stats.available}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="card rounded-xl px-4 py-3">
 				<div class="text-xs font-medium text-surface-500">Allocated</div>
-				<div class="text-2xl font-bold text-warning-500">{stats.allocated}</div>
+				<div class="text-xl font-semibold text-warning-600 dark:text-warning-400">{stats.allocated}</div>
 			</div>
-			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
+			<div class="card rounded-xl px-4 py-3">
 				<div class="text-xs font-medium text-surface-500">All Hosts / Switch1 Only</div>
-				<div class="text-2xl font-bold text-surface-900 dark:text-surface-100">
+				<div class="text-xl font-semibold text-surface-900 dark:text-surface-100">
 					{stats.allScope} <span class="text-sm font-normal text-surface-500">/</span> {stats.switch1Scope}
 				</div>
 			</div>
@@ -252,7 +252,7 @@
 
 		<!-- Add single VLAN form -->
 		{#if showAdd}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+			<div class="card rounded-2xl p-5">
 				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">Add VLAN</h2>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 					<label class="block">
@@ -291,7 +291,7 @@
 
 		<!-- Batch add form -->
 		{#if showBatchAdd}
-			<div class="rounded-2xl border border-primary-500/30 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+			<div class="card rounded-2xl p-5">
 				<h2 class="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-100">Batch Add VLANs</h2>
 				<p class="mb-3 text-sm text-surface-500">
 					Add a range of VLANs with auto-generated subnets (10.100.{'{tag-100}'}.0/24). Existing VLANs in the range will be skipped.
@@ -347,7 +347,7 @@
 		</div>
 
 		<!-- VLAN table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>

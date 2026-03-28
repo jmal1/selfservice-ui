@@ -219,7 +219,7 @@
 	}
 </script>
 
-<div class="glass overflow-hidden rounded-2xl">
+<div class="card overflow-hidden rounded-2xl">
 	<!-- Header -->
 	<button
 		class="flex w-full items-center justify-between px-5 py-3 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"

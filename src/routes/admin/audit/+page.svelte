@@ -114,7 +114,7 @@
 		</div>
 	{:else}
 		<!-- Active Sessions Card -->
-		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 p-5">
 			<div class="mb-3 flex items-center gap-2">
 				<span class="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
 				<h2 class="text-sm font-semibold uppercase tracking-wider text-surface-500">Active Sessions</h2>
@@ -167,7 +167,7 @@
 		</div>
 
 		<!-- Audit Table -->
-		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
+		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<thead>

@@ -85,16 +85,9 @@
 {/snippet}
 
 <div class="relative flex h-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
-	<!-- Animated background gradients (fire + blue blobs) -->
-	<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-		<div class="bg-blob absolute -left-[20%] -top-[20%] h-[700px] w-[700px] rounded-full bg-primary-500/8 blur-[120px]"></div>
-		<div class="bg-blob-delayed absolute -bottom-[15%] -right-[15%] h-[600px] w-[600px] rounded-full bg-secondary-500/6 blur-[100px]"></div>
-		<div class="bg-blob-delayed absolute left-[40%] top-[60%] h-[400px] w-[400px] rounded-full bg-tertiary-500/5 blur-[100px]"></div>
-	</div>
-
 	{#if showSidebar}
 	<!-- Sidebar -->
-	<aside class="glass fixed inset-y-0 left-0 z-30 flex w-64 flex-col">
+	<aside class="panel fixed inset-y-0 left-0 z-30 flex w-64 flex-col">
 		<!-- Logo -->
 		<div class="flex items-center border-b border-surface-200/30 dark:border-surface-800/30 px-5 py-6">
 			{#if themeStore.isDark}
@@ -108,7 +101,7 @@
 		<div class="px-3 pt-4 pb-2">
 			<a
 				href="/deploy"
-				class="glow-primary flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-primary-600"
+				class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
 			>
 				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
 				Deploy VM
