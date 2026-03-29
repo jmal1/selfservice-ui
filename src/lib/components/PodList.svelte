@@ -154,10 +154,10 @@
 			<p class="mt-1 text-sm">Deploy your first VM to get started.</p>
 		</div>
 	{:else}
-		{#each pods as pod (pod.id)}
+		{#each pods as pod, podIndex (pod.id)}
 			<!-- Pod row: card on mobile, grid on desktop -->
 			<div
-				class="cursor-pointer border-b border-surface-200-800 px-4 py-3 transition-colors hover:bg-surface-200-800/30 md:px-5"
+				class="cursor-pointer px-4 py-3 transition-colors hover:bg-surface-200-800/30 md:px-5 {podIndex > 0 ? 'border-t-2 border-surface-300-700' : ''}"
 				onclick={() => togglePod(pod.id)}
 				role="row"
 				tabindex="0"
@@ -357,7 +357,7 @@
 				<div class="overflow-hidden">
 				{#each pod.vms ?? [] as vm (vm.id)}
 					<div
-						class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 py-2.5 pl-12 pr-5"
+						class="grid items-center gap-2 border-b border-surface-200 last:border-b-0 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 py-2.5 pl-12 pr-5"
 						class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 						class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 						role="row"
