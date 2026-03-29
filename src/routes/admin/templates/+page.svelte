@@ -339,17 +339,18 @@
 		>
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">VM templates</caption>
 					<thead>
 						<tr
 							class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500"
 						>
-							<th class="px-5 py-3">Name</th>
-							<th class="px-5 py-3">vCenter Template</th>
-							<th class="px-5 py-3">OS</th>
-							<th class="px-5 py-3">Defaults (CPU/RAM/Disk)</th>
-							<th class="px-5 py-3">Minimums (CPU/RAM)</th>
-							<th class="px-5 py-3">Active</th>
-							<th class="px-5 py-3 text-right">Actions</th>
+							<th scope="col" class="px-5 py-3">Name</th>
+							<th scope="col" class="px-5 py-3">vCenter Template</th>
+							<th scope="col" class="px-5 py-3">OS</th>
+							<th scope="col" class="px-5 py-3">Defaults (CPU/RAM/Disk)</th>
+							<th scope="col" class="px-5 py-3">Minimums (CPU/RAM)</th>
+							<th scope="col" class="px-5 py-3">Active</th>
+							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -373,7 +374,7 @@
 									<!-- Inline edit row -->
 									<tr class="border-b border-primary-500/20 bg-primary-500/5">
 										<td class="px-5 py-3">
-											<input type="text" bind:value={editValues.name} class={inputSmClass} style="width:8rem" />
+											<input type="text" bind:value={editValues.name} class={inputSmClass} style="width:8rem" aria-label="Template name" />
 										</td>
 										<td class="px-5 py-3">
 											<input
@@ -381,6 +382,7 @@
 												bind:value={editValues.vcenter_template}
 												class={inputSmClass}
 												style="width:10rem"
+												aria-label="vCenter template"
 											/>
 										</td>
 										<td class="px-5 py-3">
@@ -397,6 +399,7 @@
 													bind:value={editValues.default_vcpus}
 													class={inputSmClass}
 													title="vCPUs"
+														aria-label="Default vCPUs"
 												/>
 												<input
 													type="number"
@@ -405,6 +408,7 @@
 													bind:value={editValues.default_ram_mb}
 													class={inputSmClass}
 													title="RAM (MB)"
+														aria-label="Default RAM in MB"
 												/>
 												<input
 													type="number"
@@ -412,6 +416,7 @@
 													bind:value={editValues.default_disk_gb}
 													class={inputSmClass}
 													title="Disk (GB)"
+														aria-label="Default disk in GB"
 												/>
 											</div>
 										</td>
@@ -423,6 +428,7 @@
 													bind:value={editValues.min_vcpus}
 													class={inputSmClass}
 													title="Min vCPUs"
+														aria-label="Minimum vCPUs"
 												/>
 												<input
 													type="number"
@@ -431,6 +437,7 @@
 													bind:value={editValues.min_ram_mb}
 													class={inputSmClass}
 													title="Min RAM (MB)"
+														aria-label="Minimum RAM in MB"
 												/>
 											</div>
 										</td>
@@ -439,6 +446,7 @@
 												type="checkbox"
 												bind:checked={editValues.is_active}
 												class="accent-primary-500"
+												aria-label="Template active"
 											/>
 										</td>
 										<td class="px-5 py-3 text-right">
@@ -497,8 +505,8 @@
 										<td class="px-5 py-3">
 											<span
 												class="rounded-full px-2 py-0.5 text-xs font-medium {t.os_type === 'windows'
-													? 'bg-blue-500/10 text-blue-500'
-													: 'bg-emerald-500/10 text-emerald-500'}"
+													? 'bg-secondary-500/10 text-secondary-500'
+													: 'bg-success-500/10 text-success-500'}"
 											>
 												{t.os_type}
 											</span>

@@ -348,7 +348,7 @@
 		<div class="ml-auto flex items-center gap-2">
 			<!-- Paste clipboard into VM -->
 			<button
-				class="rounded border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 transition-colors hover:bg-blue-500/20 disabled:opacity-40"
+				class="rounded border border-secondary-500/30 bg-secondary-500/10 px-3 py-1 text-xs text-secondary-400 transition-colors hover:bg-secondary-500/20 disabled:opacity-40"
 				onclick={handlePaste}
 				disabled={status !== 'connected' || sending}
 				title="Paste clipboard into VM (Ctrl+Shift+V)"

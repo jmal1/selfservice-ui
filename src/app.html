@@ -7,6 +7,7 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<a href="#main-content" class="sr-only" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';this.style.overflow='visible';this.style.padding='0.5rem 1rem';this.style.background='var(--color-primary-500)';this.style.color='white';this.style.zIndex='9999';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';this.style.overflow='hidden';">Skip to main content</a>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

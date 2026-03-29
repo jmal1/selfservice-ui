@@ -126,30 +126,22 @@ html {
 	animation: blob-drift 25s ease-in-out infinite reverse;
 }
 
-/* Glass panel effect */
+/* Glass panel effect — subtle solid surface with border */
 .glass {
-	background: rgba(255, 255, 255, 0.7);
-	backdrop-filter: blur(20px);
-	border: 1px solid rgba(0, 0, 0, 0.06);
-}
-.dark .glass {
-	background: rgba(255, 255, 255, 0.05);
-	border-color: rgba(255, 255, 255, 0.08);
+	background: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.04));
+	border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
 }
 
 .glass-hover:hover {
-	background: rgba(0, 0, 0, 0.03);
-}
-.dark .glass-hover:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.08));
 }
 
-/* Glow effect for primary buttons — fire orange */
+/* Subtle shadow for primary buttons */
 .glow-primary {
-	box-shadow: 0 0 20px oklch(0.60 0.22 35 / 0.3);
+	box-shadow: 0 1px 3px oklch(0.60 0.22 35 / 0.15);
 }
 .glow-primary:hover {
-	box-shadow: 0 0 30px oklch(0.60 0.22 35 / 0.4);
+	box-shadow: 0 2px 8px oklch(0.60 0.22 35 / 0.2);
 }
 
 /* Pulse animation for status dots */
@@ -376,4 +368,57 @@ h1, h2, h3, h4, h5, h6 {
 }
 .dark .checkbox {
 	border-color: var(--color-surface-500);
+}
+
+/* Touch-friendly targets on coarse pointer devices */
+@media (pointer: coarse) {
+	.touch-target {
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	.bg-blob,
+	.bg-blob-delayed {
+		animation: none;
+	}
+
+	.status-pulse {
+		animation: none;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+.sr-only:focus {
+	position: static;
+	width: auto;
+	height: auto;
+	padding: 0.5rem 1rem;
+	margin: 0;
+	overflow: visible;
+	clip: auto;
+	white-space: normal;
 }

@@ -244,10 +244,11 @@
 
 	<!-- Content -->
 	<div
-		class="overflow-hidden transition-all duration-300 ease-in-out"
-		style="max-height: {expanded ? `${Math.max(activeJobs.length, 1) * 140 + 40}px` : '0px'};"
+		class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+		style="grid-template-rows: {expanded ? '1fr' : '0fr'};"
 	>
-		<div class="border-t border-surface-200 dark:border-surface-800 px-5 py-4">
+		<div class="overflow-hidden">
+		<div class="border-t border-surface-200-800 px-5 py-4">
 			{#if activeJobs.length === 0}
 				<div class="flex items-center gap-3 py-4 text-surface-400">
 					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -317,6 +318,7 @@
 					{/each}
 				</div>
 			{/if}
+		</div>
 		</div>
 	</div>
 </div>

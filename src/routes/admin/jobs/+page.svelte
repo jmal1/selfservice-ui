@@ -126,14 +126,15 @@
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">Background jobs and their statuses</caption>
 					<thead>
-						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th class="px-5 py-3">ID</th>
-							<th class="px-5 py-3">Type</th>
-							<th class="px-5 py-3">Status</th>
-							<th class="px-5 py-3">Claimed By</th>
-							<th class="px-5 py-3">Duration</th>
-							<th class="px-5 py-3">Created</th>
+						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+							<th scope="col" class="px-5 py-3">ID</th>
+							<th scope="col" class="px-5 py-3">Type</th>
+							<th scope="col" class="px-5 py-3">Status</th>
+							<th scope="col" class="px-5 py-3">Claimed By</th>
+							<th scope="col" class="px-5 py-3">Duration</th>
+							<th scope="col" class="px-5 py-3">Created</th>
 						</tr>
 					</thead>
 					<tbody>

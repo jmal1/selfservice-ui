@@ -350,13 +350,14 @@
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">VLAN pool allocation</caption>
 					<thead>
-						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th class="px-5 py-3">VLAN Tag</th>
-							<th class="px-5 py-3">Subnet</th>
-							<th class="px-5 py-3">Host Scope</th>
-							<th class="px-5 py-3">Status</th>
-							<th class="px-5 py-3 text-right">Actions</th>
+						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+							<th scope="col" class="px-5 py-3">VLAN Tag</th>
+							<th scope="col" class="px-5 py-3">Subnet</th>
+							<th scope="col" class="px-5 py-3">Host Scope</th>
+							<th scope="col" class="px-5 py-3">Status</th>
+							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody>

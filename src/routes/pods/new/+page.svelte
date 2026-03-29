@@ -354,7 +354,7 @@
 									type="text"
 									bind:value={vmConfigs[i].name}
 									placeholder="My VM"
-									class="w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+									class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 								/>
 							</div>
 							<div>
@@ -365,7 +365,7 @@
 									min="1"
 									max="16"
 									bind:value={vmConfigs[i].vcpus}
-									class="w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+									class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 								/>
 							</div>
 							<div>
@@ -376,7 +376,7 @@
 									min="512"
 									step="512"
 									bind:value={vmConfigs[i].ram_mb}
-									class="w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+									class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 								/>
 							</div>
 							<div>
@@ -386,7 +386,7 @@
 									type="number"
 									min="10"
 									bind:value={vmConfigs[i].disk_gb}
-									class="w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+									class="w-full rounded-lg border border-surface-200-800 bg-surface-50-950 px-3 py-2 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 								/>
 							</div>
 						</div>
@@ -438,7 +438,7 @@
 					</div>
 
 					<div class="flex items-center gap-2">
-						<span class="rounded-full px-2 py-0.5 text-xs font-medium {selectedBlueprint.allow_vm_additions ? 'bg-emerald-500/10 text-emerald-500' : 'bg-surface-200 dark:bg-surface-800 text-surface-500'}">
+						<span class="rounded-full px-2 py-0.5 text-xs font-medium {selectedBlueprint.allow_vm_additions ? 'bg-success-500/10 text-success-500' : 'bg-surface-200-800 text-surface-500'}">
 							{selectedBlueprint.allow_vm_additions ? '🔓 VM additions allowed' : '🔒 VM additions locked'}
 						</span>
 					</div>

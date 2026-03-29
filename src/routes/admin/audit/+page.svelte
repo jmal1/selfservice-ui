@@ -116,7 +116,7 @@
 		<!-- Active Sessions Card -->
 		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 p-5 backdrop-blur-xl">
 			<div class="mb-3 flex items-center gap-2">
-				<span class="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+				<span class="inline-block h-2 w-2 rounded-full bg-success-500 animate-pulse"></span>
 				<h2 class="text-sm font-semibold uppercase tracking-wider text-surface-500">Active Sessions</h2>
 			</div>
 			{#if sessionsLoading}
@@ -160,6 +160,7 @@
 				<input
 					type="date"
 					bind:value={sinceFilter}
+					aria-label="Filter audit log by date"
 					onchange={() => { currentPage = 1; loading = true; loadAuditLog(); }}
 					class="rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-xs text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
 				/>
@@ -170,13 +171,14 @@
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">Audit log entries</caption>
 					<thead>
-						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th class="px-5 py-3">Timestamp</th>
-							<th class="px-5 py-3">User</th>
-							<th class="px-5 py-3">Action</th>
-							<th class="px-5 py-3">Resource</th>
-							<th class="px-5 py-3">IP</th>
+						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+							<th scope="col" class="px-5 py-3">Timestamp</th>
+							<th scope="col" class="px-5 py-3">User</th>
+							<th scope="col" class="px-5 py-3">Action</th>
+							<th scope="col" class="px-5 py-3">Resource</th>
+							<th scope="col" class="px-5 py-3">IP</th>
 						</tr>
 					</thead>
 					<tbody>

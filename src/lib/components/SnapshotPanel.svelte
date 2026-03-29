@@ -135,12 +135,14 @@
 			<input
 				bind:value={newName}
 				placeholder="Snapshot name"
+				aria-label="Snapshot name"
 				maxlength={64}
 				class="mb-2 w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-500"
 			/>
 			<input
 				bind:value={newDescription}
 				placeholder="Description (optional)"
+				aria-label="Snapshot description"
 				maxlength={256}
 				class="mb-2 w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-500"
 			/>

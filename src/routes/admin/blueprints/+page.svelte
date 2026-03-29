@@ -445,14 +445,15 @@
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">Environment blueprints</caption>
 					<thead>
-						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th class="px-5 py-3">Name</th>
-							<th class="px-5 py-3">VMs</th>
-							<th class="px-5 py-3">Total Resources</th>
-							<th class="px-5 py-3">VM Additions</th>
-							<th class="px-5 py-3">Active</th>
-							<th class="px-5 py-3 text-right">Actions</th>
+						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+							<th scope="col" class="px-5 py-3">Name</th>
+							<th scope="col" class="px-5 py-3">VMs</th>
+							<th scope="col" class="px-5 py-3">Total Resources</th>
+							<th scope="col" class="px-5 py-3">VM Additions</th>
+							<th scope="col" class="px-5 py-3">Active</th>
+							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -571,7 +572,7 @@
 											{formatBlueprintTotals(bp)}
 										</td>
 										<td class="px-5 py-3">
-											<span class="rounded-full px-2 py-0.5 text-xs font-medium {bp.allow_vm_additions ? 'bg-emerald-500/10 text-emerald-500' : 'bg-surface-200 dark:bg-surface-800 text-surface-500'}">
+											<span class="rounded-full px-2 py-0.5 text-xs font-medium {bp.allow_vm_additions ? 'bg-success-500/10 text-success-500' : 'bg-surface-200-800 text-surface-500'}">
 												{bp.allow_vm_additions ? 'Allowed' : 'Locked'}
 											</span>
 										</td>

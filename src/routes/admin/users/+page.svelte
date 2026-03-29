@@ -79,15 +79,16 @@
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
+					<caption class="sr-only">User accounts and quota management</caption>
 					<thead>
-						<tr class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th class="px-5 py-3">Username</th>
-							<th class="px-5 py-3">Email</th>
-							<th class="px-5 py-3">Role</th>
-							<th class="px-5 py-3">vCPUs</th>
-							<th class="px-5 py-3">RAM (MB)</th>
-							<th class="px-5 py-3">Pods</th>
-							<th class="px-5 py-3 text-right">Actions</th>
+						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
+							<th scope="col" class="px-5 py-3">Username</th>
+							<th scope="col" class="px-5 py-3">Email</th>
+							<th scope="col" class="px-5 py-3">Role</th>
+							<th scope="col" class="px-5 py-3">vCPUs</th>
+							<th scope="col" class="px-5 py-3">RAM (MB)</th>
+							<th scope="col" class="px-5 py-3">Pods</th>
+							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -121,7 +122,8 @@
 												type="number"
 												min="1"
 												bind:value={editValues.max_vcpus}
-												class="w-20 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+												aria-label="Maximum vCPUs for {user.username}"
+												class="w-20 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 											/>
 										</td>
 										<td class="px-5 py-3">
@@ -130,7 +132,8 @@
 												min="512"
 												step="512"
 												bind:value={editValues.max_ram_mb}
-												class="w-24 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+												aria-label="Maximum RAM in MB for {user.username}"
+												class="w-24 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 											/>
 										</td>
 										<td class="px-5 py-3">
@@ -138,7 +141,8 @@
 												type="number"
 												min="1"
 												bind:value={editValues.max_pods}
-												class="w-16 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none"
+												aria-label="Maximum pods for {user.username}"
+												class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 											/>
 										</td>
 										<td class="px-5 py-3 text-right">

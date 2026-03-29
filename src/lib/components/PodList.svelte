@@ -119,9 +119,9 @@
 	}
 </script>
 
-<div class="glass overflow-hidden rounded-2xl">
-	<!-- Header -->
-	<div class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-surface-500"
+<div class="overflow-hidden rounded-2xl border border-surface-200-800 bg-surface-100-900/50">
+	<!-- Header (desktop only) -->
+	<div class="hidden md:grid items-center gap-2 border-b border-surface-200-800 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-surface-500"
 		class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
 		class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
 	>
@@ -155,16 +155,108 @@
 		</div>
 	{:else}
 		{#each pods as pod (pod.id)}
-			<!-- Pod row -->
+			<!-- Pod row: card on mobile, grid on desktop -->
 			<div
-				class="grid cursor-pointer items-center gap-2 border-b border-surface-200 dark:border-surface-800 px-5 py-3 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
-				class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
-				class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
+				class="cursor-pointer border-b border-surface-200-800 px-4 py-3 transition-colors hover:bg-surface-200-800/30 md:px-5"
 				onclick={() => togglePod(pod.id)}
 				role="row"
 				tabindex="0"
 				onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePod(pod.id); } }}
 			>
+				<!-- Mobile layout -->
+				<div class="md:hidden">
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<svg
+								class="h-4 w-4 shrink-0 text-surface-500 transition-transform duration-200"
+								class:rotate-90={!collapsed[pod.id]}
+								fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+							</svg>
+							<span class="font-medium text-surface-900-100">{pod.name}</span>
+						</div>
+						<StatusBadge status={pod.status} />
+					</div>
+					<div class="mt-2 flex flex-wrap items-center gap-2 pl-6 text-xs text-surface-500">
+						{#if showOwner}
+							<span>{pod.owner?.display_name ?? pod.owner_id}</span>
+							<span>·</span>
+						{/if}
+						<span>{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
+						<span>·</span>
+						<span>{totalVcpus(pod)} vCPU · {totalRamGb(pod)} GB</span>
+						<span>·</span>
+						<span class="rounded-md bg-primary-500/15 px-2 py-0.5 font-mono text-xs font-semibold text-primary-400">VLAN {pod.vlan_id}</span>
+						{#if formatExpiry(pod.expires_at)}
+							{@const exp = formatExpiry(pod.expires_at)!}
+							<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+								{exp.urgency === 'green' ? 'bg-success-500/20 text-success-500' : ''}
+								{exp.urgency === 'yellow' ? 'bg-warning-500/20 text-warning-500' : ''}
+								{exp.urgency === 'red' ? 'bg-error-500/20 text-error-500' : ''}
+								{exp.urgency === 'critical' ? 'bg-error-500/30 text-error-400 animate-pulse' : ''}">
+								⏱ {exp.text}
+							</span>
+						{/if}
+					</div>
+					<div class="mt-2 flex items-center justify-end gap-1 pl-6">
+						<button
+							onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name); }}
+							class="touch-target px-2 py-1 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors"
+							title="Extend pod lifetime"
+						>
+							Extend
+						</button>
+						<a
+							href="/pods/{pod.id}"
+							class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800 hover:text-surface-900-100"
+							aria-label="View pod details"
+							onclick={(e: MouseEvent) => e.stopPropagation()}
+						>
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+							</svg>
+						</a>
+						{#if confirmDeletePod === pod.id}
+							<button
+								class="touch-target inline-flex h-10 items-center justify-center rounded-lg bg-error-500 px-2.5 text-xs font-semibold text-white transition-colors hover:bg-error-600"
+								onclick={(e: MouseEvent) => { e.stopPropagation(); handleDeletePod(pod.id); }}
+								disabled={actionLoading[`delete-pod-${pod.id}`]}
+							>
+								{actionLoading[`delete-pod-${pod.id}`] ? 'Deleting…' : 'Confirm'}
+							</button>
+							<button
+								class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-surface-200-800"
+								aria-label="Cancel delete"
+								onclick={(e: MouseEvent) => { e.stopPropagation(); cancelDeletePod(); }}
+							>
+								<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						{:else}
+							<button
+								class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:border-error-500/50 hover:bg-error-500/10 hover:text-error-500 disabled:opacity-50"
+								aria-label="Delete pod"
+								disabled={actionLoading[`delete-pod-${pod.id}`]}
+								onclick={(e: MouseEvent) => { e.stopPropagation(); handleDeletePod(pod.id); }}
+							>
+								{#if actionLoading[`delete-pod-${pod.id}`]}
+									<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+								{:else}
+									<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+									</svg>
+								{/if}
+							</button>
+						{/if}
+					</div>
+				</div>
+				<!-- Desktop layout -->
+				<div class="hidden md:grid items-center gap-2"
+					class:grid-cols-[2.2fr_1fr_1fr_1.2fr_1fr_0.8fr_110px]={showOwner}
+					class:grid-cols-[2.2fr_1fr_1.2fr_1fr_0.8fr_110px]={!showOwner}
+				>
 				<div class="flex items-center gap-2">
 					<svg
 						class="h-4 w-4 shrink-0 text-surface-500 transition-transform duration-200"
@@ -183,10 +275,10 @@
 					{#if formatExpiry(pod.expires_at)}
 						{@const exp = formatExpiry(pod.expires_at)!}
 						<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-							{exp.urgency === 'green' ? 'bg-green-500/20 text-green-400' : ''}
-							{exp.urgency === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' : ''}
-							{exp.urgency === 'red' ? 'bg-red-500/20 text-red-400' : ''}
-							{exp.urgency === 'critical' ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}"
+							{exp.urgency === 'green' ? 'bg-success-500/20 text-success-500' : ''}
+							{exp.urgency === 'yellow' ? 'bg-warning-500/20 text-warning-500' : ''}
+							{exp.urgency === 'red' ? 'bg-error-500/20 text-error-500' : ''}
+							{exp.urgency === 'critical' ? 'bg-error-500/30 text-error-400 animate-pulse' : ''}"
 							title="Expires: {new Date(pod.expires_at).toLocaleString()}">
 							⏱ {exp.text}
 						</span>
@@ -205,7 +297,7 @@
 				<div class="flex items-center justify-end gap-1">
 					<button
 						onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name); }}
-						class="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+						class="px-2 py-0.5 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors"
 						title="Extend pod lifetime"
 					>
 						Extend
@@ -254,13 +346,15 @@
 						</button>
 					{/if}
 				</div>
+				</div>
 			</div>
 
 			<!-- VM sub-rows -->
 			<div
-				class="overflow-hidden transition-all duration-300 ease-in-out"
-				style="max-height: {collapsed[pod.id] ? '0px' : `${(pod.vms ?? []).length * 60 + 20}px`};"
+				class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+				style="grid-template-rows: {collapsed[pod.id] ? '0fr' : '1fr'};"
 			>
+				<div class="overflow-hidden">
 				{#each pod.vms ?? [] as vm (vm.id)}
 					<div
 						class="grid items-center gap-2 border-b border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 py-2.5 pl-12 pr-5"
@@ -355,6 +449,7 @@
 						</div>
 					</div>
 				{/each}
+				</div>
 			</div>
 		{/each}
 	{/if}
