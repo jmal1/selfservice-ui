@@ -61,19 +61,18 @@
 		// the main admin bundle.
 		(async () => {
 			try {
-				// Use the editor.api entrypoint to avoid pulling in language
-				// services (ts/html/css/json) we never use. The default
-				// `monaco-editor` package registers all language workers; we
-				// only need shell highlighting.
-				const monacoMod = await import('monaco-editor/esm/vs/editor/editor.api');
+				// Use the editor.main entrypoint so the standard editor
+				// contributions (clipboard / Ctrl+A select-all / find / hover
+				// peek / context menu) are wired up. editor.api alone gives
+				// us a working editor but without those keybindings, which
+				// makes Ctrl+C copy random page content and Ctrl+A select the
+				// whole webpage instead of the editor text.
+				const monacoMod = await import('monaco-editor/esm/vs/editor/editor.main');
 				monaco = monacoMod;
 
-				// Register the basic shell tokenizer (not pulled in by the api entrypoint).
-				await import('monaco-editor/esm/vs/basic-languages/shell/shell.contribution');
-
-				// Worker setup. We only need the core editor worker for syntax
-				// services on a single language (shell). Language-specific
-				// workers (ts/json/html/css) are not needed.
+				// Worker setup. We only need the core editor worker; we never
+				// register the TS/JSON/HTML/CSS language services, so their
+				// workers don't get pulled in by Vite.
 				const EditorWorker = (
 					await import('monaco-editor/esm/vs/editor/editor.worker?worker')
 				).default;
