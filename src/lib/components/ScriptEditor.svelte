@@ -91,6 +91,11 @@
 				const monacoLang = language === 'bash' ? 'shell' : language;
 
 				model = monaco.editor.createModel(value, monacoLang);
+				// Force LF line endings. Scripts run on the linux runner, so
+				// any \r in the saved content breaks shebangs and conditionals
+				// and floods shellcheck with SC1017. The backend also strips
+				// CRs on save as a belt-and-suspenders fix.
+				model.setEOL(monaco.editor.EndOfLineSequence.LF);
 				editor = monaco.editor.create(container, {
 					model,
 					theme: prefersDark() ? 'vs-dark' : 'vs',
