@@ -35,6 +35,11 @@ export interface User {
 	max_pods: number;
 }
 
+export type TemplateKind =
+	| 'clone_with_customize'
+	| 'clone_no_customize'
+	| 'registered_existing_vm';
+
 export interface Template {
 	id: string;
 	name: string;
@@ -49,6 +54,8 @@ export interface Template {
 	icon_url: string;
 	default_username: string;
 	default_password: string;
+	kind: TemplateKind;
+	assign_ip: boolean;
 	is_active: boolean;
 }
 

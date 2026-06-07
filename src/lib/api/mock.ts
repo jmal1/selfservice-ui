@@ -75,6 +75,8 @@ export const mockTemplates: Template[] = [
 		icon_url: '',
 		default_username: 'student',
 		default_password: 'changeme',
+		kind: 'clone_with_customize',
+		assign_ip: true,
 		is_active: true
 	},
 	{
@@ -91,6 +93,8 @@ export const mockTemplates: Template[] = [
 		icon_url: '',
 		default_username: 'Administrator',
 		default_password: 'P@ssw0rd!',
+		kind: 'clone_with_customize',
+		assign_ip: true,
 		is_active: true
 	},
 	{
@@ -107,6 +111,8 @@ export const mockTemplates: Template[] = [
 		icon_url: '',
 		default_username: 'kali',
 		default_password: 'kali',
+		kind: 'registered_existing_vm',
+		assign_ip: true,
 		is_active: true
 	},
 	{
@@ -123,6 +129,8 @@ export const mockTemplates: Template[] = [
 		icon_url: '',
 		default_username: '',
 		default_password: '',
+		kind: 'clone_no_customize',
+		assign_ip: false,
 		is_active: false
 	}
 ];
@@ -526,6 +534,8 @@ export const mockApi = {
 			icon_url: req.icon_url as string,
 			default_username: (req.default_username as string) ?? '',
 			default_password: (req.default_password as string) ?? '',
+			kind: ((req.kind as Template['kind']) ?? 'clone_with_customize'),
+			assign_ip: typeof req.assign_ip === 'boolean' ? (req.assign_ip as boolean) : true,
 			is_active: req.is_active as boolean
 		};
 		mockTemplates.push(tpl);

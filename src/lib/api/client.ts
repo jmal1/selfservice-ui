@@ -203,6 +203,8 @@ export interface CreateTemplateRequest {
 	is_active: boolean;
 	default_username: string;
 	default_password: string;
+	kind?: 'clone_with_customize' | 'clone_no_customize' | 'registered_existing_vm';
+	assign_ip?: boolean;
 }
 
 export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Template> {

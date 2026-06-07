@@ -51,7 +51,9 @@
 			icon_url: '',
 			is_active: true,
 			default_username: '',
-			default_password: ''
+			default_password: '',
+			kind: 'clone_with_customize',
+			assign_ip: true
 		};
 	}
 
@@ -134,7 +136,9 @@
 			icon_url: t.icon_url,
 			is_active: t.is_active,
 			default_username: t.default_username ?? '',
-			default_password: t.default_password ?? ''
+			default_password: t.default_password ?? '',
+			kind: t.kind ?? 'clone_with_customize',
+			assign_ip: t.assign_ip ?? true
 		};
 	}
 
@@ -262,6 +266,35 @@
 							<option value="linux">Linux</option>
 							<option value="windows">Windows</option>
 						</select>
+					</label>
+					<label class="block sm:col-span-2 lg:col-span-3">
+						<span class="text-xs font-medium text-surface-500">Provisioning Mode</span>
+						<select bind:value={createValues.kind} class={inputClass}>
+							<option value="clone_with_customize">
+								Clone &amp; Customize — generate per-pod password, sysprep / cloud-init
+							</option>
+							<option value="clone_no_customize">
+								Clone, No Customization — linked clone, guest keeps baked-in credentials
+							</option>
+							<option value="registered_existing_vm">
+								Registered Existing VM — link-clone an already-built VM, static creds
+							</option>
+						</select>
+						<span class="mt-1 block text-xs text-surface-500">
+							{#if createValues.kind === 'clone_with_customize'}
+								Default. Each pod gets a freshly generated password injected via guestinfo.
+							{:else if createValues.kind === 'clone_no_customize'}
+								Linked clone of the template; no customization is run. Use the Default Username / Password below for the credentials students will see.
+							{:else}
+								The vCenter Template field above should point at an already-prepared VM. Each pod gets a linked clone of it.
+							{/if}
+						</span>
+					</label>
+					<label class="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
+						<input type="checkbox" bind:checked={createValues.assign_ip} class="accent-primary-500" />
+						<span class="text-sm text-surface-900 dark:text-surface-100">
+							Assign IP from the pod VLAN (uncheck if the guest manages its own networking — DHCP from inside, static config, etc.)
+						</span>
 					</label>
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">Default vCPUs</span>
@@ -443,12 +476,31 @@
 											</div>
 										</td>
 										<td class="px-5 py-3">
-											<input
-												type="checkbox"
-												bind:checked={editValues.is_active}
-												class="accent-primary-500"
-												aria-label="Template active"
-											/>
+											<div class="flex flex-col gap-1">
+												<select bind:value={editValues.kind} class={inputSmClass} aria-label="Provisioning mode">
+													<option value="clone_with_customize">Clone+Customize</option>
+													<option value="clone_no_customize">Clone, no customize</option>
+													<option value="registered_existing_vm">Registered VM</option>
+												</select>
+												<label class="flex items-center gap-1 text-xs">
+													<input
+														type="checkbox"
+														bind:checked={editValues.assign_ip}
+														class="accent-primary-500"
+														aria-label="Assign IP"
+													/>
+													<span>Assign IP</span>
+												</label>
+												<label class="flex items-center gap-1 text-xs">
+													<input
+														type="checkbox"
+														bind:checked={editValues.is_active}
+														class="accent-primary-500"
+														aria-label="Template active"
+													/>
+													<span>Active</span>
+												</label>
+											</div>
 										</td>
 										<td class="px-5 py-3 text-right">
 											<div class="flex items-center justify-end gap-1">
