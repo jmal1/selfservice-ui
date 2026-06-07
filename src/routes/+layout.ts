@@ -18,6 +18,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	}
 
 	const isLoginPage = url.pathname.startsWith('/login');
+	const isPublicPage = url.pathname.startsWith('/ai');
 
 	try {
 		const res = await fetch(`${config.apiBaseUrl}/auth/me`, {
@@ -34,7 +35,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		// Network error — treat as unauthenticated
 	}
 
-	if (!isLoginPage) {
+	if (!isLoginPage && !isPublicPage) {
 		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname)}`);
 	}
 
