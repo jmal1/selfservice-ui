@@ -13,6 +13,8 @@
 	import type { Template, Playlist } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import VCenterTemplatePicker from '$lib/components/VCenterTemplatePicker.svelte';
+	import MarkdownField from '$lib/components/MarkdownField.svelte';
+	import PasswordField from '$lib/components/PasswordField.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
 	let templates = $state<Template[]>([]);
@@ -333,17 +335,22 @@
 						<input type="text" bind:value={createValues.icon_url} class={inputClass} />
 					</label>
 					<label class="block sm:col-span-2 lg:col-span-3">
-						<span class="text-xs font-medium text-surface-500">Description</span>
-						<input type="text" bind:value={createValues.description} class={inputClass} />
+						<MarkdownField
+							bind:value={createValues.description}
+							placeholder="Markdown supported — # headings, **bold**, `code`, [links](https://…), lists, etc."
+						/>
 					</label>
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">Default Username</span>
 						<input type="text" bind:value={createValues.default_username} class={inputClass} placeholder="e.g. student" />
 					</label>
-					<label class="block">
-						<span class="text-xs font-medium text-surface-500">Default Password</span>
-						<input type="text" bind:value={createValues.default_password} class={inputClass} placeholder="e.g. changeme" />
-					</label>
+					<div class="block">
+						<PasswordField
+							bind:value={createValues.default_password}
+							placeholder="e.g. changeme"
+							hint="Visible to admins only. Stored as plaintext (shared instructor credential)."
+						/>
+					</div>
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={createValues.is_active} class="accent-primary-500" />
 						<span class="text-sm text-surface-900 dark:text-surface-100">Active</span>
