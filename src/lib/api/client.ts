@@ -226,6 +226,95 @@ export function adminDeleteTemplate(id: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/admin/templates/${id}`, { method: 'DELETE' });
 }
 
+// --- Template Creation Wizard (T4) ---
+//
+// Multi-step instructor flow: Draft → Provision → Configure → Generalize
+// → Ready → Active. Instructor-accessible (lab-instructors group) — does
+// not require full admin role. State conflicts return 409 with
+// {error, reason, current_state, allowed_next_states} in ApiError.body
+// so the UI can re-render the action buttons without a fresh GET.
+
+export interface CreateTemplateDraftRequest {
+	name: string;
+	os_type: 'linux' | 'windows';
+	source_type: 'clone_template' | 'clone_vcenter' | 'iso';
+	source_ref: string;
+	staging_network?: string;
+	vcpus?: number;
+	ram_mb?: number;
+	disk_gb?: number;
+	description?: string;
+	icon_url?: string;
+	default_username?: string;
+	default_password?: string;
+}
+
+export interface WizardStateResponse {
+	template_id: string;
+	template_state: string;
+	allowed_next_states: string[];
+	vcenter_vm_id?: string;
+	source_type?: string;
+	source_ref?: string;
+	staging_network?: string;
+}
+
+export interface WizardJobResponse {
+	job_id: string;
+	state: WizardStateResponse;
+}
+
+export function adminCreateTemplateDraft(req: CreateTemplateDraftRequest): Promise<Template> {
+	return apiFetch<Template>('/api/v1/admin/templates/draft', {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminProvisionTemplate(id: string): Promise<WizardJobResponse> {
+	return apiFetch<WizardJobResponse>(`/api/v1/admin/templates/${id}/provision`, {
+		method: 'POST'
+	});
+}
+
+export function adminGeneralizeTemplate(
+	id: string,
+	body: { guest_username?: string; guest_password: string }
+): Promise<WizardJobResponse> {
+	return apiFetch<WizardJobResponse>(`/api/v1/admin/templates/${id}/generalize`, {
+		method: 'POST',
+		body: JSON.stringify(body)
+	});
+}
+
+export function adminPublishTemplate(id: string): Promise<WizardStateResponse> {
+	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/publish`, {
+		method: 'POST'
+	});
+}
+
+export function adminUnpublishTemplate(id: string): Promise<WizardStateResponse> {
+	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/unpublish`, {
+		method: 'POST'
+	});
+}
+
+export function adminCancelTemplate(id: string): Promise<WizardStateResponse> {
+	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/cancel`, {
+		method: 'POST'
+	});
+}
+
+export function adminRetryTemplate(id: string): Promise<WizardStateResponse> {
+	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/retry`, {
+		method: 'POST'
+	});
+}
+
+export function adminGetWizardState(id: string): Promise<WizardStateResponse> {
+	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/wizard-state`);
+}
+
 // --- vCenter Templates Folder Browser ---
 
 export interface VCenterFolderVM {

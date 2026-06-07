@@ -12,6 +12,12 @@ class AuthStore {
 		return this.user?.role === 'admin';
 	}
 
+	get isInstructor(): boolean {
+		// Instructor or higher. Admin satisfies instructor in the API's
+		// level-based RequireRole, so mirror that here for UI gating.
+		return this.user?.role === 'instructor' || this.user?.role === 'admin';
+	}
+
 	get role(): string | null {
 		return this.user?.role ?? null;
 	}

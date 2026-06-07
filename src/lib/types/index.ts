@@ -40,6 +40,22 @@ export type TemplateKind =
 	| 'clone_no_customize'
 	| 'registered_existing_vm';
 
+export type TemplateLifecycleState =
+	| 'draft'
+	| 'provisioning'
+	| 'configuring'
+	| 'generalizing'
+	| 'ready'
+	| 'active'
+	| 'errored'
+	| 'archived';
+
+export type TemplateSourceType =
+	| 'clone_template'
+	| 'clone_vcenter'
+	| 'iso'
+	| '';
+
 export interface Template {
 	id: string;
 	name: string;
@@ -57,6 +73,15 @@ export interface Template {
 	kind: TemplateKind;
 	assign_ip: boolean;
 	is_active: boolean;
+	// T4 wizard lifecycle fields (migration 000018). Older templates
+	// created before T4 default to template_state="active" via the
+	// migration backfill.
+	template_state?: TemplateLifecycleState;
+	source_type?: TemplateSourceType;
+	source_ref?: string;
+	staging_network?: string;
+	vcenter_vm_id?: string;
+	created_by?: string;
 	created_at?: string;
 	updated_at?: string;
 }

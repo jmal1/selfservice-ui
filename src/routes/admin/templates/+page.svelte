@@ -236,12 +236,21 @@
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Template Management</h1>
 		{#if authStore.isAdmin && !showCreate}
-			<button
-				class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
-				onclick={openCreate}
-			>
-				+ Add Template
-			</button>
+			<div class="flex gap-2">
+				<a
+					href="/admin/templates/new"
+					class="rounded-lg bg-secondary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-secondary-600"
+					title="Open the multi-step wizard (Draft → Provision → Configure → Generalize → Publish)"
+				>
+					+ New (wizard)
+				</a>
+				<button
+					class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
+					onclick={openCreate}
+				>
+					+ Add Template
+				</button>
+			</div>
 		{/if}
 	</div>
 
