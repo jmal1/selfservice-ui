@@ -18,6 +18,17 @@
 	const hasVCenter = $derived(!!vm.vcenter_vm_id);
 	const isPoweredOn = $derived(vm.status === 'powered_on' || vm.status === 'running');
 
+	// Template kind drives the credential-source hint. When the template was
+	// registered with kind=registered_existing_vm or clone_no_customize, the
+	// student shouldn't be surprised that the password is shared across pods
+	// (no per-pod customization is run). When assign_ip=false they also need
+	// to know why no IP is being shown — the guest manages its own network.
+	const templateKind = $derived(vm.template?.kind ?? 'clone_with_customize');
+	const isStaticCreds = $derived(
+		templateKind === 'registered_existing_vm' || templateKind === 'clone_no_customize'
+	);
+	const noIpExpected = $derived(vm.template?.assign_ip === false);
+
 	async function handleCopy(text: string, field: string) {
 		const ok = await copyToClipboard(text);
 		if (ok) {
@@ -43,6 +54,9 @@
 	}
 </script>
 
+<!-- The panel renders whenever we have networking info OR a vCenter VM
+	 (so registered-existing-VM templates that manage their own networking
+	 still get the console/credentials view even without an IP). -->
 {#if vm.ip_address || hasVCenter}
 	<div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
 		{#if vm.ip_address}
@@ -113,6 +127,13 @@
 						</span>
 					{/if}
 				</div>
+			{:else if isStaticCreds}
+				<!-- T3.4: registered-existing-VM / clone-no-customize templates may
+				     have no defaults configured. Tell the student why instead of
+				     leaving the credentials block silently empty. -->
+				<div class="text-xs italic text-surface-400">
+					Credentials are managed inside the VM (no per-pod customization is run for this template).
+				</div>
 			{/if}
 			<div class="ml-auto flex gap-2">
 				{#if hasVCenter}
@@ -135,5 +156,23 @@
 				{/if}
 			</div>
 		</div>
+
+		{#if isStaticCreds && hasCredentials}
+			<!-- T3.4: shared-credentials hint. These creds are baked into the
+			     template image; every pod from this template sees the same
+			     username/password. The instructor knew this when registering
+			     the template, but the student does not. -->
+			<div class="mt-2 text-[11px] italic text-surface-500">
+				These credentials are shared across all pods from this template — change them after first login if you need per-user isolation.
+			</div>
+		{/if}
+
+		{#if noIpExpected && !vm.ip_address}
+			<!-- T3.4: assign_ip=false hint. The provisioner intentionally skipped
+			     WaitForIP so the VM may not surface an IP via VMware Tools. -->
+			<div class="mt-2 text-[11px] italic text-surface-500">
+				This template manages its own network. Use the VM console to find or configure the IP address.
+			</div>
+		{/if}
 	</div>
 {/if}
