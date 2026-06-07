@@ -16,6 +16,8 @@
 	let error = $state('');
 	let expandedWorkflow = $state('');
 	let cancelling = $state(false);
+	let liveEvents: { ts: string; type: string; message: string }[] = $state([]);
+	let wsConnected = $state(false);
 
 	const isActive = $derived(
 		run?.status === 'pending' || run?.status === 'provisioning' || run?.status === 'running'
@@ -28,6 +30,36 @@
 			error = e.message || 'Failed to load run';
 		} finally {
 			loading = false;
+		}
+	}
+
+	// connectProgressWS opens the live event stream and refreshes the run
+	// on each frame. It transparently falls back to the polling onMount sets
+	// up if the WS errors or closes early (e.g. proxy issue, server old).
+	function connectProgressWS(): WebSocket | null {
+		try {
+			const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+			const url = `${proto}//${location.host}/api/v1/runs/${runId}/progress/ws`;
+			const ws = new WebSocket(url);
+			ws.onopen = () => { wsConnected = true; };
+			ws.onmessage = (ev) => {
+				try {
+					const frame = JSON.parse(ev.data);
+					liveEvents = [
+						{ ts: frame.ts || new Date().toISOString(), type: frame.type, message: frame.message || '' },
+						...liveEvents
+					].slice(0, 50);
+					// Refresh full run state on any frame so progress bars/counts update.
+					loadRun();
+				} catch {
+					/* ignore malformed frame */
+				}
+			};
+			ws.onclose = () => { wsConnected = false; };
+			ws.onerror = () => { wsConnected = false; };
+			return ws;
+		} catch {
+			return null;
 		}
 	}
 
@@ -66,10 +98,16 @@
 
 	onMount(() => {
 		loadRun();
+		const ws = connectProgressWS();
+		// Keep a slow polling fallback in case WS drops (proxy edge case
+		// or running against a server that doesn't yet expose the WS).
 		const interval = setInterval(() => {
-			if (isActive) loadRun();
-		}, 3000);
-		return () => clearInterval(interval);
+			if (isActive && !wsConnected) loadRun();
+		}, 5000);
+		return () => {
+			clearInterval(interval);
+			ws?.close();
+		};
 	});
 </script>
 
@@ -123,6 +161,31 @@
 				<div class="mt-3 rounded bg-error-500/10 p-2 text-sm text-error-500">{run.error_message}</div>
 			{/if}
 		</div>
+
+		<!-- Live event stream — visible while run is active or has captured frames -->
+		{#if isActive || liveEvents.length > 0}
+			<div class="card p-4">
+				<div class="mb-2 flex items-center justify-between">
+					<h2 class="text-sm font-semibold">Live Progress</h2>
+					<span class="text-xs {wsConnected ? 'text-success-500' : 'text-surface-500'}">
+						{wsConnected ? '● live' : '○ polling'}
+					</span>
+				</div>
+				{#if liveEvents.length === 0}
+					<p class="text-xs text-surface-500">Waiting for events…</p>
+				{:else}
+					<ul class="max-h-40 space-y-1 overflow-auto font-mono text-xs">
+						{#each liveEvents as evt}
+							<li class="flex gap-2">
+								<span class="text-surface-500">{new Date(evt.ts).toLocaleTimeString()}</span>
+								<span class="font-semibold">{evt.type}</span>
+								<span class="text-surface-600 dark:text-surface-400">{evt.message}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		{/if}
 
 		<!-- Workflow Results -->
 		{#if run.results && run.results.length > 0}
