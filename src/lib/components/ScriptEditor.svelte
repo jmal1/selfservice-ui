@@ -114,6 +114,13 @@
 					glyphMargin: false,
 					folding: true,
 					padding: { top: 8, bottom: 8 },
+					// Render hover tooltips, suggestion popups and the diagnostics
+					// peek widget in a top-level fixed overlay instead of inside
+					// the editor's scrollable region. Without this, hovering a
+					// finding on line 1 (or any line near the top/right edge)
+					// causes the tooltip to be clipped by the container box.
+					fixedOverflowWidgets: true,
+					hover: { above: false },
 					'semanticHighlighting.enabled': true
 				});
 
