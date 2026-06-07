@@ -347,6 +347,8 @@
 					bind:hasWarnings={scriptHasWarnings}
 					language={formPlatforms.some((p) => p.startsWith('windows')) ? 'shell' : 'bash'}
 					height="320px"
+					inputContextNames={formInputCtx.map((p) => p.key).filter(Boolean)}
+					outputContextNames={formOutputCtx.map((p) => p.key).filter(Boolean)}
 					placeholder={'# Action function body\n# Use ctx_get/ctx_set for context, LAST_ERROR/LAST_STUDENT_MSG for failures\n'}
 				/>
 				<p class="text-xs text-surface-500">

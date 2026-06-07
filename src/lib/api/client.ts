@@ -640,10 +640,16 @@ export interface ScriptValidationResult {
 
 export function adminValidateScript(
 	language: string,
-	script: string
+	script: string,
+	opts?: { inputContextNames?: string[]; outputContextNames?: string[] }
 ): Promise<ScriptValidationResult> {
 	return apiFetch<ScriptValidationResult>('/api/v1/admin/scripts/validate', {
 		method: 'POST',
-		body: JSON.stringify({ language, script })
+		body: JSON.stringify({
+			language,
+			script,
+			input_context_names: opts?.inputContextNames,
+			output_context_names: opts?.outputContextNames
+		})
 	});
 }

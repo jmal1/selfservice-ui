@@ -3,14 +3,27 @@
   
   Monaco-backed editor for bash/shell scripts in the admin workflow + action
   editors. Lazy-loads the ~3MB Monaco bundle on first mount so the rest of
-  the admin UI stays light. Debounces validation calls (default 500ms) and
-  exposes lint results to the parent so it can gate Save on errors.
+  the admin UI stays light.
+
+  Validation runs in two layers:
+    1. Quick (client-side, ~300ms debounce) — sh-syntax WASM parser, no
+       network. Catches syntax errors (missing then/fi, unclosed quotes,
+       bad redirection). Most of what students hit while typing.
+    2. Deep (server-side, ~2000ms debounce or explicit) — shellcheck via
+       POST /api/v1/admin/scripts/validate. Catches the full SC**** rule
+       set. Hits the server less aggressively so untrusted code only gets
+       parsed (still: shellcheck *parses*, never executes) on real pauses
+       or Save.
+
+  Quick + deep markers are kept in separate Monaco "owner" namespaces so
+  they don't clobber each other.
 
   Usage:
     <ScriptEditor
       bind:value={customScript}
       language="bash"
       height="400px"
+      inputContextNames={['path','value']}
       bind:hasErrors
       bind:hasWarnings
     />
@@ -26,7 +39,14 @@
 		height?: string;
 		readonly?: boolean;
 		placeholder?: string;
+		/** Debounce for the client-side sh-syntax parse (default 300ms). */
+		quickValidateDebounceMs?: number;
+		/** Debounce for the server-side shellcheck call (default 2000ms). */
 		validateDebounceMs?: number;
+		/** CTX_* input context names declared on this action (admin form). */
+		inputContextNames?: string[];
+		/** CTX_* output context names declared on this action (admin form). */
+		outputContextNames?: string[];
 		hasErrors?: boolean;
 		hasWarnings?: boolean;
 		findings?: ScriptValidationFinding[];
@@ -38,41 +58,67 @@
 		height = '400px',
 		readonly = false,
 		placeholder = '',
-		validateDebounceMs = 500,
+		quickValidateDebounceMs = 300,
+		validateDebounceMs = 2000,
+		inputContextNames = [],
+		outputContextNames = [],
 		hasErrors = $bindable(false),
 		hasWarnings = $bindable(false),
 		findings = $bindable([])
 	}: Props = $props();
 
+	const MARKER_OWNER_QUICK = 'sh-syntax';
+	const MARKER_OWNER_DEEP = 'shellcheck';
+
 	let container: HTMLDivElement | undefined = $state();
 	let editor: any = null;
 	let monaco: any = null;
 	let model: any = null;
+	let shParse: ((text: string, opts: { variant: number }) => Promise<unknown>) | null = null;
+	let langBash = 0;
 	let loading = $state(true);
 	let loadError = $state<string | null>(null);
 	let validating = $state(false);
-	let lastValidatedScript = '';
-	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let lastDeepValidatedScript = '';
+	let quickFindings: ScriptValidationFinding[] = [];
+	let deepFindings: ScriptValidationFinding[] = [];
+	let quickDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let deepDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let suppressNextChange = false;
 
 	onMount(() => {
-		// Vite static import resolution requires the URL to be a literal.
-		// We use dynamic imports so the Monaco bundle is code-split out of
-		// the main admin bundle.
 		(async () => {
 			try {
-				// Use the editor.main entrypoint so the standard editor
-				// contributions (clipboard / Ctrl+A select-all / find / hover
-				// peek / context menu) are wired up. editor.api alone gives
-				// us a working editor but without those keybindings, which
-				// makes Ctrl+C copy random page content and Ctrl+A select the
-				// whole webpage instead of the editor text.
+				// Lazy-load Monaco. editor.main pulls the standard editor
+				// contributions (clipboard / Ctrl+A / find / hover peek) which
+				// editor.api alone leaves out — without it, Ctrl+C copies random
+				// page content and Ctrl+A selects the whole webpage.
 				const monacoMod = await import('monaco-editor/esm/vs/editor/editor.main');
 				monaco = monacoMod;
 
-				// Worker setup. We only need the core editor worker; we never
-				// register the TS/JSON/HTML/CSS language services, so their
-				// workers don't get pulled in by Vite.
+				// Lazy-load sh-syntax for client-side parsing. We have to wire
+				// up the WASM URL ourselves because the package's default
+				// entrypoint uses node fs to read main.wasm — Vite's `?url`
+				// loader gives us a fetchable asset URL the browser can use.
+				try {
+					const [{ getProcessor, LangVariant }, wasmModule] = await Promise.all([
+						import('sh-syntax'),
+						import('sh-syntax/main.wasm?url')
+					]);
+					// vendors/wasm_exec.cjs registers `globalThis.Go`. Side
+					// effect only — the import order matters: it has to be
+					// loaded before getProcessor calls `new Go()`.
+					await import('sh-syntax/vendors/wasm_exec');
+					langBash = LangVariant.LangBash;
+					shParse = getProcessor(async () => {
+						const res = await fetch(wasmModule.default);
+						return await res.arrayBuffer();
+					});
+				} catch (err) {
+					// Non-fatal: deep server-side validation still works.
+					console.warn('sh-syntax failed to load; client-side parsing disabled', err);
+				}
+
 				const EditorWorker = (
 					await import('monaco-editor/esm/vs/editor/editor.worker?worker')
 				).default;
@@ -84,16 +130,9 @@
 
 				if (!container) return;
 
-				// Map our language strings to Monaco's built-in IDs. Monaco ships
-				// with "shell" but not "bash" — they parse close enough for editor
-				// highlighting that we just alias.
 				const monacoLang = language === 'bash' ? 'shell' : language;
 
 				model = monaco.editor.createModel(value, monacoLang);
-				// Force LF line endings. Scripts run on the linux runner, so
-				// any \r in the saved content breaks shebangs and conditionals
-				// and floods shellcheck with SC1017. The backend also strips
-				// CRs on save as a belt-and-suspenders fix.
 				model.setEOL(monaco.editor.EndOfLineSequence.LF);
 				editor = monaco.editor.create(container, {
 					model,
@@ -113,20 +152,12 @@
 					glyphMargin: false,
 					folding: true,
 					padding: { top: 8, bottom: 8 },
-					// Render hover tooltips, suggestion popups and the diagnostics
-					// peek widget in a top-level fixed overlay instead of inside
-					// the editor's scrollable region. Without this, hovering a
-					// finding on line 1 (or any line near the top/right edge)
-					// causes the tooltip to be clipped by the container box.
 					fixedOverflowWidgets: true,
 					hover: { above: false },
 					'semanticHighlighting.enabled': true
 				});
 
 				if (placeholder && !value) {
-					// Monaco doesn't have first-class placeholder support. Light-touch
-					// alternative: render the placeholder as a content widget that
-					// hides on focus or first keystroke.
 					installPlaceholderWidget(editor, placeholder);
 				}
 
@@ -136,12 +167,14 @@
 						return;
 					}
 					value = editor.getValue();
-					scheduleValidate();
+					scheduleQuickValidate();
+					scheduleDeepValidate();
 				});
 
 				loading = false;
-				// Validate the seeded content once.
-				scheduleValidate();
+				// Seed both layers on initial load.
+				scheduleQuickValidate();
+				scheduleDeepValidate();
 			} catch (err) {
 				console.error('Monaco failed to load', err);
 				loadError = err instanceof Error ? err.message : String(err);
@@ -151,14 +184,12 @@
 	});
 
 	onDestroy(() => {
-		if (debounceTimer) clearTimeout(debounceTimer);
+		if (quickDebounceTimer) clearTimeout(quickDebounceTimer);
+		if (deepDebounceTimer) clearTimeout(deepDebounceTimer);
 		if (editor) editor.dispose();
 		if (model) model.dispose();
 	});
 
-	// Mirror external value changes back into the editor (e.g. when the parent
-	// loads a saved workflow and resets `customScript`). Use suppressNextChange
-	// so we don't echo into a validation loop.
 	$effect(() => {
 		if (editor && model && value !== editor.getValue()) {
 			suppressNextChange = true;
@@ -174,42 +205,97 @@
 		);
 	}
 
-	function scheduleValidate() {
-		if (debounceTimer) clearTimeout(debounceTimer);
-		debounceTimer = setTimeout(runValidate, validateDebounceMs);
+	function scheduleQuickValidate() {
+		if (quickDebounceTimer) clearTimeout(quickDebounceTimer);
+		quickDebounceTimer = setTimeout(runQuickValidate, quickValidateDebounceMs);
 	}
 
-	async function runValidate() {
+	function scheduleDeepValidate() {
+		if (deepDebounceTimer) clearTimeout(deepDebounceTimer);
+		deepDebounceTimer = setTimeout(runDeepValidate, validateDebounceMs);
+	}
+
+	// runQuickValidate parses the buffer client-side with sh-syntax. Catches
+	// syntax errors immediately without contacting the server. Never blocks
+	// on the network so it's safe to run on every keystroke (debounced).
+	async function runQuickValidate() {
+		if (!editor || !monaco || !model) return;
+		if (!shParse) {
+			quickFindings = [];
+			refreshAggregateState();
+			return;
+		}
+		const script = editor.getValue();
+		if (script.trim() === '') {
+			quickFindings = [];
+			setMarkers(MARKER_OWNER_QUICK, []);
+			refreshAggregateState();
+			return;
+		}
+		try {
+			await shParse(script, { variant: langBash });
+			quickFindings = [];
+		} catch (err: any) {
+			// sh-syntax throws a ParseError shaped like
+			// { Text: string, Pos: { Line, Col, Offset } }.
+			const line = err?.Pos?.Line ?? 1;
+			const col = err?.Pos?.Col ?? 1;
+			const message = typeof err?.Text === 'string' ? err.Text : err?.message ?? 'syntax error';
+			quickFindings = [
+				{
+					line,
+					column: col,
+					end_line: line,
+					end_column: col + 1,
+					severity: 'error',
+					code: 'PARSE',
+					message
+				}
+			];
+		}
+		setMarkers(MARKER_OWNER_QUICK, quickFindings);
+		refreshAggregateState();
+	}
+
+	// runDeepValidate calls the server-side shellcheck endpoint with the
+	// declared input/output context names so SC2154 doesn't fire on legitimate
+	// CTX_* references. Runs on a much longer debounce than runQuickValidate.
+	async function runDeepValidate() {
 		if (!editor || !monaco || !model) return;
 		const script = editor.getValue();
-		if (script === lastValidatedScript) return;
-		lastValidatedScript = script;
+		if (script === lastDeepValidatedScript) return;
+		lastDeepValidatedScript = script;
 
 		if (script.trim() === '') {
-			setMarkers([]);
-			findings = [];
-			hasErrors = false;
-			hasWarnings = false;
+			deepFindings = [];
+			setMarkers(MARKER_OWNER_DEEP, []);
+			refreshAggregateState();
 			return;
 		}
 
 		validating = true;
 		try {
-			const res = await adminValidateScript(language === 'sh' ? 'bash' : language, script);
-			findings = res.findings;
-			hasErrors = res.has_errors;
-			hasWarnings = res.has_warnings;
-			setMarkers(res.findings);
+			const res = await adminValidateScript(language === 'sh' ? 'bash' : language, script, {
+				inputContextNames,
+				outputContextNames
+			});
+			deepFindings = res.findings;
+			setMarkers(MARKER_OWNER_DEEP, res.findings);
 		} catch (err) {
-			// Validation failure shouldn't break the editor; surface in dev
-			// tools but leave the markers untouched so the user can keep typing.
 			console.warn('script validation failed', err);
 		} finally {
 			validating = false;
+			refreshAggregateState();
 		}
 	}
 
-	function setMarkers(items: ScriptValidationFinding[]) {
+	function refreshAggregateState() {
+		findings = [...quickFindings, ...deepFindings];
+		hasErrors = findings.some((f) => f.severity === 'error');
+		hasWarnings = findings.some((f) => f.severity === 'warning');
+	}
+
+	function setMarkers(owner: string, items: ScriptValidationFinding[]) {
 		if (!monaco || !model) return;
 		const markers = items.map((f) => ({
 			startLineNumber: f.line,
@@ -219,11 +305,10 @@
 			message: `[${f.code}] ${f.message}`,
 			severity: severityToMonaco(f.severity)
 		}));
-		monaco.editor.setModelMarkers(model, 'shellcheck', markers);
+		monaco.editor.setModelMarkers(model, owner, markers);
 	}
 
 	function severityToMonaco(s: ScriptValidationFinding['severity']): number {
-		// monaco.MarkerSeverity is an enum: Hint=1, Info=2, Warning=4, Error=8.
 		switch (s) {
 			case 'error':
 				return 8;
@@ -238,11 +323,13 @@
 		}
 	}
 
-	// Force-run validation now (used by the "Validate" button + Save click).
+	// Force-run both validation layers now (used by the "Validate" button +
+	// Save click). Returns true only if both passes succeed without errors.
 	export async function validateNow(): Promise<boolean> {
-		if (debounceTimer) clearTimeout(debounceTimer);
-		lastValidatedScript = ''; // force re-run even if unchanged
-		await runValidate();
+		if (quickDebounceTimer) clearTimeout(quickDebounceTimer);
+		if (deepDebounceTimer) clearTimeout(deepDebounceTimer);
+		lastDeepValidatedScript = '';
+		await Promise.all([runQuickValidate(), runDeepValidate()]);
 		return !hasErrors;
 	}
 
@@ -263,7 +350,7 @@
 			},
 			getPosition: () => ({
 				position: { lineNumber: 1, column: 1 },
-				preference: [0] // ABOVE
+				preference: [0]
 			})
 		};
 		ed.addContentWidget(ContentWidget);
