@@ -617,3 +617,33 @@ export function adminUpdateAction(id: string, action: Partial<Action>): Promise<
 export function adminDeleteAction(id: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/admin/actions/${id}`, { method: 'DELETE' });
 }
+
+// --- Script validator (shellcheck) ---
+export interface ScriptValidationFinding {
+	line: number;
+	column: number;
+	end_line: number;
+	end_column: number;
+	severity: 'error' | 'warning' | 'info' | 'style';
+	code: string;
+	message: string;
+}
+
+export interface ScriptValidationResult {
+	language: string;
+	findings: ScriptValidationFinding[];
+	has_errors: boolean;
+	has_warnings: boolean;
+	linter_stderr?: string;
+	duration_ms: number;
+}
+
+export function adminValidateScript(
+	language: string,
+	script: string
+): Promise<ScriptValidationResult> {
+	return apiFetch<ScriptValidationResult>('/api/v1/admin/scripts/validate', {
+		method: 'POST',
+		body: JSON.stringify({ language, script })
+	});
+}

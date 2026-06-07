@@ -16,6 +16,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import ContextBadge from '$lib/components/ContextBadge.svelte';
+	import ScriptEditor from '$lib/components/ScriptEditor.svelte';
 	import type { Workflow, Action } from '$lib/types';
 
 	// ── List mode state ──
@@ -53,6 +54,8 @@
 	// Step 3: review
 	let useScriptMode = $state(false);
 	let customScript = $state('');
+	let scriptHasErrors = $state(false);
+	let scriptHasWarnings = $state(false);
 
 	// ── Derived ──
 	const groupedLibraryActions = $derived(
@@ -1110,11 +1113,14 @@
 						</label>
 					</div>
 					{#if useScriptMode}
-						<textarea
-							class="textarea font-mono text-sm"
-							rows="16"
+						<ScriptEditor
 							bind:value={customScript}
-						></textarea>
+							bind:hasErrors={scriptHasErrors}
+							bind:hasWarnings={scriptHasWarnings}
+							language="bash"
+							height="400px"
+							placeholder={'# Custom workflow script\n# source /opt/crucible/lib/actions.sh\n# set -euo pipefail\n'}
+						/>
 					{:else}
 						<pre
 							class="max-h-80 overflow-auto rounded-lg bg-surface-100 p-4 font-mono text-sm dark:bg-surface-900"
@@ -1150,10 +1156,20 @@
 				<div class="flex items-center justify-between">
 					<button class="btn btn-secondary" onclick={() => (step = 2)}>← Back</button>
 					<div class="flex items-center gap-3">
-						{#if hasContextErrors}
+						{#if useScriptMode && scriptHasErrors}
+							<span class="text-xs font-medium text-red-600 dark:text-red-400">✗ Fix script errors to save</span>
+						{:else if hasContextErrors}
 							<span class="text-xs text-warning-600 dark:text-warning-400">⚠ Will save as draft</span>
 						{/if}
-						<button class="btn {hasContextErrors ? 'btn-warning' : 'btn-primary'}" disabled={saving} onclick={saveWorkflow}>
+						<button
+							class="btn {useScriptMode && scriptHasErrors
+								? 'btn-secondary'
+								: hasContextErrors
+									? 'btn-warning'
+									: 'btn-primary'}"
+							disabled={saving || (useScriptMode && scriptHasErrors)}
+							onclick={saveWorkflow}
+						>
 							{saving ? 'Saving...' : hasContextErrors ? 'Save as Draft' : mode === 'edit' ? 'Update Workflow' : 'Create Workflow'}
 						</button>
 					</div>
