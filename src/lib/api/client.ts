@@ -220,6 +220,60 @@ export function adminDeleteTemplate(id: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/admin/templates/${id}`, { method: 'DELETE' });
 }
 
+// --- vCenter Templates Folder Browser ---
+
+export interface VCenterFolderVM {
+	name: string;
+	moref: string;
+	power_state: string;
+	os_type: string;
+	guest_full_name: string;
+	num_cpu: number;
+	memory_mb: number;
+	disk_gb: number;
+	snapshot_count: number;
+	has_initial_snapshot: boolean;
+	vmware_tools_status: string;
+	registered_template_id: string | null;
+	registered_template_name: string | null;
+}
+
+export interface VCenterTemplatesFolder {
+	vms: VCenterFolderVM[];
+	folder_path: string;
+	cached: boolean;
+	cache_age_seconds: number;
+}
+
+export function adminListVCenterTemplatesFolder(refresh = false): Promise<VCenterTemplatesFolder> {
+	if (isMock) {
+		return Promise.resolve({
+			vms: [
+				{
+					name: 'student-ubuntu-2404',
+					moref: 'vm-mock-1',
+					power_state: 'poweredOff',
+					os_type: 'linux',
+					guest_full_name: 'Ubuntu 24.04 LTS (64-bit)',
+					num_cpu: 2,
+					memory_mb: 4096,
+					disk_gb: 40,
+					snapshot_count: 1,
+					has_initial_snapshot: true,
+					vmware_tools_status: 'toolsOk',
+					registered_template_id: null,
+					registered_template_name: null
+				}
+			],
+			folder_path: '/JMAL-Datacenter/vm/Templates (mock)',
+			cached: false,
+			cache_age_seconds: 0
+		});
+	}
+	const qs = refresh ? '?refresh=true' : '';
+	return apiFetch<VCenterTemplatesFolder>(`/api/v1/admin/vcenter/templates-folder${qs}`);
+}
+
 // --- User / Profile ---
 
 interface MeResponse {

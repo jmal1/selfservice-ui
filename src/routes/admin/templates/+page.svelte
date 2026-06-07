@@ -12,6 +12,7 @@
 	import type { CreateTemplateRequest } from '$lib/api/client';
 	import type { Template, Playlist } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import VCenterTemplatePicker from '$lib/components/VCenterTemplatePicker.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
 	let templates = $state<Template[]>([]);
@@ -253,7 +254,7 @@
 					</label>
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">vCenter Template</span>
-						<input type="text" bind:value={createValues.vcenter_template} class={inputClass} />
+						<VCenterTemplatePicker bind:value={createValues.vcenter_template} />
 					</label>
 					<label class="block">
 						<span class="text-xs font-medium text-surface-500">OS Type</span>
