@@ -57,6 +57,8 @@ export interface Template {
 	kind: TemplateKind;
 	assign_ip: boolean;
 	is_active: boolean;
+	created_at?: string;
+	updated_at?: string;
 }
 
 export interface PodVM {

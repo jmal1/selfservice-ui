@@ -212,7 +212,11 @@ export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Templat
 	return apiFetch<Template>('/api/v1/admin/templates', { method: 'POST', body: JSON.stringify(req) });
 }
 
-export function adminUpdateTemplate(id: string, req: Partial<CreateTemplateRequest>): Promise<Template> {
+export type UpdateTemplateRequest = Partial<CreateTemplateRequest> & {
+	expected_updated_at?: string;
+};
+
+export function adminUpdateTemplate(id: string, req: UpdateTemplateRequest): Promise<Template> {
 	if (isMock) return mockApi.adminUpdateTemplate(id, req as unknown as Record<string, unknown>);
 	return apiFetch<Template>(`/api/v1/admin/templates/${id}`, { method: 'PATCH', body: JSON.stringify(req) });
 }

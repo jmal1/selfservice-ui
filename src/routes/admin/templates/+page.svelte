@@ -7,7 +7,8 @@
 		adminUpdateTemplate,
 		adminDeleteTemplate,
 		adminListPlaylists,
-		adminSetTemplatePlaylists
+		adminSetTemplatePlaylists,
+		ApiError
 	} from '$lib/api/client';
 	import type { CreateTemplateRequest } from '$lib/api/client';
 	import type { Template, Playlist } from '$lib/types';
@@ -30,6 +31,7 @@
 
 	// Edit state
 	let editingId = $state<string | null>(null);
+	let editingUpdatedAt = $state<string | undefined>(undefined);
 	let editValues = $state<CreateTemplateRequest>(emptyTemplate());
 
 	// Create state
@@ -125,6 +127,7 @@
 
 	function startEdit(t: Template) {
 		editingId = t.id;
+		editingUpdatedAt = t.updated_at;
 		editValues = {
 			name: t.name,
 			vcenter_template: t.vcenter_template,
@@ -146,17 +149,28 @@
 
 	function cancelEdit() {
 		editingId = null;
+		editingUpdatedAt = undefined;
 	}
 
 	async function saveEdit(id: string) {
 		saving = true;
 		error = null;
 		try {
-			const updated = await adminUpdateTemplate(id, editValues);
+			const updated = await adminUpdateTemplate(id, {
+				...editValues,
+				expected_updated_at: editingUpdatedAt
+			});
 			templates = templates.map((t) => (t.id === id ? updated : t));
 			editingId = null;
+			editingUpdatedAt = undefined;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to update template';
+			if (e instanceof ApiError && e.status === 409) {
+				error =
+					'This template was modified by another admin since you opened the edit form. ' +
+					'Cancel and re-open the row to load the latest version, then re-apply your changes.';
+			} else {
+				error = e instanceof Error ? e.message : 'Failed to update template';
+			}
 		} finally {
 			saving = false;
 		}
