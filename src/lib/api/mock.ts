@@ -42,7 +42,7 @@ export const mockUsers: User[] = [
 		username: 'student1',
 		email: 'student1@lab.jmal.io',
 		display_name: 'Alice Chen',
-		role: 'user',
+		role: 'student',
 		max_vcpus: 8,
 		max_ram_mb: 16384,
 		max_pods: 2
@@ -52,7 +52,7 @@ export const mockUsers: User[] = [
 		username: 'student2',
 		email: 'student2@lab.jmal.io',
 		display_name: 'Bob Williams',
-		role: 'user',
+		role: 'student',
 		max_vcpus: 8,
 		max_ram_mb: 16384,
 		max_pods: 2

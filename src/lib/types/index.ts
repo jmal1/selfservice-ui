@@ -29,7 +29,7 @@ export interface User {
 	username: string;
 	email: string;
 	display_name: string;
-	role: 'user' | 'admin';
+	role: 'student' | 'instructor' | 'admin';
 	max_vcpus: number;
 	max_ram_mb: number;
 	max_pods: number;
