@@ -30,6 +30,13 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Prepare env for svelte-kit sync
+        # svelte-kit sync loads $env/static/public types from .env (not
+        # .env.production). Without this copy, svelte-check reports
+        # "Module '$env/static/public' has no exported member 'PUBLIC_X'"
+        # for every variable used in src/lib/config.ts.
+        run: cp .env.production .env
+
       - name: Type check
         run: npm run check
 
