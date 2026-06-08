@@ -339,7 +339,13 @@
 				</div>
 			</div>
 
-			<label class="label">
+			<!--
+				NOTE: this wrapper must NOT be a <label>. A <label> forwards clicks
+				to its first labelable descendant control, which steals focus from
+				Monaco's hidden <textarea> on every click and swallows keystrokes.
+				Use a plain <div> with a sibling <span> for the visual label.
+			-->
+			<div class="label">
 				<span>Script</span>
 				<ScriptEditor
 					bind:value={formScript}
@@ -372,7 +378,7 @@
 						{/each}
 					</div>
 				{/if}
-			</label>
+			</div>
 
 			<div class="grid grid-cols-2 gap-4">
 				<label class="label">
