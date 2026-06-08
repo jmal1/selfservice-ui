@@ -385,10 +385,10 @@
 				actions
 			};
 			if (mode === 'edit' && editingWorkflowId) {
-				await adminUpdateWorkflow(editingWorkflowId, payload);
+				await adminUpdateWorkflow(editingWorkflowId, payload as unknown as Partial<Workflow>);
 				toastStore.success('Workflow updated');
 			} else {
-				await adminCreateWorkflow(payload);
+				await adminCreateWorkflow(payload as unknown as Partial<Workflow>);
 				toastStore.success('Workflow created');
 			}
 			mode = 'list';

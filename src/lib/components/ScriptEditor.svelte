@@ -74,7 +74,10 @@
 	let editor: any = null;
 	let monaco: any = null;
 	let model: any = null;
-	let shParse: ((text: string, opts: { variant: number }) => Promise<unknown>) | null = null;
+	// shParse signature relaxed to `any` for the options bag because the
+	// sh-syntax types use a non-exported LangVariant enum we'd otherwise have
+	// to mirror here. The runtime contract (variant: number) is unchanged.
+	let shParse: ((text: string, opts: any) => Promise<unknown>) | null = null;
 	let langBash = 0;
 	let loading = $state(true);
 	let loadError = $state<string | null>(null);

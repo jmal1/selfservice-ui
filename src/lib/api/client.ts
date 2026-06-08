@@ -559,6 +559,7 @@ export interface CreateBlueprintRequest {
 	name: string;
 	description: string;
 	allow_vm_additions: boolean;
+	is_active?: boolean;
 	vms: {
 		template_id: string;
 		display_name: string;

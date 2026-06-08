@@ -97,7 +97,7 @@
 
 			// Check for pods expiring within 24 hours
 			for (const pod of pods) {
-				if (!pod.expires_at || pod.status !== 'running' && pod.status !== 'creating') continue;
+				if (!pod.expires_at || (pod.status !== 'active' && pod.status !== 'provisioning')) continue;
 				const hoursLeft = (new Date(pod.expires_at).getTime() - Date.now()) / (1000 * 60 * 60);
 				if (hoursLeft > 0 && hoursLeft < 24 && !warnedPods.has(pod.id)) {
 					warnedPods.add(pod.id);

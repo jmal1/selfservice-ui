@@ -323,7 +323,7 @@
 									<!-- Workflows in this playlist -->
 									{#if (expandedPlaylist.workflows ?? []).length > 0}
 										<p class="mb-3 text-xs font-semibold uppercase text-surface-500">
-											Workflows ({expandedPlaylist.workflows.length})
+											Workflows ({expandedPlaylist.workflows?.length ?? 0})
 										</p>
 										<div class="space-y-2">
 											{#each expandedPlaylist.workflows as wf, i}

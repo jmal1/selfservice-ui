@@ -4,16 +4,22 @@
 	const statusConfig = $derived.by(() => {
 		const s = status.toLowerCase();
 		switch (s) {
+			case 'active':
 			case 'running':
 			case 'powered_on':
 			case 'completed':
 				return { bg: 'bg-success-500/10', text: 'text-success-500', dot: 'bg-success-500', label: format(s), animate: s === 'running' || s === 'powered_on' };
-			case 'creating':
 			case 'pending':
 			case 'provisioning':
+			case 'cloning':
+			case 'configuring':
+			case 'creating':
 			case 'claimed':
+			case 'in_progress':
 				return { bg: 'bg-warning-500/10', text: 'text-warning-500', dot: 'bg-warning-500', label: format(s), animate: false };
 			case 'stopped':
+			case 'destroyed':
+			case 'deleted':
 			case 'powered_off':
 			case 'suspended':
 			case 'cancelled':
@@ -21,7 +27,9 @@
 			case 'error':
 			case 'failed':
 			case 'destroy_failed':
+			case 'rollback':
 				return { bg: 'bg-error-500/10', text: 'text-error-500', dot: 'bg-error-500', label: format(s), animate: false };
+			case 'destroying':
 			case 'deleting':
 			case 'suspending':
 			case 'stopping':

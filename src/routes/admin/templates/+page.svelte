@@ -7,6 +7,7 @@
 		adminUpdateTemplate,
 		adminDeleteTemplate,
 		adminListPlaylists,
+		adminGetTemplatePlaylists,
 		adminSetTemplatePlaylists,
 		ApiError
 	} from '$lib/api/client';

@@ -11,7 +11,7 @@
 	const podId = $derived(page.params.id as string);
 	const runId = $derived(page.params.runId as string);
 
-	let run: Run | null = $state(null);
+	let run = $state<Run | null>(null);
 	let loading = $state(true);
 	let error = $state('');
 	let expandedWorkflow = $state('');

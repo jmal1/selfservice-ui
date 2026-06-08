@@ -5,8 +5,8 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
 
-	const podId = $derived(page.params.podId);
-	const vmId = $derived(page.params.vmId);
+	const podId = $derived(page.params.podId as string);
+	const vmId = $derived(page.params.vmId as string);
 	let vmName = $state('');
 
 	let canvasContainer: HTMLDivElement;

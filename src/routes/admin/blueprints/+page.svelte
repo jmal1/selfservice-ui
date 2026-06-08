@@ -222,7 +222,7 @@
 		saving = true;
 		error = null;
 		try {
-			const updated = await adminUpdateBlueprint(bp.id, { is_active: !bp.is_active });
+			const updated = await adminUpdateBlueprint(bp.id, { is_active: !bp.is_active } as unknown as CreateBlueprintRequest);
 			blueprints = blueprints.map((b) => (b.id === bp.id ? updated : b));
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to toggle blueprint';

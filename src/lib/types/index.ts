@@ -1,26 +1,33 @@
-// --- Status literal types ---
+// Status literals mirror the canonical API values defined in
+// selfservice-api/internal/models/models.go (PodStatus*, VMStatus*, JobStatus*).
+// Keep them in sync — drift here causes the kind of silent type/runtime
+// mismatch that broke /admin gating in 2026-06.
 
 export type PodStatus =
 	| 'pending'
-	| 'creating'
-	| 'running'
-	| 'stopping'
-	| 'stopped'
-	| 'deleting'
+	| 'provisioning'
+	| 'active'
+	| 'destroying'
 	| 'destroy_failed'
+	| 'destroyed'
 	| 'error';
 
 export type VMStatus =
 	| 'pending'
-	| 'creating'
-	| 'powered_on'
-	| 'powered_off'
-	| 'suspending'
-	| 'suspended'
-	| 'deleting'
-	| 'error';
+	| 'cloning'
+	| 'configuring'
+	| 'running'
+	| 'stopped'
+	| 'error'
+	| 'deleted';
 
-export type JobStatus = 'pending' | 'claimed' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type JobStatus =
+	| 'pending'
+	| 'claimed'
+	| 'in_progress'
+	| 'completed'
+	| 'failed'
+	| 'rollback';
 
 // --- Domain models ---
 

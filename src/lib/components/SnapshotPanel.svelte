@@ -15,7 +15,7 @@
 	let confirmRevert = $state<string | null>(null);
 	let confirmDelete = $state<string | null>(null);
 
-	const isStopped = $derived(vmStatus === 'powered_off' || vmStatus === 'stopped');
+	const isStopped = $derived(vmStatus === 'stopped');
 	const initialSnap = $derived(snapshots.find((s) => s.is_initial));
 	const userSnaps = $derived(snapshots.filter((s) => !s.is_initial));
 	const canCreate = $derived(userSnaps.length < 2);

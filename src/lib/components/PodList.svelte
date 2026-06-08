@@ -374,7 +374,7 @@
 						<span class="font-mono text-sm text-surface-600 dark:text-surface-400">{vm.ip_address || '—'}</span>
 						<span class="text-sm text-surface-600 dark:text-surface-400">{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB</span>
 						<div class="flex items-center justify-end gap-1">
-							{#if vm.status === 'powered_off'}
+							{#if vm.status === 'stopped'}
 								<button
 									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 									aria-label="Start VM"
@@ -387,7 +387,7 @@
 										<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 									{/if}
 								</button>
-							{:else if vm.status === 'powered_on'}
+							{:else if vm.status === 'running'}
 								<button
 									class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 									aria-label="Stop VM"

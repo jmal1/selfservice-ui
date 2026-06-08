@@ -16,7 +16,7 @@
 	const displayPassword = $derived(vm.generated_password || vm.default_password);
 	const hasCredentials = $derived(!!displayUsername || !!displayPassword);
 	const hasVCenter = $derived(!!vm.vcenter_vm_id);
-	const isPoweredOn = $derived(vm.status === 'powered_on' || vm.status === 'running');
+	const isPoweredOn = $derived(vm.status === 'running');
 
 	// Template kind drives the credential-source hint. When the template was
 	// registered with kind=registered_existing_vm or clone_no_customize, the

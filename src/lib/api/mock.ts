@@ -145,9 +145,14 @@ function makeVM(overrides: Partial<PodVM> & { pod_id: string; template_id: strin
 		ram_mb: tpl?.default_ram_mb ?? 4096,
 		disk_gb: tpl?.default_disk_gb ?? 40,
 		ip_address: '',
-		status: 'powered_on',
+		status: 'running',
 		default_username: tpl?.default_username ?? '',
 		default_password: tpl?.default_password ?? '',
+		generated_username: tpl?.default_username ?? '',
+		generated_password: tpl?.default_password ?? '',
+		boot_order: 0,
+		template_name: tpl?.name ?? '',
+		os_type: tpl?.os_type ?? '',
 		template: tpl,
 		...overrides
 	};
@@ -159,12 +164,12 @@ export let mockPods: Pod[] = [
 		owner_id: 'usr-001',
 		name: 'Security Lab',
 		salt: 'x7k2m9',
-		pod_index: 1,
 		vlan_id: 101,
 		subnet: '10.101.0.0/24',
-		status: 'running',
+		status: 'active',
 		error_message: '',
 		expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+		allow_vm_additions: false,
 		owner: mockUser,
 		vms: [
 			makeVM({
@@ -173,7 +178,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Attacker',
 				vcenter_vm_name: 'x7k2m9-attacker',
 				ip_address: '10.101.0.10',
-				status: 'powered_on'
+				status: 'running'
 			}),
 			makeVM({
 				pod_id: 'pod-001',
@@ -181,7 +186,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Target Server',
 				vcenter_vm_name: 'x7k2m9-target-server',
 				ip_address: '10.101.0.11',
-				status: 'powered_on'
+				status: 'running'
 			}),
 			makeVM({
 				pod_id: 'pod-001',
@@ -189,7 +194,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Domain Controller',
 				vcenter_vm_name: 'x7k2m9-domain-controller',
 				ip_address: '10.101.0.12',
-				status: 'powered_on'
+				status: 'running'
 			})
 		]
 	},
@@ -198,12 +203,12 @@ export let mockPods: Pod[] = [
 		owner_id: 'usr-001',
 		name: 'Dev Playground',
 		salt: 'b3f8q1',
-		pod_index: 2,
 		vlan_id: 102,
 		subnet: '10.102.0.0/24',
-		status: 'running',
+		status: 'active',
 		error_message: '',
 		expires_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+		allow_vm_additions: false,
 		owner: mockUser,
 		vms: [
 			makeVM({
@@ -212,7 +217,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Docker Host',
 				vcenter_vm_name: 'b3f8q1-docker-host',
 				ip_address: '10.102.0.10',
-				status: 'powered_on'
+				status: 'running'
 			})
 		]
 	},
@@ -221,12 +226,12 @@ export let mockPods: Pod[] = [
 		owner_id: 'usr-002',
 		name: "Alice's Lab",
 		salt: 'p5w4n6',
-		pod_index: 3,
 		vlan_id: 103,
 		subnet: '10.103.0.0/24',
-		status: 'stopped',
+		status: 'active',
 		error_message: '',
 		expires_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+		allow_vm_additions: false,
 		owner: mockUsers[1],
 		vms: [
 			makeVM({
@@ -235,7 +240,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Web Server',
 				vcenter_vm_name: 'p5w4n6-web-server',
 				ip_address: '10.103.0.10',
-				status: 'powered_off'
+				status: 'stopped'
 			}),
 			makeVM({
 				pod_id: 'pod-003',
@@ -243,7 +248,7 @@ export let mockPods: Pod[] = [
 				display_name: 'Database',
 				vcenter_vm_name: 'p5w4n6-database',
 				ip_address: '10.103.0.11',
-				status: 'powered_off'
+				status: 'stopped'
 			})
 		]
 	}
@@ -258,7 +263,7 @@ export function mockResourceUsage(): ResourceUsage {
 
 	for (const pod of mockPods) {
 		if (pod.owner_id === mockUser.id) {
-			if (pod.status === 'running') activePods++;
+			if (pod.status === 'active') activePods++;
 			for (const vm of pod.vms) {
 				usedVcpus += vm.vcpus;
 				usedRam += vm.ram_mb;
@@ -383,12 +388,12 @@ export const mockApi = {
 			owner_id: mockUser.id,
 			name: req.name,
 			salt,
-			pod_index: podIndex,
 			vlan_id: 100 + podIndex,
 			subnet: `10.${100 + podIndex}.0.0/24`,
-			status: 'creating',
+			status: 'provisioning',
 			error_message: '',
 			expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+			allow_vm_additions: false,
 			owner: mockUser,
 			vms: req.vms.map((v, i) =>
 				makeVM({
@@ -400,7 +405,7 @@ export const mockApi = {
 					ram_mb: v.ram_mb,
 					disk_gb: v.disk_gb,
 					ip_address: `10.${100 + podIndex}.0.${10 + i}`,
-					status: 'creating'
+					status: 'cloning'
 				})
 			)
 		};
@@ -412,8 +417,8 @@ export const mockApi = {
 				p.id === newPod.id
 					? {
 							...p,
-							status: 'running',
-							vms: p.vms.map((vm) => ({ ...vm, status: 'powered_on' as const }))
+							status: 'active',
+							vms: p.vms.map((vm) => ({ ...vm, status: 'running' as const }))
 						}
 					: p
 			);
@@ -431,7 +436,7 @@ export const mockApi = {
 		await delay(600);
 		mockPods = mockPods.map((p) =>
 			p.id === podId
-				? { ...p, vms: p.vms.map((vm) => (vm.id === vmId ? { ...vm, status: 'powered_on' as const } : vm)) }
+				? { ...p, vms: p.vms.map((vm) => (vm.id === vmId ? { ...vm, status: 'running' as const } : vm)) }
 				: p
 		);
 	},
@@ -440,14 +445,14 @@ export const mockApi = {
 		await delay(600);
 		mockPods = mockPods.map((p) =>
 			p.id === podId
-				? { ...p, vms: p.vms.map((vm) => (vm.id === vmId ? { ...vm, status: 'powered_off' as const } : vm)) }
+				? { ...p, vms: p.vms.map((vm) => (vm.id === vmId ? { ...vm, status: 'stopped' as const } : vm)) }
 				: p
 		);
 	},
 
 	async restartVM(podId: string, vmId: string): Promise<void> {
 		await delay(1000);
-		// Status stays powered_on after restart
+		// Status stays running after restart
 		void podId;
 		void vmId;
 	},
@@ -474,7 +479,7 @@ export const mockApi = {
 			ram_mb: req.ram_mb,
 			disk_gb: req.disk_gb,
 			ip_address: `${pod.subnet.replace('.0/24', '')}.${10 + pod.vms.length}`,
-			status: 'powered_on'
+			status: 'running'
 		});
 		mockPods = mockPods.map((p) => (p.id === podId ? { ...p, vms: [...p.vms, vm] } : p));
 		return vm;

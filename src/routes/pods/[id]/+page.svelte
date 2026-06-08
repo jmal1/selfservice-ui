@@ -419,7 +419,7 @@
 											{expandedVMs[vm.id] ? 'Hide' : 'Access'}
 										</button>
 									{/if}
-									{#if vm.status === 'powered_off' || vm.status === 'stopped'}
+									{#if vm.status === 'stopped'}
 										<button
 											class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 											aria-label="Start VM"
@@ -433,7 +433,7 @@
 												<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 											{/if}
 										</button>
-									{:else if vm.status === 'powered_on' || vm.status === 'running'}
+									{:else if vm.status === 'running'}
 										<button class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50" aria-label="Stop VM" title="Stop VM" disabled={!!actionLoading[`stop-${vm.id}`]} onclick={() => handleAction(`stop-${vm.id}`, () => stopVM(podId, vm.id))}>
 											{#if actionLoading[`stop-${vm.id}`]}<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>{:else}<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" /></svg>{/if}
 										</button>
@@ -486,7 +486,7 @@
 								{/if}
 							</div>
 							<div class="flex items-center gap-1">
-								{#if vm.status === 'powered_off' || vm.status === 'stopped'}
+								{#if vm.status === 'stopped'}
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
 										aria-label="Start VM"
@@ -500,7 +500,7 @@
 											<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 										{/if}
 									</button>
-								{:else if vm.status === 'powered_on' || vm.status === 'running'}
+								{:else if vm.status === 'running'}
 									<button
 										class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50"
 										aria-label="Stop VM"
