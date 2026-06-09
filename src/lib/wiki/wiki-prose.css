@@ -1,0 +1,542 @@
+/* Wiki prose, callouts, and code-block styles.
+ *
+ * This file is imported by src/routes/wiki/+page.svelte and scopes its
+ * rules under .wiki-prose so the styling never leaks into the rest of
+ * the app. We don't use @tailwindcss/typography (not installed and would
+ * pull in another build dep); instead we write the dozen-or-so rules we
+ * need ourselves, themed against the Crucible OKLCH palette in app.css.
+ *
+ * Dark mode is driven by the .dark class on <html> (set by ThemeToggle),
+ * matching how the rest of the app handles dark mode. */
+
+/* ── Base typography ─────────────────────────────────────────────── */
+
+.wiki-prose {
+	color: var(--color-surface-800);
+	font-size: 0.95rem;
+	line-height: 1.65;
+	word-wrap: break-word;
+}
+.dark .wiki-prose {
+	color: var(--color-surface-100);
+}
+
+.wiki-prose > * + * {
+	margin-top: 1em;
+}
+
+.wiki-prose p {
+	margin: 0 0 1em 0;
+}
+
+.wiki-prose a {
+	color: var(--color-primary-500);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	text-decoration-thickness: 1px;
+	text-decoration-color: oklch(0.60 0.22 35 / 0.4);
+	transition: color 100ms ease;
+}
+.wiki-prose a:hover {
+	color: var(--color-primary-600);
+	text-decoration-color: var(--color-primary-500);
+}
+
+/* ── Headings — generous spacing above, tight to body below ────── */
+
+.wiki-prose h1,
+.wiki-prose h2,
+.wiki-prose h3,
+.wiki-prose h4 {
+	font-weight: 700;
+	line-height: 1.25;
+	scroll-margin-top: 4.5rem; /* anchor-link landing offset */
+	color: var(--color-surface-900);
+}
+.dark .wiki-prose :is(h1, h2, h3, h4) {
+	color: oklch(0.98 0.005 80);
+}
+
+.wiki-prose h1 {
+	font-size: 1.85rem;
+	margin: 0.5em 0 0.6em;
+	padding-bottom: 0.4em;
+	border-bottom: 1px solid var(--color-surface-200);
+}
+.dark .wiki-prose h1 {
+	border-color: var(--color-surface-700);
+}
+
+.wiki-prose h2 {
+	font-size: 1.45rem;
+	margin: 1.8em 0 0.5em;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid var(--color-surface-200);
+}
+.dark .wiki-prose h2 {
+	border-color: var(--color-surface-800);
+}
+
+.wiki-prose h3 {
+	font-size: 1.15rem;
+	margin: 1.4em 0 0.4em;
+}
+
+.wiki-prose h4 {
+	font-size: 1rem;
+	margin: 1.2em 0 0.3em;
+	color: var(--color-surface-700);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.dark .wiki-prose h4 {
+	color: var(--color-surface-300);
+}
+
+/* Anchor links: visible on hover next to headings */
+.wiki-prose :is(h1, h2, h3, h4)::before {
+	content: '#';
+	position: absolute;
+	margin-left: -1em;
+	color: var(--color-primary-500);
+	opacity: 0;
+	transition: opacity 100ms ease;
+	font-weight: 500;
+}
+.wiki-prose :is(h1, h2, h3, h4) {
+	position: relative;
+}
+.wiki-prose :is(h1, h2, h3, h4):hover::before {
+	opacity: 0.55;
+}
+
+/* ── Lists ───────────────────────────────────────────────────────── */
+
+.wiki-prose ul,
+.wiki-prose ol {
+	margin: 0 0 1em 0;
+	padding-left: 1.6em;
+}
+
+.wiki-prose ul {
+	list-style: disc;
+}
+.wiki-prose ul ul {
+	list-style: circle;
+	margin-top: 0.25em;
+	margin-bottom: 0.25em;
+}
+.wiki-prose ol {
+	list-style: decimal;
+}
+
+.wiki-prose li {
+	margin: 0.25em 0;
+}
+.wiki-prose li > p {
+	margin: 0.4em 0;
+}
+
+/* Task-list checkboxes from GFM `- [x] foo` */
+.wiki-prose li > input[type='checkbox'] {
+	margin-right: 0.4em;
+	accent-color: var(--color-primary-500);
+}
+
+/* ── Inline code & code blocks ────────────────────────────────── */
+
+.wiki-prose code {
+	background-color: var(--color-surface-100);
+	border: 1px solid var(--color-surface-200);
+	border-radius: 4px;
+	padding: 0.1em 0.4em;
+	font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.85em;
+	color: var(--color-primary-600);
+}
+.dark .wiki-prose code {
+	background-color: var(--color-surface-900);
+	border-color: var(--color-surface-800);
+	color: oklch(0.85 0.12 35);
+}
+
+/* When a <code> is inside a <pre>, drop the inline styling — hljs
+ * provides the colours and we don't want a double border/background. */
+.wiki-prose pre code {
+	background: transparent !important;
+	border: none !important;
+	padding: 0 !important;
+	color: inherit !important;
+	font-size: 0.85rem;
+	display: block;
+	line-height: 1.55;
+}
+
+.wiki-prose pre,
+.wiki-prose .wiki-code-block {
+	background-color: oklch(0.18 0.015 278);
+	color: oklch(0.92 0.005 80);
+	border-radius: 8px;
+	padding: 1em 1.1em;
+	overflow-x: auto;
+	margin: 1em 0;
+	border: 1px solid oklch(0.27 0.025 270);
+	font-size: 0.85rem;
+	position: relative;
+}
+
+/* Light theme code blocks: darker than surface but lighter than dark
+ * theme — pleasant contrast without screaming. */
+:where(:not(.dark)) .wiki-prose pre,
+:where(:not(.dark)) .wiki-prose .wiki-code-block {
+	background-color: oklch(0.97 0.01 70);
+	color: oklch(0.22 0.02 275);
+	border-color: oklch(0.85 0.01 70);
+}
+
+/* Optional language badge top-right inside a <pre>. Set via
+ * data-lang on the <pre> element (handled by the wiki page on mount). */
+.wiki-prose pre[data-lang]::before {
+	content: attr(data-lang);
+	position: absolute;
+	top: 0.4em;
+	right: 0.7em;
+	font-size: 0.7rem;
+	color: var(--color-surface-400);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	font-family: 'Inter', sans-serif;
+	pointer-events: none;
+}
+
+/* Copy button injected by the wiki page */
+.wiki-prose pre .wiki-copy-btn {
+	position: absolute;
+	top: 0.4em;
+	right: 0.5em;
+	font-size: 0.7rem;
+	padding: 0.2em 0.6em;
+	border-radius: 4px;
+	background-color: oklch(0.27 0.025 270);
+	color: oklch(0.85 0.005 80);
+	border: 1px solid oklch(0.35 0.025 270);
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 100ms ease, background-color 100ms ease;
+	font-family: 'Inter', sans-serif;
+}
+.wiki-prose pre:hover .wiki-copy-btn {
+	opacity: 0.85;
+}
+.wiki-prose pre .wiki-copy-btn:hover {
+	background-color: var(--color-primary-500);
+	border-color: var(--color-primary-600);
+	color: white;
+	opacity: 1;
+}
+.wiki-prose pre[data-lang] .wiki-copy-btn {
+	right: 3.5em; /* leave room for the language badge */
+}
+:where(:not(.dark)) .wiki-prose pre .wiki-copy-btn {
+	background-color: oklch(0.92 0.008 70);
+	color: oklch(0.30 0.02 275);
+	border-color: oklch(0.80 0.01 70);
+}
+
+/* ── Blockquotes (non-callout) ───────────────────────────────────── */
+
+.wiki-prose blockquote {
+	border-left: 3px solid var(--color-primary-500);
+	padding: 0.5em 1em;
+	margin: 1em 0;
+	background-color: var(--color-surface-100);
+	color: var(--color-surface-700);
+	font-style: italic;
+	border-radius: 0 6px 6px 0;
+}
+.dark .wiki-prose blockquote {
+	background-color: var(--color-surface-900);
+	color: var(--color-surface-300);
+}
+
+/* ── GitHub-style callouts (`> [!note]`, etc.) ─────────────────── */
+/* marked-alert wraps the body in `.markdown-alert.markdown-alert-<type>` */
+
+.wiki-prose .markdown-alert {
+	border-left: 4px solid;
+	background-color: var(--color-surface-100);
+	padding: 0.9em 1.2em;
+	margin: 1.2em 0;
+	border-radius: 6px;
+	font-style: normal;
+}
+.dark .wiki-prose .markdown-alert {
+	background-color: var(--color-surface-900);
+}
+
+.wiki-prose .markdown-alert-title {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	font-weight: 700;
+	margin-bottom: 0.5em;
+	font-size: 0.9em;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.wiki-prose .markdown-alert > p {
+	margin: 0.3em 0;
+}
+.wiki-prose .markdown-alert > p:last-child {
+	margin-bottom: 0;
+}
+
+/* Note — blue */
+.wiki-prose .markdown-alert-note {
+	border-color: var(--color-secondary-500);
+}
+.wiki-prose .markdown-alert-note .markdown-alert-title {
+	color: var(--color-secondary-500);
+}
+.wiki-prose .markdown-alert-note .markdown-alert-title::before {
+	content: 'ℹ';
+}
+
+/* Tip — green */
+.wiki-prose .markdown-alert-tip {
+	border-color: var(--color-success-500);
+}
+.wiki-prose .markdown-alert-tip .markdown-alert-title {
+	color: var(--color-success-500);
+}
+.wiki-prose .markdown-alert-tip .markdown-alert-title::before {
+	content: '✓';
+}
+
+/* Important — gold/orange */
+.wiki-prose .markdown-alert-important {
+	border-color: var(--color-tertiary-500);
+}
+.wiki-prose .markdown-alert-important .markdown-alert-title {
+	color: var(--color-tertiary-600);
+}
+.wiki-prose .markdown-alert-important .markdown-alert-title::before {
+	content: '★';
+}
+
+/* Warning — amber */
+.wiki-prose .markdown-alert-warning {
+	border-color: var(--color-warning-500);
+}
+.wiki-prose .markdown-alert-warning .markdown-alert-title {
+	color: var(--color-warning-600);
+}
+.wiki-prose .markdown-alert-warning .markdown-alert-title::before {
+	content: '⚠';
+}
+
+/* Caution / Danger — red */
+.wiki-prose .markdown-alert-caution {
+	border-color: var(--color-error-500);
+}
+.wiki-prose .markdown-alert-caution .markdown-alert-title {
+	color: var(--color-error-500);
+}
+.wiki-prose .markdown-alert-caution .markdown-alert-title::before {
+	content: '⛔';
+}
+
+/* ── Tables ──────────────────────────────────────────────────────── */
+
+.wiki-prose table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1em 0;
+	font-size: 0.9em;
+	border: 1px solid var(--color-surface-200);
+	border-radius: 6px;
+	overflow: hidden;
+}
+.dark .wiki-prose table {
+	border-color: var(--color-surface-800);
+}
+
+.wiki-prose th {
+	background-color: var(--color-surface-100);
+	color: var(--color-surface-800);
+	font-weight: 600;
+	text-align: left;
+	padding: 0.6em 0.9em;
+	border-bottom: 2px solid var(--color-surface-200);
+}
+.dark .wiki-prose th {
+	background-color: var(--color-surface-800);
+	color: var(--color-surface-100);
+	border-color: var(--color-surface-700);
+}
+
+.wiki-prose td {
+	padding: 0.55em 0.9em;
+	border-bottom: 1px solid var(--color-surface-100);
+	vertical-align: top;
+}
+.dark .wiki-prose td {
+	border-color: var(--color-surface-800);
+}
+.wiki-prose tr:last-child td {
+	border-bottom: none;
+}
+
+.wiki-prose tbody tr:hover {
+	background-color: oklch(0.60 0.22 35 / 0.05);
+}
+.dark .wiki-prose tbody tr:hover {
+	background-color: oklch(0.60 0.22 35 / 0.08);
+}
+
+/* ── Horizontal rules, images, kbd ─────────────────────────────── */
+
+.wiki-prose hr {
+	border: none;
+	border-top: 1px solid var(--color-surface-200);
+	margin: 2em 0;
+}
+.dark .wiki-prose hr {
+	border-color: var(--color-surface-800);
+}
+
+.wiki-prose img {
+	max-width: 100%;
+	border-radius: 6px;
+	margin: 0.5em 0;
+}
+
+.wiki-prose kbd {
+	background-color: var(--color-surface-100);
+	border: 1px solid var(--color-surface-300);
+	border-bottom-width: 2px;
+	border-radius: 4px;
+	padding: 0.1em 0.4em;
+	font-family: 'JetBrains Mono', ui-monospace, monospace;
+	font-size: 0.8em;
+	color: var(--color-surface-800);
+}
+.dark .wiki-prose kbd {
+	background-color: var(--color-surface-800);
+	border-color: var(--color-surface-600);
+	color: var(--color-surface-100);
+}
+
+/* ── highlight.js token colours ─────────────────────────────────
+ * Custom palette that matches the Crucible theme rather than pulling
+ * in a 30KB hljs theme CSS file. Tuned for both light and dark mode. */
+
+.dark .wiki-prose .hljs-comment,
+.dark .wiki-prose .hljs-quote {
+	color: oklch(0.55 0.02 270);
+	font-style: italic;
+}
+.dark .wiki-prose .hljs-keyword,
+.dark .wiki-prose .hljs-selector-tag,
+.dark .wiki-prose .hljs-literal,
+.dark .wiki-prose .hljs-section,
+.dark .wiki-prose .hljs-link {
+	color: oklch(0.75 0.18 35); /* primary glow */
+}
+.dark .wiki-prose .hljs-string,
+.dark .wiki-prose .hljs-meta-string {
+	color: oklch(0.78 0.16 145); /* success green */
+}
+.dark .wiki-prose .hljs-number,
+.dark .wiki-prose .hljs-symbol,
+.dark .wiki-prose .hljs-bullet,
+.dark .wiki-prose .hljs-attribute,
+.dark .wiki-prose .hljs-built_in,
+.dark .wiki-prose .hljs-meta {
+	color: oklch(0.80 0.15 88); /* gold */
+}
+.dark .wiki-prose .hljs-name,
+.dark .wiki-prose .hljs-attr,
+.dark .wiki-prose .hljs-class .hljs-title,
+.dark .wiki-prose .hljs-type {
+	color: oklch(0.78 0.14 255); /* steel blue */
+}
+.dark .wiki-prose .hljs-title,
+.dark .wiki-prose .hljs-function .hljs-title {
+	color: oklch(0.85 0.10 95); /* warm cream */
+	font-weight: 600;
+}
+.dark .wiki-prose .hljs-variable,
+.dark .wiki-prose .hljs-template-variable {
+	color: oklch(0.85 0.06 25); /* salmon */
+}
+.dark .wiki-prose .hljs-regexp {
+	color: oklch(0.75 0.13 25);
+}
+.dark .wiki-prose .hljs-deletion {
+	color: oklch(0.70 0.17 25);
+	background-color: oklch(0.25 0.06 25 / 0.35);
+}
+.dark .wiki-prose .hljs-addition {
+	color: oklch(0.75 0.15 145);
+	background-color: oklch(0.25 0.07 145 / 0.35);
+}
+.dark .wiki-prose .hljs-emphasis {
+	font-style: italic;
+}
+.dark .wiki-prose .hljs-strong {
+	font-weight: 700;
+}
+
+/* Light theme hljs colours — more saturated to read well on cream */
+.wiki-prose .hljs-comment,
+.wiki-prose .hljs-quote {
+	color: oklch(0.50 0.02 250);
+	font-style: italic;
+}
+.wiki-prose .hljs-keyword,
+.wiki-prose .hljs-selector-tag,
+.wiki-prose .hljs-literal,
+.wiki-prose .hljs-section,
+.wiki-prose .hljs-link {
+	color: oklch(0.50 0.22 35);
+	font-weight: 600;
+}
+.wiki-prose .hljs-string,
+.wiki-prose .hljs-meta-string {
+	color: oklch(0.45 0.15 145);
+}
+.wiki-prose .hljs-number,
+.wiki-prose .hljs-symbol,
+.wiki-prose .hljs-bullet,
+.wiki-prose .hljs-attribute,
+.wiki-prose .hljs-built_in,
+.wiki-prose .hljs-meta {
+	color: oklch(0.55 0.14 75);
+}
+.wiki-prose .hljs-name,
+.wiki-prose .hljs-attr,
+.wiki-prose .hljs-class .hljs-title,
+.wiki-prose .hljs-type {
+	color: oklch(0.45 0.18 255);
+}
+.wiki-prose .hljs-title,
+.wiki-prose .hljs-function .hljs-title {
+	color: oklch(0.40 0.14 35);
+	font-weight: 600;
+}
+.wiki-prose .hljs-variable,
+.wiki-prose .hljs-template-variable {
+	color: oklch(0.45 0.18 25);
+}
+.wiki-prose .hljs-regexp {
+	color: oklch(0.50 0.16 25);
+}
+.wiki-prose .hljs-deletion {
+	color: oklch(0.45 0.18 25);
+	background-color: oklch(0.95 0.04 25);
+}
+.wiki-prose .hljs-addition {
+	color: oklch(0.40 0.15 145);
+	background-color: oklch(0.95 0.04 145);
+}
