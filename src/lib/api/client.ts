@@ -493,6 +493,57 @@ export function adminGetHealth(): Promise<HealthResponse> {
 	return apiFetch<HealthResponse>('/api/v1/admin/health');
 }
 
+// --- Instructor Wiki ---
+
+export interface WikiManifestEntry {
+	path: string;
+	size: number;
+	sha256: string;
+	is_markdown: boolean;
+	links_out?: string[];
+	from_seed: boolean;
+}
+
+export interface WikiIndex {
+	seeds: string[];
+	files: WikiManifestEntry[];
+	total_bytes: number;
+}
+
+export function wikiGetIndex(): Promise<WikiIndex> {
+	return apiFetch<WikiIndex>('/api/v1/wiki/index');
+}
+
+// wikiGetPage fetches a single bundle file as raw text. Bypasses
+// apiFetch's JSON parser since wiki pages are markdown or source code,
+// not JSON. Reuses the same 401 -> /login redirect via a manual check.
+export async function wikiGetPage(path: string): Promise<string> {
+	const url = `${config.apiBaseUrl}/api/v1/wiki/page/${path}`;
+	const resp = await fetch(url, { credentials: 'include' });
+	if (resp.status === 401) {
+		authStore.logout();
+		await goto('/login');
+		throw new ApiError(401, 'Unauthorized', null);
+	}
+	if (!resp.ok) {
+		throw new ApiError(resp.status, resp.statusText, null);
+	}
+	return resp.text();
+}
+
+// wikiZipURL returns an absolute URL for the bundle.zip endpoint so the
+// UI can use it as an <a href> for download — the browser will send the
+// session cookie automatically, no JS fetch needed.
+export function wikiZipURL(): string {
+	return `${config.apiBaseUrl}/api/v1/wiki/bundle.zip`;
+}
+
+// wikiPageDownloadURL returns an absolute URL with ?download=1 so the
+// browser saves the file instead of inlining it.
+export function wikiPageDownloadURL(path: string): string {
+	return `${config.apiBaseUrl}/api/v1/wiki/page/${path}?download=1`;
+}
+
 // --- VLAN Pool Admin ---
 
 export async function adminGetVLANPool(): Promise<VLANPoolEntry[]> {
