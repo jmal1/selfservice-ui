@@ -189,6 +189,15 @@ export function getTemplates(): Promise<Template[]> {
 	return apiFetch<Template[]>('/api/v1/templates');
 }
 
+// adminListTemplates returns ALL templates regardless of is_active or
+// template_state. Use this on admin pages so drafts and errored wizard
+// templates remain visible (the public /api/v1/templates filters
+// is_active=true and would hide them).
+export function adminListTemplates(): Promise<Template[]> {
+	if (isMock) return mockApi.getTemplates();
+	return apiFetch<Template[]>('/api/v1/admin/templates');
+}
+
 export interface CreateTemplateRequest {
 	name: string;
 	vcenter_template: string;
