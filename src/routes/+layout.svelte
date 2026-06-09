@@ -25,6 +25,10 @@
 		{ href: '/templates', label: 'Templates', icon: 'templates' }
 	];
 
+	const instructorItems = [
+		{ href: '/wiki', label: 'Wiki', icon: 'audit' }
+	];
+
 	const adminItems = [
 		{ href: '/admin', label: 'Overview', icon: 'dashboard' },
 		{ href: '/admin/users', label: 'Users', icon: 'users' },
@@ -173,6 +177,27 @@
 					<span>{item.label}</span>
 				</a>
 			{/each}
+
+			{#if authStore.isInstructor}
+				<div class="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-400">
+					Instructor
+				</div>
+				{#each instructorItems as item}
+					<a
+						href={item.href}
+						class="relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors
+							{isActive(item.href)
+							? 'bg-primary-500/15 text-primary-400'
+							: 'text-surface-400 hover:bg-surface-200/50 dark:hover:bg-surface-800/50 hover:text-surface-900 dark:hover:text-surface-100'}"
+					>
+						{#if isActive(item.href)}
+							<span class="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-primary-500"></span>
+						{/if}
+						{@render navIcon(item.icon)}
+						<span>{item.label}</span>
+					</a>
+				{/each}
+			{/if}
 
 			{#if authStore.isAdmin}
 				<div class="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-400">
