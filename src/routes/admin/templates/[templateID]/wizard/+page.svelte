@@ -144,14 +144,24 @@
 		return wizard?.template_state === 'error' && wizard.allowed_next_states.length > 0;
 	}
 
-	// stepNumber maps the canonical wizard state to a 1-based index over
+	// stateToStep maps the canonical wizard state to a 1-based index over
 	// the 5 visible steps (Draft / Provision / Configure / Generalize /
 	// Publish). For 'error' we surface the LAST attempted step so the
 	// progress strip can show a red box at the right position instead of
-	// collapsing to "nothing started yet". We infer the last attempted
-	// step from vcenter_vm_id: if a vCenter VM was already created, the
-	// failure happened at or after step 3; otherwise it's at step 2.
-	function stateToStep(state: string | undefined, hasVM: boolean): number {
+	// collapsing to "nothing started yet". The API tells us which job ran
+	// most recently — that's authoritative for picking the failed step.
+	//
+	// template_provision  → was attempting Provision (step 2). Even if the
+	//   clone succeeded and a vCenter VM exists, the rest of the provision
+	//   sequence (attach NIC, etc.) may have failed BEFORE we ever flipped
+	//   to `configuring`. Old heuristic ("has vm → step 4") was wrong here
+	//   and falsely marked Configure as ✓.
+	// template_generalize → was attempting Generalize (step 4).
+	function stateToStep(
+		state: string | undefined,
+		hasVM: boolean,
+		lastJobType: string | undefined
+	): number {
 		switch (state) {
 			case 'draft':
 				return 1;
@@ -165,8 +175,10 @@
 			case 'active':
 				return 5;
 			case 'error':
-				// Best-effort guess based on whether the worker got far
-				// enough to record a staging VM moref.
+				if (lastJobType === 'template_provision') return 2;
+				if (lastJobType === 'template_generalize') return 4;
+				// No job history (shouldn't happen for state=error, but
+				// be defensive): fall back to the original heuristic.
 				return hasVM ? 4 : 2;
 			default:
 				return 0;
@@ -174,7 +186,7 @@
 	}
 
 	const stepNumber = $derived(
-		stateToStep(wizard?.template_state, !!wizard?.vcenter_vm_id)
+		stateToStep(wizard?.template_state, !!wizard?.vcenter_vm_id, wizard?.last_job_type)
 	);
 	const isErrored = $derived(wizard?.template_state === 'error');
 
@@ -404,13 +416,24 @@
 		{/if}
 
 		{#if wizard.template_state === 'error'}
+			{@const failedStepLabel =
+				wizard.last_job_type === 'template_provision'
+					? 'Provision'
+					: wizard.last_job_type === 'template_generalize'
+						? 'Generalize'
+						: 'last step'}
 			<section class="card p-6 space-y-3">
-				<h3 class="text-base font-semibold text-error-500">Errored</h3>
+				<h3 class="text-base font-semibold text-error-500">
+					{failedStepLabel} failed
+				</h3>
+				{#if wizard.last_job_error}
+					<pre
+						class="rounded-lg border border-error-500/30 bg-error-500/10 p-3 text-xs text-error-500 whitespace-pre-wrap break-words font-mono">{wizard.last_job_error}</pre>
+				{/if}
 				<p class="text-sm text-surface-600 dark:text-surface-300">
-					The last attempt failed. Check the worker logs in
-					<a href="/admin/jobs" class="text-primary-500 hover:underline">/admin/jobs</a> for
-					details, then retry to move back to the previous attempt
-					state.
+					Fix the underlying cause, then retry to re-run the {failedStepLabel.toLowerCase()} step. Full job
+					history is in
+					<a href="/admin/jobs" class="text-primary-500 hover:underline">/admin/jobs</a>.
 				</p>
 				<button
 					class="btn btn-primary"
