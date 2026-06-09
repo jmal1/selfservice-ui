@@ -47,6 +47,25 @@ const marked = new Marked(
 marked.setOptions({ gfm: true, breaks: false });
 
 /**
+ * Normalize GFM alert tokens to uppercase so marked-alert recognises
+ * them. The plugin builds its match regex as `^\[!{TYPE}\]` (case-
+ * sensitive, uppercase) but our docs are authored in the Obsidian
+ * convention `> [!note]` / `> [!tip]` (lowercase). Without this
+ * pre-pass, lowercase callouts silently fall through and render as
+ * plain blockquotes.
+ *
+ * The replacement is anchored on `> [!xxx]` at the start of a line so
+ * we don't rewrite arbitrary text that happens to contain `[!foo]`
+ * inside code or prose. Mixed-case (e.g. `[!Note]`) is also normalised
+ * for forgiveness.
+ */
+function normalizeAlertSyntax(md: string): string {
+	return md.replace(/^(\s*>\s*\[!)([A-Za-z]+)(\])/gm, (_m, prefix, kind, suffix) => {
+		return `${prefix}${kind.toUpperCase()}${suffix}`;
+	});
+}
+
+/**
  * Resolve a markdown link target against the directory of the source
  * page so that relative links (`./foo.md`, `../bar.md`, bare names)
  * become bundle-absolute paths that match what the API serves.
@@ -132,7 +151,8 @@ function rewriteIntraBundleLinks(md: string, sourcePath: string): string {
  */
 export function renderMarkdown(source: string, sourcePath: string): string {
 	if (!source) return '';
-	const rewritten = rewriteIntraBundleLinks(source, sourcePath);
+	const normalised = normalizeAlertSyntax(source);
+	const rewritten = rewriteIntraBundleLinks(normalised, sourcePath);
 	const html = marked.parse(rewritten, { async: false }) as string;
 	// `USE_PROFILES: { html: true }` is the default-safe profile that
 	// permits common formatting tags, links, images, and tables but
@@ -148,7 +168,7 @@ export function renderMarkdown(source: string, sourcePath: string): string {
 
 // Exported solely so the bundler-link contract has a unit test. Not
 // intended for general use; callers should prefer renderMarkdown.
-export const __test = { resolveBundlePath, rewriteIntraBundleLinks };
+export const __test = { resolveBundlePath, rewriteIntraBundleLinks, normalizeAlertSyntax };
 
 /**
  * Render a raw source file (.go/.sql/.sh/etc.) as a single syntax-

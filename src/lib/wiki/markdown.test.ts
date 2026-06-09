@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { __test } from './markdown';
 
-const { resolveBundlePath, rewriteIntraBundleLinks } = __test;
+const { resolveBundlePath, rewriteIntraBundleLinks, normalizeAlertSyntax } = __test;
 
 describe('resolveBundlePath', () => {
 	it('resolves bare filenames against the source directory', () => {
@@ -78,5 +78,42 @@ describe('rewriteIntraBundleLinks', () => {
 		const input = 'See [the runner](../../internal/runner/executor.go).';
 		const out = rewriteIntraBundleLinks(input, 'docs/instructor/runner-environment.md');
 		expect(out).toContain('](?file=internal%2Frunner%2Fexecutor.go)');
+	});
+});
+
+describe('normalizeAlertSyntax', () => {
+	it('uppercases lowercase Obsidian-style callouts so marked-alert matches', () => {
+		const input = '> [!note]\n> Body text.';
+		expect(normalizeAlertSyntax(input)).toBe('> [!NOTE]\n> Body text.');
+	});
+
+	it('handles all five GFM alert types', () => {
+		for (const kind of ['note', 'tip', 'important', 'warning', 'caution']) {
+			const input = `> [!${kind}]\n> Body.`;
+			expect(normalizeAlertSyntax(input)).toContain(`[!${kind.toUpperCase()}]`);
+		}
+	});
+
+	it('leaves already-uppercase callouts unchanged', () => {
+		const input = '> [!WARNING]\n> Body.';
+		expect(normalizeAlertSyntax(input)).toBe(input);
+	});
+
+	it('normalises mixed-case callouts', () => {
+		expect(normalizeAlertSyntax('> [!Tip]\n> Body.')).toBe('> [!TIP]\n> Body.');
+	});
+
+	it('does not rewrite [!foo] inside prose or inline code', () => {
+		// The pattern is anchored to start-of-line with `>` so an inline
+		// `[!foo]` mention stays untouched.
+		const input = 'See `[!note]` for the literal syntax we use.';
+		expect(normalizeAlertSyntax(input)).toBe(input);
+	});
+
+	it('only matches at line start so an indented blockquote inside a list also works', () => {
+		// GFM allows blockquotes inside list items with leading
+		// whitespace; our regex permits leading \s* so those still match.
+		const input = '- item\n  > [!warning]\n  > body';
+		expect(normalizeAlertSyntax(input)).toContain('[!WARNING]');
 	});
 });
