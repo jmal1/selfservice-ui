@@ -497,6 +497,11 @@ export function adminGetHealth(): Promise<HealthResponse> {
 
 export interface WikiManifestEntry {
 	path: string;
+	/** Human-friendly display name from the bundler. For markdown
+	 *  files this is the first `# H1` heading; for source files it's
+	 *  the basename with a parenthesised language hint. Always
+	 *  populated by the API since the manifest schema added it. */
+	title: string;
 	size: number;
 	sha256: string;
 	is_markdown: boolean;
