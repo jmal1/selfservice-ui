@@ -495,6 +495,22 @@ export function adminGetHealth(): Promise<HealthResponse> {
 
 // --- Instructor Wiki ---
 
+/**
+ * WikiManifestEntry is the wire shape of a single entry in
+ * `/api/v1/wiki/index`. It MUST stay in lockstep with the Go
+ * `wikitypes.ManifestEntry` struct in `selfservice-api/internal/wikitypes`.
+ *
+ * **If you add or remove a field here, also update:**
+ * 1. `selfservice-api/internal/wikitypes/types.go` (the Go source of truth)
+ * 2. The golden file at `selfservice-api/internal/docs/testdata/manifest.golden.json`
+ *    by running `go test ./internal/docs -update`
+ * 3. The `wantFields` allowlist in
+ *    `selfservice-api/internal/docs/embed_test.go::TestManifestSchema_EveryWireFieldDocumented`
+ *
+ * That last test is the trip-wire — CI fails when Go JSON keys drift
+ * from this TS shape, so any uncoordinated change here or there will
+ * be caught before merge.
+ */
 export interface WikiManifestEntry {
 	path: string;
 	/** Human-friendly display name from the bundler. For markdown
