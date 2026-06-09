@@ -36,7 +36,8 @@
 		{ href: '/admin/runs', label: 'Runs', icon: 'jobs' },
 		{ href: '/admin/vlans', label: 'VLAN Pool', icon: 'vlans' },
 		{ href: '/admin/jobs', label: 'Jobs', icon: 'jobs' },
-		{ href: '/admin/audit', label: 'Audit Log', icon: 'audit' }
+		{ href: '/admin/audit', label: 'Audit Log', icon: 'audit' },
+		{ href: '/admin/health', label: 'Health', icon: 'dashboard' }
 	];
 
 	function isActive(href: string): boolean {
