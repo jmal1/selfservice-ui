@@ -332,6 +332,25 @@ export function adminGetWizardState(id: string): Promise<WizardStateResponse> {
 	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/wizard-state`);
 }
 
+/**
+ * TemplateConsoleTicket is the wire shape returned by
+ * GET /api/v1/admin/templates/{id}/console/ticket. Server-side auth +
+ * state gating happen on this request, so a successful fetch implies
+ * the caller is allowed to open the WS at `ws_url`.
+ *
+ * Mirrors `handlers.TemplateConsoleTicketResponse` in
+ * selfservice-api/internal/api/handlers/templates_console.go.
+ */
+export interface TemplateConsoleTicket {
+	ws_url: string;
+	template_state: string;
+	vm_name: string;
+}
+
+export function getTemplateConsoleTicket(id: string): Promise<TemplateConsoleTicket> {
+	return apiFetch<TemplateConsoleTicket>(`/api/v1/admin/templates/${id}/console/ticket`);
+}
+
 // --- vCenter Templates Folder Browser ---
 
 export interface VCenterFolderVM {

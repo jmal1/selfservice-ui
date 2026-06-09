@@ -316,13 +316,26 @@
 		{/if}
 
 		{#if wizard.template_state === 'provisioning'}
-			<section class="card p-6 space-y-2">
+			<section class="card p-6 space-y-3">
 				<h3 class="text-base font-semibold text-primary-500">Provisioning in progress</h3>
 				<p class="text-sm text-surface-600 dark:text-surface-300">
 					The worker is cloning the source VM. This typically takes 5–10
 					minutes depending on the source size. You can leave this page
 					and come back later; the wizard remembers where you left off.
 				</p>
+				{#if wizard.vcenter_vm_id}
+					<a
+						href="/admin/templates/{templateID}/console"
+						target="_blank"
+						rel="noopener"
+						class="btn btn-secondary inline-flex items-center gap-1"
+					>
+						Open Build Console ↗
+					</a>
+					<p class="text-xs text-surface-500">
+						The VM may not have power yet — the console will reconnect once it does.
+					</p>
+				{/if}
 			</section>
 		{/if}
 
@@ -330,12 +343,21 @@
 			<section class="card p-6 space-y-3">
 				<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">Step 3 — Configure the VM</h3>
 				<p class="text-sm text-surface-500">
-					The staging VM is up. Open the vCenter console (or use VMware
-					Remote Console) and install your software, configure user
-					accounts, etc. When you're done, fill in the guest credentials
-					below and click <b>Generalize</b> — Crucible will run the
-					appropriate sysprep / cloud-init clean.
+					The staging VM is up. Click <b>Open Build Console</b> below to
+					install software, configure user accounts, etc. directly from
+					your browser — no vCenter account needed. When you're done,
+					fill in the guest credentials and click <b>Generalize</b> —
+					Crucible will run the appropriate sysprep / cloud-init clean.
 				</p>
+
+				<a
+					href="/admin/templates/{templateID}/console"
+					target="_blank"
+					rel="noopener"
+					class="btn btn-primary inline-flex items-center gap-1"
+				>
+					Open Build Console ↗
+				</a>
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<label class="label">
@@ -371,13 +393,26 @@
 		{/if}
 
 		{#if wizard.template_state === 'generalizing'}
-			<section class="card p-6 space-y-2">
+			<section class="card p-6 space-y-3">
 				<h3 class="text-base font-semibold text-primary-500">Generalizing…</h3>
 				<p class="text-sm text-surface-600 dark:text-surface-300">
 					Crucible is running the OS-specific generalize script
 					(cloud-init clean on Linux, sysprep on Windows) and powering
 					the VM down. This usually takes 2–5 minutes.
 				</p>
+				{#if wizard.vcenter_vm_id}
+					<a
+						href="/admin/templates/{templateID}/console"
+						target="_blank"
+						rel="noopener"
+						class="btn btn-secondary inline-flex items-center gap-1"
+					>
+						Open Build Console ↗
+					</a>
+					<p class="text-xs text-surface-500">
+						Useful for watching sysprep finish or debugging if it hangs.
+					</p>
+				{/if}
 			</section>
 		{/if}
 
