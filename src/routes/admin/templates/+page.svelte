@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
-		getTemplates,
+		adminListTemplates,
 		adminCreateTemplate,
 		adminUpdateTemplate,
 		adminDeleteTemplate,
@@ -75,7 +75,7 @@
 
 	async function loadTemplates() {
 		try {
-			templates = await getTemplates();
+			templates = await adminListTemplates();
 			if (!playlistsLoaded) {
 				playlists = await adminListPlaylists();
 				playlistsLoaded = true;
@@ -231,6 +231,28 @@
 		'w-full rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
 	const inputSmClass =
 		'w-20 rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none';
+
+	function stateBadgeClass(s: string | undefined): string {
+		switch (s) {
+			case 'ready':
+			case 'active':
+				return 'bg-success-500/15 text-success-500';
+			case 'draft':
+				return 'bg-surface-500/15 text-surface-500 dark:text-surface-300';
+			case 'provisioning':
+			case 'configuring':
+			case 'generalizing':
+				return 'bg-primary-500/15 text-primary-500';
+			case 'error':
+				return 'bg-error-500/15 text-error-500';
+			default:
+				return 'bg-surface-500/15 text-surface-500';
+		}
+	}
+
+	function isWizardState(s: string | undefined): boolean {
+		return s === 'draft' || s === 'provisioning' || s === 'configuring' || s === 'generalizing' || s === 'error';
+	}
 </script>
 
 <div class="mx-auto max-w-7xl space-y-6">
@@ -410,6 +432,7 @@
 							class="border-b border-surface-200 dark:border-surface-800 text-xs font-semibold uppercase tracking-wider text-surface-500"
 						>
 							<th scope="col" class="px-5 py-3">Name</th>
+							<th scope="col" class="px-5 py-3">State</th>
 							<th scope="col" class="px-5 py-3">vCenter Template</th>
 							<th scope="col" class="px-5 py-3">OS</th>
 							<th scope="col" class="px-5 py-3">Defaults (CPU/RAM/Disk)</th>
@@ -422,14 +445,14 @@
 						{#if loading}
 							{#each Array(4) as _}
 								<tr class="border-b border-surface-200 dark:border-surface-800">
-									{#each Array(7) as _cell}
+									{#each Array(8) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
 								</tr>
 							{/each}
 						{:else if templates.length === 0}
 							<tr>
-								<td colspan="7" class="px-5 py-12 text-center text-surface-500"
+								<td colspan="8" class="px-5 py-12 text-center text-surface-500"
 									>No templates found.</td
 								>
 							</tr>
@@ -440,6 +463,9 @@
 									<tr class="border-b border-primary-500/20 bg-primary-500/5">
 										<td class="px-5 py-3">
 											<input type="text" bind:value={editValues.name} class={inputSmClass} style="width:8rem" aria-label="Template name" />
+										</td>
+										<td class="px-5 py-3 text-xs text-surface-500">
+											{t.template_state ?? '—'}
 										</td>
 										<td class="px-5 py-3">
 											<input
@@ -554,7 +580,7 @@
 								{:else if deletingId === t.id}
 									<!-- Delete confirmation row -->
 									<tr class="border-b border-error-500/20 bg-error-500/5">
-										<td colspan="7" class="px-5 py-3">
+										<td colspan="8" class="px-5 py-3">
 											<div class="flex items-center justify-between">
 												<span class="text-sm text-surface-900 dark:text-surface-100">
 													Delete <strong>{t.name}</strong>? This cannot be undone.
@@ -583,6 +609,11 @@
 										class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 									>
 										<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">{t.name}</td>
+										<td class="px-5 py-3">
+											<span class="rounded-full px-2 py-0.5 text-xs font-medium {stateBadgeClass(t.template_state)}">
+												{t.template_state ?? 'unknown'}
+											</span>
+										</td>
 										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400"
 											>{t.vcenter_template}</td
 										>
@@ -619,6 +650,15 @@
 										</td>
 										<td class="px-5 py-3 text-right">
 											<div class="flex items-center justify-end gap-2">
+												{#if isWizardState(t.template_state)}
+													<a
+														class="text-xs text-secondary-500 hover:text-secondary-400"
+														href={`/admin/templates/${t.id}/wizard`}
+														title="Open the multi-step wizard for this template"
+													>
+														Resume wizard
+													</a>
+												{/if}
 												<button
 													class="text-xs text-primary-500 hover:text-primary-400"
 													onclick={() => openPlaylistEditor(t.id)}
@@ -642,7 +682,7 @@
 									</tr>
 									{#if playlistEditingTemplateId === t.id}
 										<tr class="border-b border-primary-500/20 bg-primary-500/5">
-											<td colspan="7" class="px-5 py-4">
+											<td colspan="8" class="px-5 py-4">
 												<div class="space-y-3">
 													<p class="text-sm font-semibold">Assign Playlists to {t.name}</p>
 													{#if playlists.length === 0}
