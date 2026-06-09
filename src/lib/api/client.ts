@@ -266,6 +266,14 @@ export interface WizardStateResponse {
 	source_type?: string;
 	source_ref?: string;
 	staging_network?: string;
+	// Latest worker job for this template. When template_state === 'error'
+	// these tell the wizard which step failed (`template_provision` →
+	// failure during Provision, `template_generalize` → failure during
+	// Generalize) and surface the raw error string from the worker so the
+	// user sees the actual cause instead of a generic "check worker logs".
+	last_job_type?: string;
+	last_job_status?: string;
+	last_job_error?: string;
 }
 
 export interface WizardJobResponse {
