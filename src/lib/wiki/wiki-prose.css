@@ -185,10 +185,12 @@
 	position: relative;
 }
 
-/* Light theme code blocks: darker than surface but lighter than dark
- * theme — pleasant contrast without screaming. */
-:where(:not(.dark)) .wiki-prose pre,
-:where(:not(.dark)) .wiki-prose .wiki-code-block {
+/* Light theme override — must select on <html> so the rule actually
+ * scopes by theme. (Earlier draft used :where(:not(.dark)) on the
+ * <pre> itself, which always matched since <pre> never carries the
+ * .dark class — making "light" win even in dark mode.) */
+html:not(.dark) .wiki-prose pre,
+html:not(.dark) .wiki-prose .wiki-code-block {
 	background-color: oklch(0.97 0.01 70);
 	color: oklch(0.22 0.02 275);
 	border-color: oklch(0.85 0.01 70);
@@ -237,7 +239,7 @@
 .wiki-prose pre[data-lang] .wiki-copy-btn {
 	right: 3.5em; /* leave room for the language badge */
 }
-:where(:not(.dark)) .wiki-prose pre .wiki-copy-btn {
+html:not(.dark) .wiki-prose pre .wiki-copy-btn {
 	background-color: oklch(0.92 0.008 70);
 	color: oklch(0.30 0.02 275);
 	border-color: oklch(0.80 0.01 70);
