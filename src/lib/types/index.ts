@@ -54,8 +54,7 @@ export type TemplateLifecycleState =
 	| 'generalizing'
 	| 'ready'
 	| 'active'
-	| 'errored'
-	| 'archived';
+	| 'error';
 
 export type TemplateSourceType =
 	| 'clone_template'

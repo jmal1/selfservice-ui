@@ -63,8 +63,11 @@
 		return s === 'provisioning' || s === 'generalizing';
 	}
 
-	function isTerminal(s: string): boolean {
-		return s === 'archived';
+	function isTerminal(_s: string): boolean {
+		// No terminal states currently exist in the lifecycle (an 'active'
+		// template can be unpublished back to 'ready'); kept as a hook for
+		// when an archived/deleted state is added.
+		return false;
 	}
 
 	async function reload() {
@@ -135,25 +138,45 @@
 		);
 	}
 	function canCancel(): boolean {
-		return wizard?.allowed_next_states.includes('errored') ?? false;
+		return wizard?.allowed_next_states.includes('error') ?? false;
 	}
 	function canRetry(): boolean {
-		return wizard?.template_state === 'errored' && wizard.allowed_next_states.length > 0;
+		return wizard?.template_state === 'error' && wizard.allowed_next_states.length > 0;
+	}
+
+	// stepNumber maps the canonical wizard state to a 1-based index over
+	// the 5 visible steps (Draft / Provision / Configure / Generalize /
+	// Publish). For 'error' we surface the LAST attempted step so the
+	// progress strip can show a red box at the right position instead of
+	// collapsing to "nothing started yet". We infer the last attempted
+	// step from vcenter_vm_id: if a vCenter VM was already created, the
+	// failure happened at or after step 3; otherwise it's at step 2.
+	function stateToStep(state: string | undefined, hasVM: boolean): number {
+		switch (state) {
+			case 'draft':
+				return 1;
+			case 'provisioning':
+				return 2;
+			case 'configuring':
+				return 3;
+			case 'generalizing':
+				return 4;
+			case 'ready':
+			case 'active':
+				return 5;
+			case 'error':
+				// Best-effort guess based on whether the worker got far
+				// enough to record a staging VM moref.
+				return hasVM ? 4 : 2;
+			default:
+				return 0;
+		}
 	}
 
 	const stepNumber = $derived(
-		wizard?.template_state === 'draft'
-			? 1
-			: wizard?.template_state === 'provisioning'
-				? 2
-				: wizard?.template_state === 'configuring'
-					? 3
-					: wizard?.template_state === 'generalizing'
-						? 4
-						: wizard?.template_state === 'ready' || wizard?.template_state === 'active'
-							? 5
-							: 0
+		stateToStep(wizard?.template_state, !!wizard?.vcenter_vm_id)
 	);
+	const isErrored = $derived(wizard?.template_state === 'error');
 </script>
 
 <svelte:head>
@@ -170,23 +193,43 @@
 	</header>
 
 	{#if loading}
-		<p>Loading wizard wizard…</p>
+		<p>Loading wizard…</p>
 	{:else if error}
 		<aside class="card preset-tonal-error p-4">
 			<p class="font-semibold">⚠️ {error}</p>
 			<button class="btn preset-tonal-surface mt-2" onclick={reload}>Retry</button>
 		</aside>
 	{:else if wizard}
-		<!-- Progress strip -->
-		<ol class="flex gap-2 text-xs">
+		<!-- Progress strip: visually distinct so the instructor can see
+		     at a glance which step is current, done, pending, or errored.
+		     Uses Tailwind utility classes (not just Skeleton presets) so
+		     the contrast is reliable across themes. -->
+		<ol class="flex gap-2 text-xs font-medium">
 			{#each ['Draft', 'Provision', 'Configure', 'Generalize', 'Publish'] as label, i (label)}
+				{@const idx = i + 1}
+				{@const isCurrent = !isErrored && stepNumber === idx}
+				{@const isDone = stepNumber > idx}
+				{@const isErrorHere = isErrored && stepNumber === idx}
 				<li
-					class="flex-1 rounded p-2 text-center border"
-					class:preset-tonal-primary={stepNumber === i + 1}
-					class:preset-tonal-success={stepNumber > i + 1}
-					class:preset-tonal-surface={stepNumber < i + 1}
+					class="flex-1 rounded-md p-2 text-center border-2 transition-colors"
+					class:border-primary-500={isCurrent}
+					class:bg-primary-500={isCurrent}
+					class:text-white={isCurrent || isDone || isErrorHere}
+					class:border-success-500={isDone}
+					class:bg-success-500={isDone}
+					class:border-error-500={isErrorHere}
+					class:bg-error-500={isErrorHere}
+					class:border-surface-700={!isCurrent && !isDone && !isErrorHere}
+					class:opacity-50={!isCurrent && !isDone && !isErrorHere}
 				>
-					{i + 1}. {label}
+					<span class="mr-1">{idx}.</span>{label}
+					{#if isCurrent}
+						<span class="ml-1">●</span>
+					{:else if isDone}
+						<span class="ml-1">✓</span>
+					{:else if isErrorHere}
+						<span class="ml-1">✗</span>
+					{/if}
 				</li>
 			{/each}
 		</ol>
@@ -347,14 +390,14 @@
 			</section>
 		{/if}
 
-		{#if wizard.template_state === 'errored'}
+		{#if wizard.template_state === 'error'}
 			<section class="card preset-tonal-error p-6 space-y-3">
 				<h3 class="h5">Errored</h3>
 				<p>
 					The last attempt failed. Check the worker logs in
 					<a href="/admin/jobs" class="underline">/admin/jobs</a> for
 					details, then retry to move back to the previous attempt
-					wizard.
+					state.
 				</p>
 				<button
 					class="btn preset-filled-warning"
