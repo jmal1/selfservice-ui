@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { marked } from 'marked';
-	import DOMPurify from 'dompurify';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
 		wikiGetIndex,
@@ -14,6 +11,15 @@
 		type WikiManifestEntry
 	} from '$lib/api/client';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import {
+		renderMarkdown,
+		renderSourceFile,
+		extractToc,
+		languageForPath,
+		iconForPath,
+		type TocEntry
+	} from '$lib/wiki/markdown';
+	import './../../lib/wiki/wiki-prose.css';
 
 	let index = $state<WikiIndex | null>(null);
 	let loadingIndex = $state(true);
@@ -24,65 +30,36 @@
 	let loadingPage = $state(false);
 	let pageError = $state<string | null>(null);
 
-	// rendered is the sanitized HTML for the current page. For markdown
-	// we run marked() then DOMPurify (same pattern as MarkdownField). For
-	// source files we wrap in <pre><code> so highlight.js can be wired
-	// in later without changing the data flow.
+	let sidebarFilter = $state('');
+	let activeHeadingId = $state<string>('');
+
+	// Content render — either markdown via marked+hljs+callouts, or a
+	// single-file syntax-highlighted source code block. Both paths run
+	// through DOMPurify inside the markdown module so `{@html}` here is
+	// safe.
 	const rendered = $derived.by(() => {
 		if (!pageBody) return '';
 		const ext = currentPath.split('.').pop()?.toLowerCase() ?? '';
-		if (ext === 'md') {
-			// Rewrite intra-bundle links from `[text](internal/foo.go)` to
-			// `[text](?file=internal/foo.go)` so clicks navigate within
-			// the wiki UI instead of leaking out to a 404. External http(s)
-			// links pass through unchanged.
-			const rewritten = pageBody.replace(
-				/\]\(([^)#\s]+?)\)/g,
-				(match, target: string) => {
-					if (/^(https?:|mailto:|ftp:|#)/i.test(target)) return match;
-					return `](?file=${encodeURIComponent(target)})`;
-				}
-			);
-			const html = marked.parse(rewritten, { async: false }) as string;
-			return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
-		}
-		// Source files: render as a single <pre><code> block. Escape HTML
-		// since the bundle contains raw .go/.sql/.sh source.
-		const escaped = pageBody
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-		const lang = languageFor(currentPath);
-		return `<pre class="rounded-lg bg-surface-200/40 dark:bg-surface-900 p-4 overflow-x-auto text-xs"><code class="language-${lang}">${escaped}</code></pre>`;
+		if (ext === 'md') return renderMarkdown(pageBody);
+		return renderSourceFile(pageBody, languageForPath(currentPath));
 	});
 
-	function languageFor(path: string): string {
-		const ext = path.split('.').pop()?.toLowerCase() ?? '';
-		switch (ext) {
-			case 'go':
-				return 'go';
-			case 'sql':
-				return 'sql';
-			case 'sh':
-				return 'bash';
-			case 'json':
-				return 'json';
-			case 'yaml':
-			case 'yml':
-				return 'yaml';
-			default:
-				return 'plaintext';
-		}
-	}
+	// TOC is extracted from the rendered HTML so we don't have to walk
+	// the markdown AST a second time. Empty for source-file pages.
+	const toc = $derived<TocEntry[]>(rendered ? extractToc(rendered) : []);
 
-	// groupedFiles organizes the file list into top-level folders for the
-	// sidebar tree. Seeds get pulled into their own "Start here" group
-	// regardless of folder so instructors land on AGENTS.md first.
+	// Group sidebar files into Start-here + per-folder buckets. Applies
+	// the sidebar filter so typing in the search box narrows the tree.
 	const groupedFiles = $derived.by(() => {
-		if (!index) return { seeds: [], groups: new Map<string, WikiManifestEntry[]>() };
+		const empty = { seeds: [] as WikiManifestEntry[], groups: new Map<string, WikiManifestEntry[]>() };
+		if (!index) return empty;
+		const filter = sidebarFilter.trim().toLowerCase();
+		const matches = (p: string) => !filter || p.toLowerCase().includes(filter);
+
 		const seeds: WikiManifestEntry[] = [];
 		const groups = new Map<string, WikiManifestEntry[]>();
 		for (const f of index.files) {
+			if (!matches(f.path)) continue;
 			if (f.from_seed) {
 				seeds.push(f);
 				continue;
@@ -92,12 +69,15 @@
 			arr.push(f);
 			groups.set(topLevel, arr);
 		}
-		// Sort entries inside each group for stable rendering.
 		for (const arr of groups.values()) {
 			arr.sort((a, b) => a.path.localeCompare(b.path));
 		}
 		return { seeds, groups };
 	});
+
+	// Breadcrumb segments for the top of the main pane. Splits the
+	// current path on `/` and renders each segment as a chip.
+	const breadcrumbs = $derived(currentPath ? currentPath.split('/') : []);
 
 	async function loadIndex() {
 		try {
@@ -123,16 +103,27 @@
 		} finally {
 			loadingPage = false;
 		}
+		// Wait for the DOM update then enhance the rendered article
+		// (add copy buttons, language badges, jump to anchor if present
+		// in the URL).
+		await tick();
+		enhanceCodeBlocks();
+		applyAnchorFromUrl();
+		setupScrollSpy();
 	}
 
-	function selectPage(path: string) {
-		// Push the path into the URL so users can bookmark / share deep
-		// links. Use replaceState rather than goto to avoid a full
-		// SvelteKit navigation cycle for what's effectively in-page
-		// tab-switching.
+	function selectPage(path: string, anchor?: string) {
+		// Bookmarkable URL: ?file=path&#heading-id
 		const url = new URL(window.location.href);
 		url.searchParams.set('file', path);
+		if (anchor) url.hash = anchor;
+		else url.hash = '';
 		history.replaceState({}, '', url.toString());
+		if (path === currentPath && anchor) {
+			// Same page, just jump to anchor
+			document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			return;
+		}
 		loadPage(path);
 	}
 
@@ -142,10 +133,86 @@
 		return `${(n / 1024 / 1024).toFixed(2)} MB`;
 	}
 
+	// After render: walk every <pre> inside the article and inject a
+	// "Copy" button + language badge. Keeps the markdown module free of
+	// DOM mutation responsibilities.
+	function enhanceCodeBlocks() {
+		const article = document.getElementById('wiki-article');
+		if (!article) return;
+		for (const pre of article.querySelectorAll('pre')) {
+			if (pre.querySelector('.wiki-copy-btn')) continue; // idempotent
+			const code = pre.querySelector('code');
+			const cls = code?.className ?? '';
+			const langMatch = cls.match(/language-([\w-]+)/);
+			if (langMatch && langMatch[1] !== 'plaintext') {
+				pre.setAttribute('data-lang', langMatch[1]);
+			}
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'wiki-copy-btn';
+			btn.textContent = 'Copy';
+			btn.addEventListener('click', async (ev) => {
+				ev.stopPropagation();
+				const text = code?.textContent ?? '';
+				try {
+					await navigator.clipboard.writeText(text);
+					btn.textContent = 'Copied!';
+					setTimeout(() => (btn.textContent = 'Copy'), 1500);
+				} catch {
+					btn.textContent = 'Failed';
+					setTimeout(() => (btn.textContent = 'Copy'), 1500);
+				}
+			});
+			pre.appendChild(btn);
+		}
+	}
+
+	function applyAnchorFromUrl() {
+		const hash = window.location.hash.replace(/^#/, '');
+		if (!hash) return;
+		const el = document.getElementById(hash);
+		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	// Track which TOC entry is currently in view by watching scroll
+	// position. IntersectionObserver gives near-zero overhead vs a
+	// scroll listener. Re-runs whenever the page (and its set of
+	// headings) changes.
+	let scrollObserver: IntersectionObserver | null = null;
+	function setupScrollSpy() {
+		scrollObserver?.disconnect();
+		const article = document.getElementById('wiki-article');
+		if (!article) return;
+		const headings = Array.from(article.querySelectorAll('h2, h3')) as HTMLElement[];
+		if (headings.length === 0) {
+			activeHeadingId = '';
+			return;
+		}
+		scrollObserver = new IntersectionObserver(
+			(entries) => {
+				// Pick the first heading currently intersecting the
+				// "active" band near the top of the viewport.
+				const visible = entries
+					.filter((e) => e.isIntersecting)
+					.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+				if (visible.length > 0) {
+					activeHeadingId = visible[0].target.id;
+				}
+			},
+			{ rootMargin: '-15% 0% -70% 0%', threshold: 0 }
+		);
+		for (const h of headings) scrollObserver.observe(h);
+	}
+
+	function scrollToToc(id: string) {
+		const url = new URL(window.location.href);
+		url.hash = id;
+		history.replaceState({}, '', url.toString());
+		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
 	onMount(() => {
 		if (!authStore.isInstructor) return;
-		// Kick off the async initial load without awaiting it (onMount
-		// must stay sync to return its cleanup handler).
 		(async () => {
 			await loadIndex();
 			const fromUrl = page.url.searchParams.get('file');
@@ -155,30 +222,42 @@
 				selectPage(index.seeds[0]);
 			}
 		})();
-		// Intercept clicks on rewritten in-app links so they don't trigger
-		// a full page reload (they're rendered as anchor tags with
-		// ?file=... hrefs).
+		// Document-level click interception for rewritten ?file= links
+		// so they SPA-navigate instead of hitting the network.
 		const handler = (ev: MouseEvent) => {
 			const target = (ev.target as HTMLElement | null)?.closest('a');
 			if (!target) return;
 			const href = target.getAttribute('href');
-			if (!href || !href.startsWith('?file=')) return;
-			ev.preventDefault();
-			const file = decodeURIComponent(href.slice('?file='.length));
-			selectPage(file);
+			if (!href) return;
+			if (href.startsWith('?file=')) {
+				ev.preventDefault();
+				const q = href.slice('?file='.length);
+				const [filePart, anchor] = q.split('#');
+				selectPage(decodeURIComponent(filePart), anchor);
+			} else if (href.startsWith('#')) {
+				// Plain in-page anchor — update URL but let smooth scroll
+				// happen via JS so the offset matches scroll-margin-top.
+				ev.preventDefault();
+				scrollToToc(href.slice(1));
+			}
 		};
 		document.addEventListener('click', handler);
-		return () => document.removeEventListener('click', handler);
+		return () => {
+			document.removeEventListener('click', handler);
+			scrollObserver?.disconnect();
+		};
 	});
 </script>
 
-<div class="mx-auto flex max-w-7xl gap-6">
+<div class="mx-auto flex max-w-[100rem] gap-6">
 	{#if !authStore.isInstructor}
-		<div class="w-full rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
+		<div
+			class="w-full rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500"
+		>
 			Wiki is restricted to instructors and admins.
 		</div>
 	{:else}
-		<!-- Sidebar -->
+		<!-- ── LEFT SIDEBAR: file tree + search ──────────────────────── -->
 		<aside class="w-72 shrink-0 space-y-4">
 			<div>
 				<h2 class="text-lg font-bold text-surface-900 dark:text-surface-100">Instructor Wiki</h2>
@@ -194,6 +273,14 @@
 				⬇ Download Bundle (.zip)
 			</a>
 
+			<input
+				type="search"
+				bind:value={sidebarFilter}
+				placeholder="Filter files…"
+				class="input text-sm"
+				aria-label="Filter wiki files"
+			/>
+
 			{#if loadingIndex}
 				<div class="space-y-2">
 					{#each Array(5) as _, i (i)}
@@ -201,33 +288,45 @@
 					{/each}
 				</div>
 			{:else if indexError}
-				<div class="rounded-lg border border-error-500/30 bg-error-500/10 px-3 py-2 text-xs text-error-500">
+				<div
+					class="rounded-lg border border-error-500/30 bg-error-500/10 px-3 py-2 text-xs text-error-500"
+				>
 					{indexError}
 				</div>
 			{:else if index}
-				<div>
-					<div class="mb-1 text-xs font-semibold uppercase tracking-wide text-surface-500">
-						Start here
+				{#if groupedFiles.seeds.length > 0}
+					<div>
+						<div
+							class="mb-1 text-xs font-semibold uppercase tracking-wide text-surface-500"
+						>
+							Start here
+						</div>
+						<ul class="space-y-0.5">
+							{#each groupedFiles.seeds as f (f.path)}
+								<li>
+									<button
+										type="button"
+										class="flex w-full items-center gap-2 truncate rounded px-2 py-1 text-left text-sm hover:bg-surface-200/50 dark:hover:bg-surface-800 {currentPath ===
+										f.path
+											? 'bg-primary-500/15 text-primary-500'
+											: 'text-surface-700 dark:text-surface-300'}"
+										onclick={() => selectPage(f.path)}
+										title={f.path}
+									>
+										<span class="text-sm">{iconForPath(f.path)}</span>
+										<span class="truncate">{f.path}</span>
+									</button>
+								</li>
+							{/each}
+						</ul>
 					</div>
-					<ul class="space-y-0.5">
-						{#each groupedFiles.seeds as f (f.path)}
-							<li>
-								<button
-									type="button"
-									class="w-full truncate rounded px-2 py-1 text-left text-sm hover:bg-surface-200/50 dark:hover:bg-surface-800 {currentPath === f.path ? 'bg-primary-500/15 text-primary-500' : 'text-surface-700 dark:text-surface-300'}"
-									onclick={() => selectPage(f.path)}
-									title={f.path}
-								>
-									{f.path}
-								</button>
-							</li>
-						{/each}
-					</ul>
-				</div>
+				{/if}
 
 				{#each [...groupedFiles.groups.entries()].sort(([a], [b]) => a.localeCompare(b)) as [folder, files] (folder)}
 					<div>
-						<div class="mb-1 text-xs font-semibold uppercase tracking-wide text-surface-500">
+						<div
+							class="mb-1 text-xs font-semibold uppercase tracking-wide text-surface-500"
+						>
 							{folder}/
 						</div>
 						<ul class="space-y-0.5">
@@ -235,11 +334,15 @@
 								<li>
 									<button
 										type="button"
-										class="w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-surface-200/50 dark:hover:bg-surface-800 {currentPath === f.path ? 'bg-primary-500/15 text-primary-500' : 'text-surface-600 dark:text-surface-400'}"
+										class="flex w-full items-center gap-2 truncate rounded px-2 py-1 text-left text-xs hover:bg-surface-200/50 dark:hover:bg-surface-800 {currentPath ===
+										f.path
+											? 'bg-primary-500/15 text-primary-500'
+											: 'text-surface-600 dark:text-surface-400'}"
 										onclick={() => selectPage(f.path)}
 										title={f.path}
 									>
-										{f.path.slice(folder.length + 1)}
+										<span class="text-xs">{iconForPath(f.path)}</span>
+										<span class="truncate">{f.path.slice(folder.length + 1)}</span>
 									</button>
 								</li>
 							{/each}
@@ -247,25 +350,43 @@
 					</div>
 				{/each}
 
-				<div class="border-t border-surface-200 dark:border-surface-800 pt-3 text-xs text-surface-500">
+				{#if groupedFiles.seeds.length === 0 && groupedFiles.groups.size === 0}
+					<div class="px-2 py-3 text-xs italic text-surface-500">No files match "{sidebarFilter}".</div>
+				{/if}
+
+				<div
+					class="border-t border-surface-200 dark:border-surface-800 pt-3 text-xs text-surface-500"
+				>
 					{index.files.length} files · {formatBytes(index.total_bytes)}
 				</div>
 			{/if}
 		</aside>
 
-		<!-- Main content -->
+		<!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
 		<main class="min-w-0 flex-1">
 			{#if currentPath}
-				<div class="mb-4 flex items-center justify-between gap-3">
-					<div class="min-w-0">
-						<div class="text-xs text-surface-500">File</div>
-						<div class="truncate font-mono text-sm text-surface-900 dark:text-surface-100" title={currentPath}>
-							{currentPath}
-						</div>
-					</div>
+				<!-- Breadcrumbs + actions -->
+				<div
+					class="mb-4 flex items-center justify-between gap-3 border-b border-surface-200 pb-3 dark:border-surface-800"
+				>
+					<nav class="flex min-w-0 items-center gap-1 text-sm" aria-label="Breadcrumb">
+						{#each breadcrumbs as seg, i (i)}
+							{#if i > 0}
+								<span class="text-surface-400">/</span>
+							{/if}
+							<span
+								class="truncate {i === breadcrumbs.length - 1
+									? 'font-medium text-surface-900 dark:text-surface-100'
+									: 'text-surface-500'}"
+								title={seg}
+							>
+								{seg}
+							</span>
+						{/each}
+					</nav>
 					<a
 						href={wikiPageDownloadURL(currentPath)}
-						class="shrink-0 rounded-lg border border-surface-300 dark:border-surface-700 bg-surface-100 dark:bg-surface-900 px-3 py-1.5 text-sm hover:bg-surface-200 dark:hover:bg-surface-800"
+						class="shrink-0 rounded-lg border border-surface-300 bg-surface-100 px-3 py-1.5 text-sm hover:bg-surface-200 dark:border-surface-700 dark:bg-surface-900 dark:hover:bg-surface-800"
 					>
 						⬇ Download
 					</a>
@@ -274,19 +395,51 @@
 				{#if loadingPage}
 					<LoadingSkeleton width="100%" height="20rem" />
 				{:else if pageError}
-					<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
+					<div
+						class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500"
+					>
 						{pageError}
 					</div>
 				{:else}
-					<article class="prose prose-sm max-w-none dark:prose-invert">
+					<article id="wiki-article" class="wiki-prose">
 						{@html rendered}
 					</article>
 				{/if}
 			{:else if !loadingIndex && !indexError}
-				<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 p-8 text-center text-sm text-surface-500">
+				<div
+					class="rounded-xl border border-surface-200 bg-surface-100 p-8 text-center text-sm text-surface-500 dark:border-surface-800 dark:bg-surface-900"
+				>
 					Select a doc from the sidebar to begin.
 				</div>
 			{/if}
 		</main>
+
+		<!-- ── RIGHT SIDEBAR: Table of Contents ────────────────────── -->
+		{#if toc.length > 0}
+			<aside class="sticky top-20 hidden h-fit w-56 shrink-0 lg:block">
+				<div class="mb-2 text-xs font-semibold uppercase tracking-wide text-surface-500">
+					On this page
+				</div>
+				<ul class="space-y-0.5 border-l border-surface-200 dark:border-surface-800">
+					{#each toc as entry (entry.id)}
+						<li>
+							<button
+								type="button"
+								onclick={() => scrollToToc(entry.id)}
+								class="block w-full truncate border-l-2 py-1 pr-2 text-left text-xs transition-colors {entry.level ===
+								3
+									? 'pl-6'
+									: 'pl-3'} {activeHeadingId === entry.id
+									? 'border-primary-500 text-primary-500'
+									: 'border-transparent text-surface-500 hover:border-surface-300 hover:text-surface-800 dark:hover:border-surface-600 dark:hover:text-surface-100'}"
+								title={entry.text}
+							>
+								{entry.text}
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</aside>
+		{/if}
 	{/if}
 </div>
