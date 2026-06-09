@@ -47,17 +47,70 @@ const marked = new Marked(
 marked.setOptions({ gfm: true, breaks: false });
 
 /**
+ * Resolve a markdown link target against the directory of the source
+ * page so that relative links (`./foo.md`, `../bar.md`, bare names)
+ * become bundle-absolute paths that match what the API serves.
+ *
+ * Mirrors the Go bundler's resolveLink in cmd/wiki-bundler/main.go;
+ * keep the two in sync — a divergence here means the rewriter would
+ * route to a path the bundler didn't include, and the wiki would 404
+ * on links the bundle build verified were valid.
+ *
+ * Inputs:
+ *   - `target`: the raw link target from `[text](target)`. May include
+ *     `./`, `../`, a leading `/` (treated as bundle-absolute), or just
+ *     be a bare filename.
+ *   - `sourcePath`: bundle-relative path of the page the link lives in,
+ *     e.g. `docs/instructor/overview.md`. Used to resolve `./` and
+ *     `../` segments.
+ *
+ * Returns the bundle-relative path with `./` and `../` segments
+ * collapsed. Caller is responsible for URL-encoding before embedding.
+ */
+function resolveBundlePath(target: string, sourcePath: string): string {
+	let candidate: string;
+	if (target.startsWith('/')) {
+		// Leading slash means "bundle root" — strip it and we're done.
+		candidate = target.slice(1);
+	} else {
+		// Relative to source file's directory.
+		const lastSlash = sourcePath.lastIndexOf('/');
+		const dir = lastSlash >= 0 ? sourcePath.slice(0, lastSlash) : '';
+		candidate = dir ? `${dir}/${target}` : target;
+	}
+	// Collapse `.` and `..` segments. Splitting on `/` rather than using
+	// the URL constructor keeps us bundle-rooted (the URL ctor would
+	// need a base host and would percent-encode along the way).
+	const segments: string[] = [];
+	for (const seg of candidate.split('/')) {
+		if (seg === '' || seg === '.') continue;
+		if (seg === '..') {
+			segments.pop();
+			continue;
+		}
+		segments.push(seg);
+	}
+	return segments.join('/');
+}
+
+/**
  * Rewrite intra-bundle markdown links so clicks navigate inside the
  * wiki SPA instead of trying to hit a 404 on the API. External links
  * (http://, https://, mailto:, anchors) pass through unchanged.
  *
+ * Relative paths are resolved against `sourcePath` (the bundle-relative
+ * path of the page being rendered) so a link from
+ * `docs/instructor/overview.md` to `workflows.md` correctly becomes
+ * `?file=docs%2Finstructor%2Fworkflows.md`, not `?file=workflows.md`.
+ *
  * The wiki page intercepts clicks on `?file=...` anchors via a document
  * click handler and routes them to selectPage(). See +page.svelte.
  */
-function rewriteIntraBundleLinks(md: string): string {
+function rewriteIntraBundleLinks(md: string, sourcePath: string): string {
 	return md.replace(/\]\(([^)#\s]+?)(#[^)]*)?\)/g, (match, target: string, anchor?: string) => {
 		if (/^(https?:|mailto:|ftp:|#)/i.test(target)) return match;
-		const file = encodeURIComponent(target);
+		const resolved = resolveBundlePath(target, sourcePath);
+		const file = encodeURIComponent(resolved);
 		// Preserve trailing #anchor so deep-links to headings still work
 		// after the SPA navigation reloads the page body.
 		return anchor ? `](?file=${file}${anchor})` : `](?file=${file})`;
@@ -71,11 +124,15 @@ function rewriteIntraBundleLinks(md: string): string {
  *   * `> [!note]` / `[!tip]` / `[!warning]` / `[!danger]` callouts
  *   * Auto-generated heading IDs for TOC + deep-linking
  *   * Syntax-highlighted code blocks (hljs)
- *   * Rewritten intra-bundle links (`](foo/bar.md)` -> `](?file=foo/bar.md)`)
+ *   * Rewritten intra-bundle links (`](workflows.md)` from
+ *     `docs/instructor/overview.md` -> `](?file=docs%2Finstructor%2Fworkflows.md)`)
+ *
+ * `sourcePath` is the bundle-relative path of the page being rendered;
+ * supplying it is mandatory so relative links resolve correctly.
  */
-export function renderMarkdown(source: string): string {
+export function renderMarkdown(source: string, sourcePath: string): string {
 	if (!source) return '';
-	const rewritten = rewriteIntraBundleLinks(source);
+	const rewritten = rewriteIntraBundleLinks(source, sourcePath);
 	const html = marked.parse(rewritten, { async: false }) as string;
 	// `USE_PROFILES: { html: true }` is the default-safe profile that
 	// permits common formatting tags, links, images, and tables but
@@ -88,6 +145,10 @@ export function renderMarkdown(source: string): string {
 		ADD_ATTR: ['id']
 	});
 }
+
+// Exported solely so the bundler-link contract has a unit test. Not
+// intended for general use; callers should prefer renderMarkdown.
+export const __test = { resolveBundlePath, rewriteIntraBundleLinks };
 
 /**
  * Render a raw source file (.go/.sql/.sh/etc.) as a single syntax-

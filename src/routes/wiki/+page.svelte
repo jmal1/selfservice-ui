@@ -40,7 +40,7 @@
 	const rendered = $derived.by(() => {
 		if (!pageBody) return '';
 		const ext = currentPath.split('.').pop()?.toLowerCase() ?? '';
-		if (ext === 'md') return renderMarkdown(pageBody);
+		if (ext === 'md') return renderMarkdown(pageBody, currentPath);
 		return renderSourceFile(pageBody, languageForPath(currentPath));
 	});
 
@@ -48,30 +48,71 @@
 	// the markdown AST a second time. Empty for source-file pages.
 	const toc = $derived<TocEntry[]>(rendered ? extractToc(rendered) : []);
 
-	// Group sidebar files into Start-here + per-folder buckets. Applies
-	// the sidebar filter so typing in the search box narrows the tree.
+	// Sidebar categorisation: map a bundle-relative path to a friendly
+	// category label so the sidebar reads "Instructor Guide" instead of
+	// "docs/" and so source-code entries are clearly separated. Keep
+	// in sync with how the bundler seeds files in selfservice-api's
+	// Makefile (WIKI_SEEDS) — adding a new top-level folder requires a
+	// matching entry here, otherwise files fall into "Other".
+	const CATEGORY_ORDER = [
+		'Instructor Guide',
+		'AI Authoring Prompts',
+		'Source Reference',
+		'Deployment Reference',
+		'Other'
+	] as const;
+	function categoryFor(path: string): string {
+		if (path.startsWith('docs/instructor/')) return 'Instructor Guide';
+		if (path.startsWith('docs/ai-prompts/') || path.startsWith('docs/ai/'))
+			return 'AI Authoring Prompts';
+		if (path.startsWith('internal/')) return 'Source Reference';
+		if (path.startsWith('deploy/')) return 'Deployment Reference';
+		return 'Other';
+	}
+
+	// Group sidebar files into Start-here + per-category buckets. Filter
+	// matches against the path AND the friendly title so typing
+	// "Workflow" finds the corresponding page even though the filename
+	// is just "workflows.md".
 	const groupedFiles = $derived.by(() => {
-		const empty = { seeds: [] as WikiManifestEntry[], groups: new Map<string, WikiManifestEntry[]>() };
+		const empty = {
+			seeds: [] as WikiManifestEntry[],
+			groups: [] as { label: string; files: WikiManifestEntry[] }[]
+		};
 		if (!index) return empty;
 		const filter = sidebarFilter.trim().toLowerCase();
-		const matches = (p: string) => !filter || p.toLowerCase().includes(filter);
+		const matches = (f: WikiManifestEntry) =>
+			!filter ||
+			f.path.toLowerCase().includes(filter) ||
+			(f.title ?? '').toLowerCase().includes(filter);
 
 		const seeds: WikiManifestEntry[] = [];
-		const groups = new Map<string, WikiManifestEntry[]>();
+		const byCategory = new Map<string, WikiManifestEntry[]>();
 		for (const f of index.files) {
-			if (!matches(f.path)) continue;
+			if (!matches(f)) continue;
 			if (f.from_seed) {
 				seeds.push(f);
 				continue;
 			}
-			const topLevel = f.path.split('/')[0] ?? '';
-			const arr = groups.get(topLevel) ?? [];
+			const cat = categoryFor(f.path);
+			const arr = byCategory.get(cat) ?? [];
 			arr.push(f);
-			groups.set(topLevel, arr);
+			byCategory.set(cat, arr);
 		}
-		for (const arr of groups.values()) {
-			arr.sort((a, b) => a.path.localeCompare(b.path));
+		// Sort each category by title (with path tiebreaker) so users
+		// see human names in alphabetical order rather than the
+		// path-sorted ordering that grouped subdirectories oddly.
+		for (const arr of byCategory.values()) {
+			arr.sort(
+				(a, b) =>
+					(a.title ?? a.path).localeCompare(b.title ?? b.path) ||
+					a.path.localeCompare(b.path)
+			);
 		}
+		const groups = CATEGORY_ORDER.filter((label) => byCategory.has(label)).map((label) => ({
+			label,
+			files: byCategory.get(label)!
+		}));
 		return { seeds, groups };
 	});
 
@@ -314,7 +355,7 @@
 										title={f.path}
 									>
 										<span class="text-sm">{iconForPath(f.path)}</span>
-										<span class="truncate">{f.path}</span>
+										<span class="truncate">{f.title ?? f.path}</span>
 									</button>
 								</li>
 							{/each}
@@ -322,15 +363,15 @@
 					</div>
 				{/if}
 
-				{#each [...groupedFiles.groups.entries()].sort(([a], [b]) => a.localeCompare(b)) as [folder, files] (folder)}
+				{#each groupedFiles.groups as group (group.label)}
 					<div>
 						<div
 							class="mb-1 text-xs font-semibold uppercase tracking-wide text-surface-500"
 						>
-							{folder}/
+							{group.label}
 						</div>
 						<ul class="space-y-0.5">
-							{#each files as f (f.path)}
+							{#each group.files as f (f.path)}
 								<li>
 									<button
 										type="button"
@@ -342,7 +383,7 @@
 										title={f.path}
 									>
 										<span class="text-xs">{iconForPath(f.path)}</span>
-										<span class="truncate">{f.path.slice(folder.length + 1)}</span>
+										<span class="truncate">{f.title ?? f.path}</span>
 									</button>
 								</li>
 							{/each}
@@ -350,7 +391,7 @@
 					</div>
 				{/each}
 
-				{#if groupedFiles.seeds.length === 0 && groupedFiles.groups.size === 0}
+				{#if groupedFiles.seeds.length === 0 && groupedFiles.groups.length === 0}
 					<div class="px-2 py-3 text-xs italic text-surface-500">No files match "{sidebarFilter}".</div>
 				{/if}
 
