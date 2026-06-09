@@ -177,6 +177,24 @@
 		stateToStep(wizard?.template_state, !!wizard?.vcenter_vm_id)
 	);
 	const isErrored = $derived(wizard?.template_state === 'error');
+
+	function stateBadgeClass(s: string | undefined): string {
+		switch (s) {
+			case 'ready':
+			case 'active':
+				return 'bg-success-500/15 text-success-500';
+			case 'draft':
+				return 'bg-surface-500/15 text-surface-500 dark:text-surface-300';
+			case 'provisioning':
+			case 'configuring':
+			case 'generalizing':
+				return 'bg-primary-500/15 text-primary-500';
+			case 'error':
+				return 'bg-error-500/15 text-error-500';
+			default:
+				return 'bg-surface-500/15 text-surface-500';
+		}
+	}
 </script>
 
 <svelte:head>
@@ -188,16 +206,16 @@
 		<a href="/admin/templates" class="text-sm text-surface-500 hover:underline">
 			← Back to templates
 		</a>
-		<h1 class="h2">Template wizard</h1>
+		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Template wizard</h1>
 		<p class="text-surface-500 text-sm">Template ID: <code>{templateID}</code></p>
 	</header>
 
 	{#if loading}
-		<p>Loading wizard…</p>
+		<p class="text-sm text-surface-500">Loading wizard…</p>
 	{:else if error}
-		<aside class="card preset-tonal-error p-4">
+		<aside class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 			<p class="font-semibold">⚠️ {error}</p>
-			<button class="btn preset-tonal-surface mt-2" onclick={reload}>Retry</button>
+			<button class="btn btn-secondary btn-sm mt-2" onclick={reload}>Retry</button>
 		</aside>
 	{:else if wizard}
 		<!-- Progress strip: visually distinct so the instructor can see
@@ -234,12 +252,14 @@
 			{/each}
 		</ol>
 
-		<section class="card p-6 space-y-2">
-			<h2 class="h4">Status</h2>
+		<section class="card p-6 space-y-3">
+			<h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">Status</h2>
 			<dl class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
 				<dt class="font-semibold">Lifecycle wizard</dt>
 				<dd>
-					<span class="badge preset-tonal-primary">{wizard.template_state}</span>
+					<span class="rounded-full px-2 py-0.5 text-xs font-medium {stateBadgeClass(wizard.template_state)}">
+						{wizard.template_state}
+					</span>
 					{#if isTransient(wizard.template_state)}
 						<span class="ml-2 text-surface-500">polling…</span>
 					{/if}
@@ -259,22 +279,13 @@
 					<dt class="font-semibold">Staging network</dt>
 					<dd><code>{wizard.staging_network}</code></dd>
 				{/if}
-
-				<dt class="font-semibold">Allowed next moves</dt>
-				<dd>
-					{#each wizard.allowed_next_states as next (next)}
-						<span class="badge preset-tonal-surface mr-1">{next}</span>
-					{:else}
-						<em>none — terminal</em>
-					{/each}
-				</dd>
 			</dl>
 		</section>
 
 		<!-- Step-appropriate actions -->
 		{#if wizard.template_state === 'draft'}
 			<section class="card p-6 space-y-3">
-				<h3 class="h5">Step 2 — Provision staging VM</h3>
+				<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">Step 2 — Provision staging VM</h3>
 				<p class="text-sm text-surface-500">
 					Clicking Provision enqueues a worker job that clones from your
 					source ({wizard.source_type}) into the Templates folder and
@@ -282,7 +293,7 @@
 					will auto-refresh when the job completes.
 				</p>
 				<button
-					class="btn preset-filled-primary"
+					class="btn btn-primary"
 					disabled={acting || !canProvision()}
 					onclick={() =>
 						act('Provision', () => adminProvisionTemplate(templateID))}
@@ -293,9 +304,9 @@
 		{/if}
 
 		{#if wizard.template_state === 'provisioning'}
-			<section class="card preset-tonal-primary p-6">
-				<h3 class="h5">Provisioning in progress</h3>
-				<p>
+			<section class="card p-6 space-y-2">
+				<h3 class="text-base font-semibold text-primary-500">Provisioning in progress</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
 					The worker is cloning the source VM. This typically takes 5–10
 					minutes depending on the source size. You can leave this page
 					and come back later; the wizard remembers where you left off.
@@ -305,7 +316,7 @@
 
 		{#if wizard.template_state === 'configuring'}
 			<section class="card p-6 space-y-3">
-				<h3 class="h5">Step 3 — Configure the VM</h3>
+				<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">Step 3 — Configure the VM</h3>
 				<p class="text-sm text-surface-500">
 					The staging VM is up. Open the vCenter console (or use VMware
 					Remote Console) and install your software, configure user
@@ -332,7 +343,7 @@
 				</div>
 
 				<button
-					class="btn preset-filled-primary"
+					class="btn btn-primary"
 					disabled={acting || !canGeneralize() || !guestPassword}
 					onclick={() =>
 						act('Generalize', () =>
@@ -348,9 +359,9 @@
 		{/if}
 
 		{#if wizard.template_state === 'generalizing'}
-			<section class="card preset-tonal-primary p-6">
-				<h3 class="h5">Generalizing…</h3>
-				<p>
+			<section class="card p-6 space-y-2">
+				<h3 class="text-base font-semibold text-primary-500">Generalizing…</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
 					Crucible is running the OS-specific generalize script
 					(cloud-init clean on Linux, sysprep on Windows) and powering
 					the VM down. This usually takes 2–5 minutes.
@@ -359,15 +370,15 @@
 		{/if}
 
 		{#if wizard.template_state === 'ready'}
-			<section class="card preset-tonal-success p-6 space-y-3">
-				<h3 class="h5">Step 5 — Ready to publish</h3>
-				<p>
+			<section class="card p-6 space-y-3">
+				<h3 class="text-base font-semibold text-success-500">Step 5 — Ready to publish</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
 					The template is ready. Publish makes it visible to students;
 					you can always unpublish to hide it again without losing the
 					generalized image.
 				</p>
 				<button
-					class="btn preset-filled-success"
+					class="btn btn-success"
 					disabled={acting || !canPublish()}
 					onclick={() => act('Publish', () => adminPublishTemplate(templateID))}
 				>
@@ -377,11 +388,13 @@
 		{/if}
 
 		{#if wizard.template_state === 'active'}
-			<section class="card preset-tonal-success p-6 space-y-3">
-				<h3 class="h5">Live ✅</h3>
-				<p>Students can launch pods from this template.</p>
+			<section class="card p-6 space-y-3">
+				<h3 class="text-base font-semibold text-success-500">Live ✅</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
+					Students can launch pods from this template.
+				</p>
 				<button
-					class="btn preset-tonal-warning"
+					class="btn btn-secondary"
 					disabled={acting || !canUnpublish()}
 					onclick={() => act('Unpublish', () => adminUnpublishTemplate(templateID))}
 				>
@@ -391,16 +404,16 @@
 		{/if}
 
 		{#if wizard.template_state === 'error'}
-			<section class="card preset-tonal-error p-6 space-y-3">
-				<h3 class="h5">Errored</h3>
-				<p>
+			<section class="card p-6 space-y-3">
+				<h3 class="text-base font-semibold text-error-500">Errored</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
 					The last attempt failed. Check the worker logs in
-					<a href="/admin/jobs" class="underline">/admin/jobs</a> for
+					<a href="/admin/jobs" class="text-primary-500 hover:underline">/admin/jobs</a> for
 					details, then retry to move back to the previous attempt
 					state.
 				</p>
 				<button
-					class="btn preset-filled-warning"
+					class="btn btn-primary"
 					disabled={acting || !canRetry()}
 					onclick={() => act('Retry', () => adminRetryTemplate(templateID))}
 				>
@@ -412,15 +425,19 @@
 		{#if !isTerminal(wizard.template_state) && canCancel()}
 			<section class="card p-4">
 				<button
-					class="btn preset-tonal-error"
+					class="btn btn-danger"
 					disabled={acting}
 					onclick={() => {
-						if (confirm('Move this template to errored? You can retry from there.')) {
+						if (
+							confirm(
+								'Cancel this wizard run and mark the template as errored? You can retry from there.'
+							)
+						) {
 							void act('Cancel', () => adminCancelTemplate(templateID));
 						}
 					}}
 				>
-					Cancel (move to errored)
+					Cancel wizard run
 				</button>
 			</section>
 		{/if}
