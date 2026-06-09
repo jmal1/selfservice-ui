@@ -460,3 +460,34 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	:global(html),
+	:global(body) {
+		overflow: hidden !important;
+		margin: 0;
+		padding: 0;
+		height: 100%;
+		width: 100%;
+	}
+	/* Pin the WMKS container to fill the parent exactly. WMKS won't
+	   bring up the VNC framebuffer if the canvas is 0×0, and ESXi
+	   then closes the WebSocket with code 1000 a few hundred ms later
+	   ("session ended"). These rules existed in the original pod
+	   console page and MUST stay shipped with the component. */
+	:global(#console-canvas) {
+		position: absolute !important;
+		inset: 0;
+		overflow: hidden !important;
+	}
+	:global(#console-canvas > div) {
+		overflow: hidden !important;
+	}
+	/* Let WMKS manage canvas sizing via rescale transforms;
+	   max-* acts as a safety ceiling without fighting WMKS */
+	:global(#console-canvas canvas) {
+		display: block;
+		max-width: 100% !important;
+		max-height: 100% !important;
+	}
+</style>
