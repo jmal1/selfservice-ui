@@ -472,6 +472,27 @@ export function adminListSessions(): Promise<ActiveSession[]> {
 	return apiFetch<ActiveSession[]>('/api/v1/admin/sessions');
 }
 
+// --- Admin Health Dashboard ---
+
+export type HealthDepStatus = 'ok' | 'degraded' | 'down' | 'not_configured';
+
+export interface HealthDep {
+	name: string;
+	status: HealthDepStatus;
+	latency_ms: number;
+	last_check: string;
+	detail?: string;
+}
+
+export interface HealthResponse {
+	status: HealthDepStatus;
+	deps: HealthDep[];
+}
+
+export function adminGetHealth(): Promise<HealthResponse> {
+	return apiFetch<HealthResponse>('/api/v1/admin/health');
+}
+
 // --- VLAN Pool Admin ---
 
 export async function adminGetVLANPool(): Promise<VLANPoolEntry[]> {
