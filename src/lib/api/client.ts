@@ -274,6 +274,23 @@ export interface WizardStateResponse {
 	last_job_type?: string;
 	last_job_status?: string;
 	last_job_error?: string;
+	// Phase H: build-VM access surface mirrored from the API. Populated
+	// during the transient build states (provisioning / configuring /
+	// generalizing). The wizard converts these into a VMAccessInfo for
+	// VMAccessPanel so instructors can SSH/RDP into the staging VM and
+	// see the bootstrap credentials when the OS locks them out.
+	//
+	// CONTRACT: keep the fields in sync with WizardStateResponse in
+	// selfservice-api/internal/api/handlers/templates_wizard.go.
+	os_type?: string;
+	template_kind?: 'clone_with_customize' | 'clone_no_customize' | 'registered_existing_vm';
+	assign_ip?: boolean;
+	build_vm_name?: string;
+	build_vm_ip?: string;
+	build_vm_power_on?: boolean;
+	build_vm_tools_running?: boolean;
+	default_username?: string;
+	default_password?: string;
 }
 
 export interface WizardJobResponse {

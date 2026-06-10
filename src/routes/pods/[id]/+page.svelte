@@ -20,6 +20,7 @@
 	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
+	import { podVMToAccessInfo } from '$lib/components/vm-access-adapters';
 	import SnapshotPanel from '$lib/components/SnapshotPanel.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 
@@ -575,7 +576,7 @@
 						<!-- VM Access Panel (expandable) -->
 						{#if expandedVMs[vm.id]}
 							<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/30 px-5 py-3">
-								<VMAccessPanel {vm} />
+								<VMAccessPanel info={podVMToAccessInfo(vm)} />
 							</div>
 						{/if}
 

@@ -1,33 +1,33 @@
 <script lang="ts">
-	import type { PodVM } from '$lib/types';
+	import type { VMAccessInfo } from '$lib/types/vm-access';
 	import { copyToClipboard } from '$lib/utils/clipboard';
 
-	let { vm }: { vm: PodVM } = $props();
+	let { info }: { info: VMAccessInfo } = $props();
 
 	let copiedField = $state<string | null>(null);
 	let showPassword = $state(false);
 
-	const osType = $derived((vm.os_type || vm.template?.os_type || '').toLowerCase());
+	const osType = $derived((info.osType || '').toLowerCase());
 	const isLinux = $derived(osType.includes('linux') || osType.includes('ubuntu') || osType.includes('centos') || osType.includes('debian'));
 	const isWindows = $derived(osType.includes('windows'));
 
-	// Prefer generated (per-VM) credentials, fall back to template defaults
-	const displayUsername = $derived(vm.generated_username || vm.default_username);
-	const displayPassword = $derived(vm.generated_password || vm.default_password);
+	const displayUsername = $derived(info.displayUsername);
+	const displayPassword = $derived(info.displayPassword);
 	const hasCredentials = $derived(!!displayUsername || !!displayPassword);
-	const hasVCenter = $derived(!!vm.vcenter_vm_id);
-	const isPoweredOn = $derived(vm.status === 'running');
+	const hasVCenter = $derived(!!info.vcenterVmId);
+	const isPoweredOn = $derived(info.isPoweredOn);
 
 	// Template kind drives the credential-source hint. When the template was
 	// registered with kind=registered_existing_vm or clone_no_customize, the
 	// student shouldn't be surprised that the password is shared across pods
 	// (no per-pod customization is run). When assign_ip=false they also need
 	// to know why no IP is being shown — the guest manages its own network.
-	const templateKind = $derived(vm.template?.kind ?? 'clone_with_customize');
+	const templateKind = $derived(info.templateKind);
 	const isStaticCreds = $derived(
 		templateKind === 'registered_existing_vm' || templateKind === 'clone_no_customize'
 	);
-	const noIpExpected = $derived(vm.template?.assign_ip === false);
+	const noIpExpected = $derived(info.noIpExpected);
+	const consoleHref = $derived(info.consoleHref);
 
 	async function handleCopy(text: string, field: string) {
 		const ok = await copyToClipboard(text);
@@ -38,17 +38,18 @@
 	}
 
 	function openConsole() {
-		window.open(`/console/${vm.pod_id}/${vm.id}`, '_blank');
+		if (!consoleHref) return;
+		window.open(consoleHref, '_blank');
 	}
 
 	function downloadRdp() {
-		if (!vm.ip_address) return;
-		const content = `full address:s:${vm.ip_address}\r\nusername:s:\\${displayUsername || 'Student'}\r\ndesktopwidth:i:1920\r\ndesktopheight:i:1080\r\nprompt for credentials:i:1\r\nadministrative session:i:1\r\nsmart sizing:i:1`;
+		if (!info.ipAddress) return;
+		const content = `full address:s:${info.ipAddress}\r\nusername:s:\\${displayUsername || 'Student'}\r\ndesktopwidth:i:1920\r\ndesktopheight:i:1080\r\nprompt for credentials:i:1\r\nadministrative session:i:1\r\nsmart sizing:i:1`;
 		const blob = new Blob([content], { type: 'application/x-rdp' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${vm.vcenter_vm_name}.rdp`;
+		a.download = `${info.vcenterVmName || 'vm'}.rdp`;
 		a.click();
 		URL.revokeObjectURL(url);
 	}
@@ -57,19 +58,19 @@
 <!-- The panel renders whenever we have networking info OR a vCenter VM
 	 (so registered-existing-VM templates that manage their own networking
 	 still get the console/credentials view even without an IP). -->
-{#if vm.ip_address || hasVCenter}
+{#if info.ipAddress || hasVCenter}
 	<div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
-		{#if vm.ip_address}
+		{#if info.ipAddress}
 			{#if isLinux}
 				<!-- SSH: primary command -->
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">SSH</span>
 					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
-						ssh {displayUsername || 'user'}@{vm.ip_address}
+						ssh {displayUsername || 'user'}@{info.ipAddress}
 					</code>
 					<button
 						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-						onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${vm.ip_address}`, 'ssh')}
+						onclick={() => handleCopy(`ssh ${displayUsername || 'user'}@${info.ipAddress}`, 'ssh')}
 					>
 						{copiedField === 'ssh' ? '✓ Copied' : 'Copy'}
 					</button>
@@ -79,12 +80,12 @@
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">RDP</span>
 					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
-						mstsc /w:1920 /h:1080 /v:{vm.ip_address}
+						mstsc /w:1920 /h:1080 /v:{info.ipAddress}
 						<span class="text-surface-400 ml-2">(user: <strong class="text-surface-300">\{displayUsername || 'Student'}</strong>)</span>
 					</code>
 					<button
 						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-						onclick={() => handleCopy(`mstsc /w:1920 /h:1080 /v:${vm.ip_address}`, 'rdp')}
+						onclick={() => handleCopy(`mstsc /w:1920 /h:1080 /v:${info.ipAddress}`, 'rdp')}
 					>
 						{copiedField === 'rdp' ? '✓ Copied' : 'Copy'}
 					</button>
@@ -94,11 +95,11 @@
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">IP</span>
 					<code class="flex-1 rounded-lg bg-surface-200 dark:bg-surface-800 px-3 py-1.5 font-mono text-sm text-surface-900 dark:text-surface-100">
-						{vm.ip_address}
+						{info.ipAddress}
 					</code>
 					<button
 						class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-						onclick={() => handleCopy(vm.ip_address, 'ip')}
+						onclick={() => handleCopy(info.ipAddress, 'ip')}
 					>
 						{copiedField === 'ip' ? '✓ Copied' : 'Copy'}
 					</button>
@@ -136,7 +137,7 @@
 				</div>
 			{/if}
 			<div class="ml-auto flex gap-2">
-				{#if hasVCenter}
+				{#if hasVCenter && consoleHref}
 					<button
 						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
 						onclick={openConsole}
@@ -146,7 +147,7 @@
 						🖥 Console
 					</button>
 				{/if}
-				{#if isWindows && vm.ip_address}
+				{#if isWindows && info.ipAddress}
 					<button
 						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
 						onclick={downloadRdp}
@@ -167,7 +168,7 @@
 			</div>
 		{/if}
 
-		{#if noIpExpected && !vm.ip_address}
+		{#if noIpExpected && !info.ipAddress}
 			<!-- T3.4: assign_ip=false hint. The provisioner intentionally skipped
 			     WaitForIP so the VM may not surface an IP via VMware Tools. -->
 			<div class="mt-2 text-[11px] italic text-surface-500">
