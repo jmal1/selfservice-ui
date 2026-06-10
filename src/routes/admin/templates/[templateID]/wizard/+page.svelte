@@ -15,6 +15,8 @@
 		ApiError,
 		type WizardStateResponse
 	} from '$lib/api/client';
+	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
+	import { wizardStateToAccessInfo } from '$lib/components/vm-access-adapters';
 
 	// Per-template wizard page.
 	//
@@ -60,8 +62,17 @@
 	});
 
 	function isTransient(s: string): boolean {
-		return s === 'provisioning' || s === 'generalizing';
+		// Includes 'configuring' so the wizard keeps polling vCenter
+		// for the build VM's IP while the instructor is doing OS setup
+		// — without that poll the VMAccessPanel's IP/SSH-RDP fields
+		// would freeze at whatever the page first loaded with.
+		return s === 'provisioning' || s === 'configuring' || s === 'generalizing';
 	}
+
+	// Phase H: VMAccessInfo for the staging build VM. Null in early
+	// states (no vcenter_vm_id yet) so the panel doesn't render an
+	// empty shell on the draft card.
+	const buildVMAccess = $derived(wizard ? wizardStateToAccessInfo(wizard) : null);
 
 	function isTerminal(_s: string): boolean {
 		// No terminal states currently exist in the lifecycle (an 'active'
@@ -323,15 +334,8 @@
 					minutes depending on the source size. You can leave this page
 					and come back later; the wizard remembers where you left off.
 				</p>
-				{#if wizard.vcenter_vm_id}
-					<a
-						href="/admin/templates/{templateID}/console"
-						target="_blank"
-						rel="noopener"
-						class="btn btn-secondary inline-flex items-center gap-1"
-					>
-						Open Build Console ↗
-					</a>
+				{#if buildVMAccess}
+					<VMAccessPanel info={buildVMAccess} />
 					<p class="text-xs text-surface-500">
 						The VM may not have power yet — the console will reconnect once it does.
 					</p>
@@ -343,21 +347,18 @@
 			<section class="card p-6 space-y-3">
 				<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">Step 3 — Configure the VM</h3>
 				<p class="text-sm text-surface-500">
-					The staging VM is up. Click <b>Open Build Console</b> below to
-					install software, configure user accounts, etc. directly from
-					your browser — no vCenter account needed. When you're done,
-					fill in the guest credentials and click <b>Generalize</b> —
-					Crucible will run the appropriate sysprep / cloud-init clean.
+					The staging VM is up. Use the web console below to install
+					software and configure user accounts — no vCenter account
+					needed. SSH/RDP commands and the bootstrap credentials are
+					shown below so you can get back in if the OS locks you out.
+					When you're done, fill in the guest credentials and click
+					<b>Generalize</b> — Crucible will run the appropriate sysprep
+					/ cloud-init clean.
 				</p>
 
-				<a
-					href="/admin/templates/{templateID}/console"
-					target="_blank"
-					rel="noopener"
-					class="btn btn-primary inline-flex items-center gap-1"
-				>
-					Open Build Console ↗
-				</a>
+				{#if buildVMAccess}
+					<VMAccessPanel info={buildVMAccess} />
+				{/if}
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<label class="label">
@@ -400,15 +401,8 @@
 					(cloud-init clean on Linux, sysprep on Windows) and powering
 					the VM down. This usually takes 2–5 minutes.
 				</p>
-				{#if wizard.vcenter_vm_id}
-					<a
-						href="/admin/templates/{templateID}/console"
-						target="_blank"
-						rel="noopener"
-						class="btn btn-secondary inline-flex items-center gap-1"
-					>
-						Open Build Console ↗
-					</a>
+				{#if buildVMAccess}
+					<VMAccessPanel info={buildVMAccess} />
 					<p class="text-xs text-surface-500">
 						Useful for watching sysprep finish or debugging if it hangs.
 					</p>
