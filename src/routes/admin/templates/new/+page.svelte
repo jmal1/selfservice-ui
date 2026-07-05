@@ -12,6 +12,7 @@
 	import type { Template } from '$lib/types';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { handleWizardEnter } from '$lib/utils/wizardEnter';
 
 	// Step 1 of the T4 template wizard.
 	//
@@ -108,6 +109,17 @@
 <svelte:head>
 	<title>New Template — Crucible</title>
 </svelte:head>
+
+<svelte:window
+	onkeydown={(e) =>
+		handleWizardEnter(e, {
+			canAdvance: () => true,
+			isLastStep: () => true,
+			advance: () => {},
+			submit,
+			busy: () => submitting
+		})}
+/>
 
 <div class="container mx-auto max-w-3xl p-6 space-y-6">
 	<header class="space-y-1">
