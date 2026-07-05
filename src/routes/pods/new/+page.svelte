@@ -8,6 +8,7 @@
 	import WizardStepper from '$lib/components/WizardStepper.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import { handleWizardEnter } from '$lib/utils/wizardEnter';
 
 	// Destination: 'new' = new environment, or a pod ID for existing
 	let destination = $state<'new' | string>('new');
@@ -172,6 +173,17 @@
 		return templates.find((t) => t.id === id)?.name ?? 'Unknown';
 	}
 </script>
+
+<svelte:window
+	onkeydown={(e) =>
+		handleWizardEnter(e, {
+			canAdvance: canNext,
+			isLastStep: () => step === steps.length,
+			advance: nextStep,
+			submit: handleSubmit,
+			busy: () => submitting || loading
+		})}
+/>
 
 <div class="mx-auto max-w-4xl space-y-6">
 	<div class="flex items-center gap-3">
