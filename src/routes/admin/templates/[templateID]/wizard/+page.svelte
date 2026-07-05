@@ -66,7 +66,7 @@
 		// for the build VM's IP while the instructor is doing OS setup
 		// — without that poll the VMAccessPanel's IP/SSH-RDP fields
 		// would freeze at whatever the page first loaded with.
-		return s === 'provisioning' || s === 'configuring' || s === 'generalizing';
+		return s === 'provisioning' || s === 'configuring' || s === 'generalizing' || s === 'verifying';
 	}
 
 	// Phase H: VMAccessInfo for the staging build VM. Null in early
@@ -140,7 +140,9 @@
 		return wizard?.allowed_next_states.includes('generalizing') ?? false;
 	}
 	function canPublish(): boolean {
-		return wizard?.allowed_next_states.includes('active') ?? false;
+		// Publish now enqueues an automated smoke test (ready → verifying);
+		// the verify worker promotes to active only if the clone boots.
+		return wizard?.allowed_next_states.includes('verifying') ?? false;
 	}
 	function canUnpublish(): boolean {
 		return (
@@ -183,11 +185,13 @@
 			case 'generalizing':
 				return 4;
 			case 'ready':
+			case 'verifying':
 			case 'active':
 				return 5;
 			case 'error':
 				if (lastJobType === 'template_provision') return 2;
 				if (lastJobType === 'template_generalize') return 4;
+				if (lastJobType === 'template_verify') return 5;
 				// No job history (shouldn't happen for state=error, but
 				// be defensive): fall back to the original heuristic.
 				return hasVM ? 4 : 2;
@@ -211,6 +215,7 @@
 			case 'provisioning':
 			case 'configuring':
 			case 'generalizing':
+			case 'verifying':
 				return 'bg-primary-500/15 text-primary-500';
 			case 'error':
 				return 'bg-error-500/15 text-error-500';
@@ -412,19 +417,39 @@
 
 		{#if wizard.template_state === 'ready'}
 			<section class="card p-6 space-y-3">
-				<h3 class="text-base font-semibold text-success-500">Step 5 — Ready to publish</h3>
+				<h3 class="text-base font-semibold text-success-500">Step 5 — Verify &amp; publish</h3>
 				<p class="text-sm text-surface-600 dark:text-surface-300">
-					The template is ready. Publish makes it visible to students;
-					you can always unpublish to hide it again without losing the
-					generalized image.
+					Publishing runs an automated <strong>smoke test</strong> first: Crucible
+					clones this template's base-image, boots the clone, and waits for
+					VMware Tools{#if wizard.assign_ip} and an IP address{/if} before making
+					the template visible to students. This catches a bricked image
+					(unbootable sysprep, no network, BitLocker left on) <em>before</em>
+					any student clones it. If the smoke test fails, the template returns
+					to <code>ready</code> so you can fix it and try again.
 				</p>
 				<button
 					class="btn btn-success"
 					disabled={acting || !canPublish()}
-					onclick={() => act('Publish', () => adminPublishTemplate(templateID))}
+					onclick={() => act('Verify & publish', () => adminPublishTemplate(templateID))}
 				>
-					{acting ? 'Working…' : 'Publish to students'}
+					{acting ? 'Working…' : 'Verify & publish to students'}
 				</button>
+			</section>
+		{/if}
+
+		{#if wizard.template_state === 'verifying'}
+			<section class="card p-6 space-y-3">
+				<h3 class="text-base font-semibold text-primary-500">Step 5 — Verifying…</h3>
+				<p class="text-sm text-surface-600 dark:text-surface-300">
+					Running the smoke test: cloning the base-image, booting the clone,
+					and waiting for VMware Tools{#if wizard.assign_ip} + IP{/if}. The
+					throwaway clone is destroyed automatically. This usually takes a few
+					minutes — the template publishes itself on success, or returns to
+					<code>ready</code> with the failure reason if the clone doesn't come up.
+				</p>
+				{#if wizard.last_job_status}
+					<p class="text-xs text-surface-500">Smoke job: {wizard.last_job_status}</p>
+				{/if}
 			</section>
 		{/if}
 
