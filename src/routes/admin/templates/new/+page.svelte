@@ -28,7 +28,7 @@
 		os_type: 'linux',
 		source_type: 'clone_template',
 		source_ref: '',
-		staging_network: 'LabVMs-VLAN30',
+		staging_network: 'PG-VM-Lab',
 		vcpus: 2,
 		ram_mb: 4096,
 		disk_gb: 40,
@@ -169,7 +169,7 @@
 					class="input"
 					type="text"
 					bind:value={req.staging_network}
-					placeholder="LabVMs-VLAN30"
+					placeholder="PG-VM-Lab"
 				/>
 			</label>
 		</div>
