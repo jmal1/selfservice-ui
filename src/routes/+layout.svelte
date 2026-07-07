@@ -8,7 +8,13 @@
 	let { children } = $props();
 
 	const isLoginPage = $derived(page.url.pathname.startsWith('/login'));
-	const isConsolePage = $derived(page.url.pathname.startsWith('/console'));
+	// Full-screen VM consoles: the pod console (/console/[podId]/[vmId]) and
+	// the template build console (/admin/templates/[templateID]/console). Both
+	// render <WMKSConsole> as a fixed inset-0 layer, so the sidebar must be
+	// hidden or it overlaps the left edge of the console.
+	const isConsolePage = $derived(
+		page.url.pathname.startsWith('/console') || page.url.pathname.endsWith('/console')
+	);
 	const showSidebar = $derived(authStore.isAuthenticated && !isLoginPage && !isConsolePage);
 
 	let mobileMenuOpen = $state(false);
