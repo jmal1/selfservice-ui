@@ -40,7 +40,7 @@
 	let filterStatus = $state('all-status');
 
 	onMount(() => {
-		if (!authStore.isAdmin) return;
+		if (!authStore.isInstructor) return;
 		loadVLANs();
 
 		const interval = setInterval(() => {
@@ -192,7 +192,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">VLAN Pool</h1>
-		{#if authStore.isAdmin}
+		{#if authStore.isInstructor}
 			<div class="flex gap-2">
 				<button
 					class="rounded-lg border border-surface-200 dark:border-surface-800 px-4 py-2 text-sm font-semibold text-surface-900 dark:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-800"
@@ -210,7 +210,7 @@
 		{/if}
 	</div>
 
-	{#if !authStore.isAdmin}
+	{#if !authStore.isInstructor}
 		<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 			You do not have admin access.
 		</div>

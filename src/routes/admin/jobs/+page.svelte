@@ -12,7 +12,7 @@
 	let error = $state<string | null>(null);
 	let expandedJob = $state<string | null>(null);
 	onMount(() => {
-		if (!authStore.isAdmin) return;
+		if (!authStore.isInstructor) return;
 		loadJobs();
 
 		wsStore.connect();
@@ -114,7 +114,7 @@
 		</div>
 	</div>
 
-	{#if !authStore.isAdmin}
+	{#if !authStore.isInstructor}
 		<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 			You do not have admin access.
 		</div>
