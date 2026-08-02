@@ -2,6 +2,8 @@
 	import '../app.css';
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { config } from '$lib/config';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Toast from '$lib/components/Toast.svelte';
 
@@ -55,8 +57,35 @@
 		return page.url.pathname.startsWith(href);
 	}
 
-	function handleLogout() {
-		authStore.logout();
+	async function handleLogout() {
+		let logoutUrl: string | null = null;
+		try {
+			const res = await fetch(`${config.apiBaseUrl}/auth/logout`, {
+				method: 'POST',
+				credentials: 'include'
+			});
+			if (res.ok) {
+				const data = await res.json().catch(() => null);
+				if (data && typeof data.logout_url === 'string') {
+					logoutUrl = data.logout_url;
+				}
+			}
+		} catch {
+			// Network error — fall through and clear local state anyway.
+		}
+
+		// Clear in-memory auth state before navigating so the login page's
+		// guard sees an unauthenticated user.
+		authStore.clearState();
+
+		if (logoutUrl) {
+			// A top-level browser navigation is required for Authentik to clear
+			// its SSO cookie; a fetch alone won't terminate the SSO session.
+			// Authentik ends the session then 302s back to /login.
+			window.location.assign(logoutUrl);
+		} else {
+			await goto('/login');
+		}
 	}
 
 	function toggleMobileMenu() {
