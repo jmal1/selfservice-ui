@@ -27,12 +27,14 @@ class AuthStore {
 		this.token = token;
 	}
 
-	logout() {
+	// clearState nulls the in-memory user/token WITHOUT redirecting. The
+	// caller owns navigation timing so it can await the backend /auth/logout
+	// call (and any top-level SSO end-session navigation) before leaving the
+	// page. Clearing state without a redirect avoids a race where a hard nav
+	// kills the in-flight logout request.
+	clearState() {
 		this.user = null;
 		this.token = null;
-		if (typeof window !== 'undefined') {
-			window.location.href = '/login';
-		}
 	}
 
 	setToken(token: string) {

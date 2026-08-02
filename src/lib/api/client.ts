@@ -54,7 +54,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 	});
 
 	if (response.status === 401) {
-		authStore.logout();
+		authStore.clearState();
 		await goto('/login');
 		throw new ApiError(401, 'Unauthorized', null);
 	}
@@ -578,7 +578,7 @@ export async function wikiGetPage(path: string): Promise<string> {
 	const url = `${config.apiBaseUrl}/api/v1/wiki/page/${path}`;
 	const resp = await fetch(url, { credentials: 'include' });
 	if (resp.status === 401) {
-		authStore.logout();
+		authStore.clearState();
 		await goto('/login');
 		throw new ApiError(401, 'Unauthorized', null);
 	}
