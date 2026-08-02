@@ -63,7 +63,7 @@
 	}
 
 	onMount(() => {
-		if (!authStore.isAdmin) return;
+		if (!authStore.isInstructor) return;
 		loadTemplates();
 
 		const interval = setInterval(() => {
@@ -258,7 +258,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Template Management</h1>
-		{#if authStore.isAdmin && !showCreate}
+		{#if authStore.isInstructor && !showCreate}
 			<div class="flex gap-2">
 				<a
 					href="/admin/templates/new"
@@ -277,7 +277,7 @@
 		{/if}
 	</div>
 
-	{#if !authStore.isAdmin}
+	{#if !authStore.isInstructor}
 		<div
 			class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500"
 		>

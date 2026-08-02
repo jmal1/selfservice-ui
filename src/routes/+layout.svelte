@@ -38,19 +38,26 @@
 	];
 
 	const adminItems = [
-		{ href: '/admin', label: 'Overview', icon: 'dashboard' },
-		{ href: '/admin/users', label: 'Users', icon: 'users' },
-		{ href: '/admin/templates', label: 'Templates', icon: 'templates' },
-		{ href: '/admin/blueprints', label: 'Blueprints', icon: 'templates' },
-		{ href: '/admin/actions', label: 'Actions', icon: 'audit' },
-		{ href: '/admin/workflows', label: 'Workflows', icon: 'audit' },
-		{ href: '/admin/playlists', label: 'Playlists', icon: 'audit' },
-		{ href: '/admin/runs', label: 'Runs', icon: 'jobs' },
-		{ href: '/admin/vlans', label: 'VLAN Pool', icon: 'vlans' },
-		{ href: '/admin/jobs', label: 'Jobs', icon: 'jobs' },
-		{ href: '/admin/audit', label: 'Audit Log', icon: 'audit' },
-		{ href: '/admin/health', label: 'Health', icon: 'dashboard' }
+		{ href: '/admin', label: 'Overview', icon: 'dashboard', minRole: 'instructor' },
+		{ href: '/admin/users', label: 'Users', icon: 'users', minRole: 'instructor' },
+		{ href: '/admin/templates', label: 'Templates', icon: 'templates', minRole: 'instructor' },
+		{ href: '/admin/blueprints', label: 'Blueprints', icon: 'templates', minRole: 'instructor' },
+		{ href: '/admin/actions', label: 'Actions', icon: 'audit', minRole: 'instructor' },
+		{ href: '/admin/workflows', label: 'Workflows', icon: 'audit', minRole: 'instructor' },
+		{ href: '/admin/playlists', label: 'Playlists', icon: 'audit', minRole: 'instructor' },
+		{ href: '/admin/runs', label: 'Runs', icon: 'jobs', minRole: 'instructor' },
+		{ href: '/admin/vlans', label: 'VLAN Pool', icon: 'vlans', minRole: 'instructor' },
+		{ href: '/admin/jobs', label: 'Jobs', icon: 'jobs', minRole: 'instructor' },
+		{ href: '/admin/health', label: 'Health', icon: 'dashboard', minRole: 'instructor' },
+		// Admin-only: instructors were intentionally not granted the audit log.
+		{ href: '/admin/audit', label: 'Audit Log', icon: 'audit', minRole: 'admin' }
 	];
+
+	// Filter the admin nav by the viewer's role. Instructors see the full
+	// admin surface except the admin-only entries (Audit Log); admins see all.
+	const visibleAdminItems = $derived(
+		adminItems.filter((item) => item.minRole !== 'admin' || authStore.isAdmin)
+	);
 
 	function isActive(href: string): boolean {
 		if (href === '/' || href === '/admin') return page.url.pathname === href;
@@ -234,11 +241,11 @@
 				{/each}
 			{/if}
 
-			{#if authStore.isAdmin}
+			{#if authStore.isInstructor}
 				<div class="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-400">
 					Admin
 				</div>
-				{#each adminItems as item}
+				{#each visibleAdminItems as item}
 					<a
 						href={item.href}
 						class="relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors

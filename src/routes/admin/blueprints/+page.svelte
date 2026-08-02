@@ -66,7 +66,7 @@
 	}
 
 	onMount(() => {
-		if (!authStore.isAdmin) return;
+		if (!authStore.isInstructor) return;
 		loadData();
 
 		const interval = setInterval(() => {
@@ -372,7 +372,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Blueprint Management</h1>
-		{#if authStore.isAdmin && !showCreate}
+		{#if authStore.isInstructor && !showCreate}
 			<button
 				class="rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
 				onclick={openCreate}
@@ -382,7 +382,7 @@
 		{/if}
 	</div>
 
-	{#if !authStore.isAdmin}
+	{#if !authStore.isInstructor}
 		<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 			You do not have admin access.
 		</div>
