@@ -12,9 +12,11 @@
 		adminUnpublishTemplate,
 		adminCancelTemplate,
 		adminRetryTemplate,
+		adminGetResolvedCredentials,
 		ApiError,
 		type WizardStateResponse
 	} from '$lib/api/client';
+	import type { ResolvedCredentialsResponse } from '$lib/types';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
 	import { wizardStateToAccessInfo } from '$lib/components/vm-access-adapters';
 
@@ -42,6 +44,13 @@
 	let guestUsername = $state('');
 	let guestPassword = $state('');
 
+	// Resolved credentials from GET .../resolved-credentials.
+	// null = not yet fetched; populated on mount.
+	let resolvedCreds = $state<ResolvedCredentialsResponse | null>(null);
+	// true when the operator explicitly wants to type credentials
+	// instead of using the resolved ones.
+	let credsOverrideMode = $state(false);
+
 	onMount(async () => {
 		if (!authStore.isInstructor && !authStore.isAdmin) {
 			toastStore.error('Forbidden', 'You need the instructor role.');
@@ -49,6 +58,7 @@
 			return;
 		}
 		await reload();
+		await fetchResolvedCreds();
 		// Poll while in a transient wizard; throttled to 5s.
 		pollTimer = setInterval(() => {
 			if (wizard && isTransient(wizard.template_state) && !document.hidden) {
@@ -92,6 +102,22 @@
 			loading = false;
 		}
 	}
+
+	async function fetchResolvedCreds() {
+		if (!templateID) return;
+		try {
+			resolvedCreds = await adminGetResolvedCredentials(templateID);
+		} catch {
+			// Non-fatal: fall back to the manual prompt.
+			resolvedCreds = null;
+		}
+	}
+
+	// credentialsResolved is true when the server can supply a complete
+	// credential pair for the generalize step without operator input.
+	const credentialsResolved = $derived(
+		resolvedCreds !== null && resolvedCreds.source !== 'none'
+	);
 
 	function applyConflictBody(body: unknown) {
 		if (
@@ -356,7 +382,7 @@
 					software and configure user accounts — no vCenter account
 					needed. SSH/RDP commands and the bootstrap credentials are
 					shown below so you can get back in if the OS locks you out.
-					When you're done, fill in the guest credentials and click
+					When you're done, click
 					<b>Generalize</b> — Crucible will run the appropriate sysprep
 					/ cloud-init clean.
 				</p>
@@ -365,36 +391,75 @@
 					<VMAccessPanel info={buildVMAccess} />
 				{/if}
 
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<label class="label">
-						<span class="text-sm">Guest username (with sudo / Administrator)</span>
-						<input class="input" type="text" bind:value={guestUsername} />
-					</label>
-					<label class="label">
-						<span class="text-sm">Guest password *</span>
-						<input
-							class="input"
-							type="password"
-							bind:value={guestPassword}
-							autocomplete="new-password"
-							required
-						/>
-					</label>
-				</div>
+				{#if credentialsResolved && !credsOverrideMode}
+					<!-- Credentials are resolved server-side; no input needed. -->
+					<p class="text-sm text-surface-600 dark:text-surface-300">
+						{#if resolvedCreds?.source === 'unattend_config'}
+							Using the credentials from this template's unattended install (user: <code>{resolvedCreds.username}</code>).
+						{:else}
+							Using this template's stored credentials (user: <code>{resolvedCreds?.username}</code>).
+						{/if}
+						<button
+							class="ml-2 text-xs text-primary-500 hover:underline"
+							onclick={() => { credsOverrideMode = true; }}
+						>
+							Enter different credentials
+						</button>
+					</p>
 
-				<button
-					class="btn btn-primary"
-					disabled={acting || !canGeneralize() || !guestPassword}
-					onclick={() =>
-						act('Generalize', () =>
-							adminGeneralizeTemplate(templateID, {
-								guest_username: guestUsername || undefined,
-								guest_password: guestPassword
-							})
-						)}
-				>
-					{acting ? 'Working…' : 'Generalize'}
-				</button>
+					<button
+						class="btn btn-primary"
+						disabled={acting || !canGeneralize()}
+						onclick={() =>
+							act('Generalize', () => adminGeneralizeTemplate(templateID))}
+					>
+						{acting ? 'Working…' : 'Generalize'}
+					</button>
+				{:else}
+					<!-- No resolved credentials, or override requested: show the prompt. -->
+					{#if credsOverrideMode}
+						<p class="text-sm text-surface-500">
+							Enter the credentials currently active in the guest.
+							<button
+								class="ml-2 text-xs text-primary-500 hover:underline"
+								onclick={() => { credsOverrideMode = false; guestUsername = ''; guestPassword = ''; }}
+							>
+								Use resolved credentials instead
+							</button>
+						</p>
+					{/if}
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<label class="label">
+							<span class="text-sm">Guest username (with sudo / Administrator)</span>
+							<input class="input" type="text" bind:value={guestUsername} />
+						</label>
+						<label class="label">
+							<span class="text-sm">Guest password *</span>
+							<input
+								class="input"
+								type="password"
+								bind:value={guestPassword}
+								autocomplete="new-password"
+								required
+							/>
+						</label>
+					</div>
+
+					<button
+						class="btn btn-primary"
+						disabled={acting || !canGeneralize() || !guestPassword}
+						onclick={() =>
+							act('Generalize', () =>
+								adminGeneralizeTemplate(templateID, {
+									guest_username: guestUsername || undefined,
+									guest_password: guestPassword
+								})
+							)}
+					>
+						{acting ? 'Working…' : 'Generalize'}
+					</button>
+				{/if}
 			</section>
 		{/if}
 

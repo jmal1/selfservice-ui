@@ -92,6 +92,17 @@ export interface Template {
 	updated_at?: string;
 }
 
+// ResolvedCredentialsResponse is the wire type returned by
+// GET /api/v1/admin/templates/{id}/resolved-credentials.
+// The raw password is never included — has_password indicates
+// whether one is available without exposing it.
+// source is one of "template" | "unattend_config" | "none".
+export interface ResolvedCredentialsResponse {
+	username: string;
+	has_password: boolean;
+	source: 'template' | 'unattend_config' | 'none';
+}
+
 export interface PodVM {
 	id: string;
 	pod_id: string;
