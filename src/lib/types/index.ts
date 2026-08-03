@@ -336,6 +336,12 @@ export interface Run {
 	total_workflows: number;
 	passed_workflows: number;
 	failed_workflows: number;
+	/** The pod VM this run was executed against. Name and IP are stored on the
+	 * run itself so attribution survives pod teardown; target_pod_vm_id goes
+	 * null once the pod_vms row is deleted. */
+	target_pod_vm_id?: string | null;
+	target_vm_name?: string;
+	target_vm_ip?: string;
 	error_message?: string;
 	started_at?: string;
 	completed_at?: string;

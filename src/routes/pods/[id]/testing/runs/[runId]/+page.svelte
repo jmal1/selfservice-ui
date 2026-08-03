@@ -157,6 +157,24 @@
 					<p class="text-sm">{run.completed_at ? new Date(run.completed_at).toLocaleString() : '—'}</p>
 				</div>
 			</div>
+			<!-- Which VM was graded. Runs created before this was recorded have no
+			     target, so say so explicitly rather than rendering an empty field
+			     that reads as "no VM". -->
+			<div class="mt-3 border-t border-surface-300/40 pt-3 dark:border-surface-600/40">
+				<p class="text-sm text-surface-600 dark:text-surface-400">Assessed VM</p>
+				{#if run.target_vm_name}
+					<p class="font-mono text-sm">
+						{run.target_vm_name}
+						{#if run.target_vm_ip}
+							<span class="text-surface-500">({run.target_vm_ip})</span>
+						{/if}
+					</p>
+				{:else}
+					<p class="text-sm text-surface-500">
+						Not recorded — this run predates target tracking.
+					</p>
+				{/if}
+			</div>
 			{#if run.error_message}
 				<div class="mt-3 rounded bg-error-500/10 p-2 text-sm text-error-500">{run.error_message}</div>
 			{/if}
