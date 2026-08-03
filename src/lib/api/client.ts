@@ -19,7 +19,9 @@ import type {
 	Run,
 	Workflow,
 	Playlist,
-	Action
+	Action,
+	ImageUpload,
+	VCenterISOListResponse
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -256,6 +258,18 @@ export interface CreateTemplateDraftRequest {
 	icon_url?: string;
 	default_username?: string;
 	default_password?: string;
+	// ISO-only fields
+	guest_id?: string;
+	unattend_mode?: 'manual' | 'cloudinit_cidata' | 'debian_preseed' | 'windows_autounattend';
+	unattend_config?: {
+		hostname?: string;
+		username?: string;
+		password?: string;
+		locale?: string;
+		time_zone?: string;
+		apt_proxy?: string;
+		extra_pkgs?: string[];
+	};
 }
 
 export interface WizardStateResponse {
@@ -948,4 +962,74 @@ export function adminValidateScript(
 			output_context_names: opts?.outputContextNames
 		})
 	});
+}
+
+// --- Image Uploads ---
+
+export interface CreateImageUploadRequest {
+	filename: string;
+	size_bytes: number;
+	checksum_sha256?: string;
+}
+
+export interface CreateImageUploadResponse {
+	id: string;
+	kind: 'iso' | 'ova';
+	object_key: string;
+	upload_id: string;
+	part_size: number;
+	urls: string[];
+	expires_in: number;
+}
+
+export interface CompleteImageUploadPart {
+	part_number: number;
+	etag: string;
+}
+
+export interface ImportImageResponse {
+	job_id: string;
+	image_id: string;
+	status: string;
+}
+
+export function adminCreateImageUpload(req: CreateImageUploadRequest): Promise<CreateImageUploadResponse> {
+	return apiFetch<CreateImageUploadResponse>('/api/v1/admin/images', {
+		method: 'POST',
+		body: JSON.stringify(req)
+	});
+}
+
+export function adminCompleteImageUpload(
+	id: string,
+	parts: CompleteImageUploadPart[]
+): Promise<ImageUpload> {
+	return apiFetch<ImageUpload>(`/api/v1/admin/images/${id}/complete`, {
+		method: 'POST',
+		body: JSON.stringify({ parts })
+	});
+}
+
+export function adminImportImage(id: string): Promise<ImportImageResponse> {
+	return apiFetch<ImportImageResponse>(`/api/v1/admin/images/${id}/import`, {
+		method: 'POST'
+	});
+}
+
+export async function adminListImages(): Promise<ImageUpload[]> {
+	const data = await apiFetch<ImageUpload[] | null>('/api/v1/admin/images');
+	return Array.isArray(data) ? data : [];
+}
+
+export function adminGetImage(id: string): Promise<ImageUpload> {
+	return apiFetch<ImageUpload>(`/api/v1/admin/images/${id}`);
+}
+
+export function adminDeleteImage(id: string): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/images/${id}`, { method: 'DELETE' });
+}
+
+export function adminListVCenterISOs(refresh = false): Promise<VCenterISOListResponse> {
+	const qs = refresh ? '?refresh=true' : '';
+	return apiFetch<VCenterISOListResponse>(`/api/v1/admin/vcenter/isos${qs}`);
 }
