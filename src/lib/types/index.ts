@@ -371,3 +371,45 @@ export interface TestingDashboard {
 	playlists: Playlist[];
 	recent_runs: Run[];
 }
+
+// --- Image Uploads ---
+
+export type ImageUploadStatus =
+	| 'pending'
+	| 'uploading'
+	| 'uploaded'
+	| 'importing'
+	| 'imported'
+	| 'error';
+
+export interface ImageUpload {
+	id: string;
+	filename: string;
+	kind: 'iso' | 'ova';
+	size_bytes: number;
+	checksum_sha256: string;
+	object_key: string;
+	upload_id: string;
+	status: ImageUploadStatus;
+	datastore_path: string;
+	vcenter_vm_id: string;
+	error_message: string;
+	uploaded_by?: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface VCenterDatastoreFile {
+	name: string;
+	path: string;
+	folder_path: string;
+	size_bytes: number;
+	modified_time: string;
+}
+
+export interface VCenterISOListResponse {
+	files: VCenterDatastoreFile[];
+	datastore: string;
+	cached: boolean;
+	cache_age_seconds: number;
+}

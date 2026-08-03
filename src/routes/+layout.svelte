@@ -41,6 +41,7 @@
 		{ href: '/admin', label: 'Overview', icon: 'dashboard', minRole: 'instructor' },
 		{ href: '/admin/users', label: 'Users', icon: 'users', minRole: 'instructor' },
 		{ href: '/admin/templates', label: 'Templates', icon: 'templates', minRole: 'instructor' },
+		{ href: '/admin/images', label: 'Images', icon: 'templates', minRole: 'instructor' },
 		{ href: '/admin/blueprints', label: 'Blueprints', icon: 'templates', minRole: 'instructor' },
 		{ href: '/admin/actions', label: 'Actions', icon: 'audit', minRole: 'instructor' },
 		{ href: '/admin/workflows', label: 'Workflows', icon: 'audit', minRole: 'instructor' },

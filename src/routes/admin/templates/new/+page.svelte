@@ -4,12 +4,14 @@
 	import {
 		adminCreateTemplateDraft,
 		adminListVCenterTemplatesFolder,
+		adminListImages,
+		adminListVCenterISOs,
 		getTemplates,
 		ApiError,
 		type CreateTemplateDraftRequest,
 		type VCenterFolderVM
 	} from '$lib/api/client';
-	import type { Template } from '$lib/types';
+	import type { Template, ImageUpload, VCenterDatastoreFile } from '$lib/types';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { handleWizardEnter } from '$lib/utils/wizardEnter';
@@ -35,14 +37,27 @@
 		description: '',
 		icon_url: '',
 		default_username: '',
-		default_password: ''
+		default_password: '',
+		unattend_mode: 'manual',
+		unattend_config: {}
 	});
 
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
+	let importedISOs = $state<ImageUpload[]>([]);
+	let vcenterISOs = $state<VCenterDatastoreFile[]>([]);
 	let loadingSources = $state(true);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
+
+	// Unattend config fields (bound separately, merged into req.unattend_config on submit)
+	let unattendHostname = $state('');
+	let unattendUsername = $state('');
+	let unattendPassword = $state('');
+	let unattendLocale = $state('');
+	let unattendTimeZone = $state('');
+	let unattendAptProxy = $state('');
+	let unattendExtraPkgs = $state(''); // comma-separated in the UI
 
 	onMount(async () => {
 		if (!authStore.isInstructor && !authStore.isAdmin) {
@@ -51,12 +66,16 @@
 			return;
 		}
 		try {
-			const [tpls, folder] = await Promise.all([
+			const [tpls, folder, imgs, vcISOs] = await Promise.all([
 				getTemplates(),
-				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] }))
+				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
+				adminListImages().catch(() => [] as ImageUpload[]),
+				adminListVCenterISOs().catch(() => ({ files: [] as VCenterDatastoreFile[], datastore: '', cached: false, cache_age_seconds: 0 }))
 			]);
 			existingTemplates = tpls;
 			vcenterVMs = folder.vms ?? [];
+			importedISOs = (imgs ?? []).filter((img) => img.kind === 'iso' && img.status === 'imported');
+			vcenterISOs = vcISOs.files ?? [];
 		} catch (err) {
 			console.error('load source data', err);
 			toastStore.error('Could not load source options', String(err));
@@ -70,7 +89,7 @@
 			error = 'Name is required';
 			return false;
 		}
-		if (req.source_type !== 'iso' && !req.source_ref) {
+		if (!req.source_ref) {
 			error = 'Pick a source';
 			return false;
 		}
@@ -86,6 +105,28 @@
 		if (!valid()) return;
 		submitting = true;
 		try {
+			// For ISO installs, merge the unattend_config fields before sending
+			if (req.source_type === 'iso') {
+				const cfg: Record<string, unknown> = {};
+				if (unattendHostname) cfg.hostname = unattendHostname;
+				if (unattendUsername) cfg.username = unattendUsername;
+				if (unattendPassword) cfg.password = unattendPassword;
+				if (unattendLocale) cfg.locale = unattendLocale;
+				if (unattendTimeZone) cfg.time_zone = unattendTimeZone;
+				if (unattendAptProxy) cfg.apt_proxy = unattendAptProxy;
+				if (unattendExtraPkgs.trim()) {
+					cfg.extra_pkgs = unattendExtraPkgs
+						.split(',')
+						.map((s) => s.trim())
+						.filter(Boolean);
+				}
+				req.unattend_config = Object.keys(cfg).length > 0 ? cfg : {};
+			} else {
+				// Clear ISO-only fields for non-ISO installs
+				req.unattend_mode = undefined;
+				req.unattend_config = undefined;
+			}
+
 			const tmpl = await adminCreateTemplateDraft(req);
 			toastStore.success('Draft created', `${tmpl.name} is now in draft state.`);
 			await goto(`/admin/templates/${tmpl.id}/wizard`);
@@ -201,7 +242,7 @@
 			<select class="select" bind:value={req.source_type}>
 				<option value="clone_template">Clone an existing Crucible template</option>
 				<option value="clone_vcenter">Clone an existing vCenter VM</option>
-				<option value="iso" disabled>ISO install (not yet implemented)</option>
+				<option value="iso">ISO install</option>
 			</select>
 		</label>
 
@@ -229,8 +270,84 @@
 					{/each}
 				</select>
 			</label>
-		{:else}
-			<p class="text-warning-700">ISO install is planned but not yet implemented.</p>
+		{:else if req.source_type === 'iso'}
+				<label class="label">
+					<span class="text-sm">ISO source *</span>
+					<select class="select" bind:value={req.source_ref}>
+						<option value="">— pick an ISO —</option>
+						{#if importedISOs.length > 0}
+							<optgroup label="Uploaded & imported ISOs">
+								{#each importedISOs as img (img.id)}
+									<option value={img.datastore_path}>{img.filename}</option>
+								{/each}
+							</optgroup>
+						{/if}
+						{#if vcenterISOs.length > 0}
+							<optgroup label="ISOs already on vCenter datastore">
+								{#each vcenterISOs as iso (iso.path)}
+									<option value={iso.path}>{iso.name}</option>
+								{/each}
+							</optgroup>
+						{/if}
+					</select>
+					<p class="text-xs text-surface-500 mt-1">
+						Don't see your ISO?
+						<a href="/admin/images" class="anchor">Upload it on the Images page</a>
+						and wait for the import to complete.
+					</p>
+				</label>
+
+				<div class="space-y-3 border border-surface-200 dark:border-surface-700 rounded p-4 mt-2">
+					<h3 class="text-sm font-semibold">Unattended install</h3>
+
+					<label class="label">
+						<span class="text-sm">Install mode</span>
+						<select class="select" bind:value={req.unattend_mode}>
+							<option value="manual">Manual (use the VM console)</option>
+							<option value="cloudinit_cidata">Cloud-init (CIDATA)</option>
+							<option value="debian_preseed">Debian preseed</option>
+							<option value="windows_autounattend">Windows Autounattend</option>
+						</select>
+					</label>
+
+					{#if req.unattend_mode !== 'manual'}
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+							<label class="label">
+								<span class="text-sm">Hostname</span>
+								<input class="input" type="text" bind:value={unattendHostname} placeholder="crucible-vm" />
+							</label>
+							<label class="label">
+								<span class="text-sm">Username</span>
+								<input class="input" type="text" bind:value={unattendUsername} placeholder="student" />
+							</label>
+							<label class="label">
+								<span class="text-sm">Password</span>
+								<input class="input" type="password" bind:value={unattendPassword} autocomplete="new-password" />
+							</label>
+							<label class="label">
+								<span class="text-sm">Locale</span>
+								<input class="input" type="text" bind:value={unattendLocale} placeholder="en_US.UTF-8" />
+							</label>
+							<label class="label">
+								<span class="text-sm">Time zone</span>
+								<input class="input" type="text" bind:value={unattendTimeZone} placeholder="America/New_York" />
+							</label>
+							<label class="label">
+								<span class="text-sm">APT proxy</span>
+								<input class="input" type="text" bind:value={unattendAptProxy} placeholder="http://10.10.30.20:3142" />
+							</label>
+						</div>
+						<label class="label">
+							<span class="text-sm">Extra packages (comma-separated)</span>
+							<input class="input" type="text" bind:value={unattendExtraPkgs} placeholder="curl, git, vim" />
+						</label>
+					{/if}
+				</div>
+
+				<aside class="card preset-tonal-surface p-3 text-sm text-surface-600 dark:text-surface-300">
+					💡 An imported OVA appears automatically in the "Clone an existing vCenter VM" picker —
+					no separate source type needed for OVAs.
+				</aside>
 		{/if}
 	</section>
 
