@@ -43,6 +43,7 @@
 						<th>Passed</th>
 						<th>Failed</th>
 						<th>Total</th>
+						<th>Assessed VM</th>
 						<th>Started</th>
 						<th></th>
 					</tr>
@@ -54,6 +55,13 @@
 							<td class="text-success-500">{run.passed_workflows}</td>
 							<td class="text-error-500">{run.failed_workflows}</td>
 							<td>{run.total_workflows}</td>
+							<td class="font-mono text-sm">
+								{#if run.target_vm_name}
+									{run.target_vm_name}
+								{:else}
+									<span class="text-surface-500">—</span>
+								{/if}
+							</td>
 							<td class="text-sm">{run.started_at ? new Date(run.started_at).toLocaleString() : '—'}</td>
 							<td>
 								<a href="/pods/{podId}/testing/runs/{run.id}" class="btn btn-sm btn-ghost">
