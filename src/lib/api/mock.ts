@@ -98,19 +98,19 @@ export const mockTemplates: Template[] = [
 		is_active: true
 	},
 	{
-		id: 'tpl-kali',
-		name: 'Kali Linux 2024',
-		vcenter_template: 'tpl-kali-2024',
+		id: 'tpl-mint',
+		name: 'Linux Mint 22',
+		vcenter_template: 'tpl-mint-22',
 		os_type: 'linux',
 		default_vcpus: 2,
 		default_ram_mb: 4096,
 		default_disk_gb: 60,
 		min_vcpus: 2,
 		min_ram_mb: 2048,
-		description: 'Kali Linux rolling release for penetration testing',
+		description: 'Linux Mint 22 desktop workstation',
 		icon_url: '',
-		default_username: 'kali',
-		default_password: 'kali',
+		default_username: 'student',
+		default_password: 'student',
 		kind: 'registered_existing_vm',
 		assign_ip: true,
 		is_active: true
@@ -174,9 +174,9 @@ export let mockPods: Pod[] = [
 		vms: [
 			makeVM({
 				pod_id: 'pod-001',
-				template_id: 'tpl-kali',
-				display_name: 'Attacker',
-				vcenter_vm_name: 'x7k2m9-attacker',
+				template_id: 'tpl-mint',
+				display_name: 'Workstation',
+				vcenter_vm_name: 'x7k2m9-workstation',
 				ip_address: '10.101.0.10',
 				status: 'running'
 			}),
