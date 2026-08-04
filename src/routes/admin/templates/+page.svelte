@@ -11,7 +11,7 @@
 		adminSetTemplatePlaylists,
 		ApiError
 	} from '$lib/api/client';
-	import type { CreateTemplateRequest } from '$lib/api/client';
+	import type { CreateTemplateRequest, TemplateVisibility } from '$lib/api/client';
 	import type { Template, Playlist } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import VCenterTemplatePicker from '$lib/components/VCenterTemplatePicker.svelte';
@@ -58,7 +58,8 @@
 			default_username: '',
 			default_password: '',
 			kind: 'clone_with_customize',
-			assign_ip: true
+			assign_ip: true,
+			visibility: 'public'
 		};
 	}
 
@@ -144,7 +145,8 @@
 			default_username: t.default_username ?? '',
 			default_password: t.default_password ?? '',
 			kind: t.kind ?? 'clone_with_customize',
-			assign_ip: t.assign_ip ?? true
+			assign_ip: t.assign_ip ?? true,
+			visibility: t.visibility ?? 'public'
 		};
 	}
 
@@ -397,6 +399,13 @@
 							hint="Visible to admins only. Stored as plaintext (shared instructor credential)."
 						/>
 					</div>
+					<label class="block">
+						<span class="text-xs font-medium text-surface-500">Visibility</span>
+						<select bind:value={createValues.visibility} class={inputClass}>
+							<option value="public">Public — visible to students</option>
+							<option value="instructor_only">Instructor only — hidden from students (for staging)</option>
+						</select>
+					</label>
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={createValues.is_active} class="accent-primary-500" />
 						<span class="text-sm text-surface-900 dark:text-surface-100">Active</span>
@@ -549,6 +558,12 @@
 													<span>Assign IP</span>
 												</label>
 												<label class="flex items-center gap-1 text-xs">
+													<select bind:value={editValues.visibility} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-1.5 py-0.5 text-xs text-surface-900 dark:text-surface-100 focus:border-primary-500 focus:outline-none" aria-label="Visibility">
+														<option value="public">Public</option>
+														<option value="instructor_only">Instructor only</option>
+													</select>
+												</label>
+												<label class="flex items-center gap-1 text-xs">
 													<input
 														type="checkbox"
 														bind:checked={editValues.is_active}
@@ -608,7 +623,14 @@
 									<tr
 										class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 									>
-										<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">{t.name}</td>
+										<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">
+											{t.name}
+											{#if t.visibility === 'instructor_only'}
+												<span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium bg-warning-500/10 text-warning-500">
+													🔒 Instructor only
+												</span>
+											{/if}
+										</td>
 										<td class="px-5 py-3">
 											<span class="rounded-full px-2 py-0.5 text-xs font-medium {stateBadgeClass(t.template_state)}">
 												{t.template_state ?? 'unknown'}

@@ -48,6 +48,8 @@ export type TemplateKind =
 	| 'clone_no_customize'
 	| 'registered_existing_vm';
 
+export type TemplateVisibility = 'public' | 'instructor_only';
+
 export type TemplateLifecycleState =
 	| 'draft'
 	| 'provisioning'
@@ -80,6 +82,7 @@ export interface Template {
 	kind: TemplateKind;
 	assign_ip: boolean;
 	is_active: boolean;
+	visibility?: TemplateVisibility;
 	// T4 wizard lifecycle fields (migration 000018). Older templates
 	// created before T4 default to template_state="active" via the
 	// migration backfill.
