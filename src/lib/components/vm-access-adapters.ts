@@ -24,6 +24,8 @@ export function podVMToAccessInfo(vm: PodVM): VMAccessInfo {
 		consoleHref: `/console/${vm.pod_id}/${vm.id}`,
 		templateKind: vm.template?.kind ?? 'clone_with_customize',
 		noIpExpected: vm.template?.assign_ip === false,
+		isSuspended: vm.status === 'suspended',
+		suspendReason: vm.suspend_reason ?? undefined,
 	};
 }
 
@@ -54,5 +56,8 @@ export function wizardStateToAccessInfo(
 		consoleHref: `/admin/templates/${state.template_id}/console`,
 		templateKind: state.template_kind ?? 'clone_with_customize',
 		noIpExpected: state.assign_ip === false,
+		// Build (wizard) VMs are never suspended — suspension only applies to
+		// student pod VMs via the idle evaluator.
+		isSuspended: false,
 	};
 }

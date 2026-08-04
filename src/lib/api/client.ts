@@ -140,6 +140,14 @@ export function startVM(podId: string, vmId: string): Promise<void> {
 	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/start`, { method: 'POST' });
 }
 
+// resumeVM uses the same /start endpoint as startVM — PowerOnVM on the backend
+// handles both resuming from a saved-state suspend and starting a stopped VM.
+// A separate export makes intent clear at the call site.
+export function resumeVM(podId: string, vmId: string): Promise<void> {
+	if (isMock) return mockApi.resumeVM(podId, vmId);
+	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/start`, { method: 'POST' });
+}
+
 export function stopVM(podId: string, vmId: string): Promise<void> {
 	if (isMock) return mockApi.stopVM(podId, vmId);
 	return apiFetch<void>(`/api/v1/pods/${podId}/vms/${vmId}/stop`, { method: 'POST' });

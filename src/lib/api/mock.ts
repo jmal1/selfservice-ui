@@ -195,7 +195,18 @@ export let mockPods: Pod[] = [
 				vcenter_vm_name: 'x7k2m9-domain-controller',
 				ip_address: '10.101.0.12',
 				status: 'running'
-			})
+				}),
+				makeVM({
+					pod_id: 'pod-001',
+					template_id: 'tpl-ubuntu',
+					display_name: 'Idle Worker',
+					vcenter_vm_name: 'x7k2m9-idle-worker',
+					vcenter_vm_id: 'vm-mock-suspended-1',
+					ip_address: '10.101.0.13',
+					status: 'suspended',
+					suspended_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+					suspend_reason: 'idle: no console activity and low CPU/net for 6h'
+				})
 		]
 	},
 	{
@@ -567,6 +578,23 @@ export const mockApi = {
 		mockPods = mockPods.map((p) =>
 			p.id === podId
 				? { ...p, vms: p.vms.map((vm) => (vm.id === vmId ? { ...vm, status: 'running' as const } : vm)) }
+				: p
+		);
+	},
+
+	// Resume uses the same /start endpoint — PowerOnVM handles both.
+	async resumeVM(podId: string, vmId: string): Promise<void> {
+		await delay(800);
+		mockPods = mockPods.map((p) =>
+			p.id === podId
+				? {
+						...p,
+						vms: p.vms.map((vm) =>
+							vm.id === vmId
+								? { ...vm, status: 'running' as const, suspended_at: undefined, suspend_reason: undefined }
+								: vm
+						)
+					}
 				: p
 		);
 	},

@@ -21,9 +21,10 @@
 			case 'destroyed':
 			case 'deleted':
 			case 'powered_off':
-			case 'suspended':
-			case 'cancelled':
-				return { bg: 'bg-surface-400/10', text: 'text-surface-500', dot: 'bg-surface-500', label: format(s), animate: false };
+				case 'cancelled':
+					return { bg: 'bg-surface-400/10', text: 'text-surface-500', dot: 'bg-surface-500', label: format(s), animate: false };
+				case 'suspended':
+					return { bg: 'bg-warning-500/15', text: 'text-warning-400', dot: 'bg-warning-400', label: 'Suspended', animate: false };
 			case 'error':
 			case 'failed':
 			case 'destroy_failed':
