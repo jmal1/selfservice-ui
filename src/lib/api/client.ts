@@ -942,6 +942,23 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 	});
 }
 
+export interface BlueprintVMPlaylistsResolvedResponse {
+	vm_playlists: Array<{
+		vm_slot: number;
+		playlists: Array<{
+			playlist_id: string;
+			name: string;
+			slug: string;
+			source: 'blueprint_override' | 'template_default';
+			execution_order: number;
+		}>;
+	}>;
+}
+
+export function adminGetBlueprintVMPlaylistsResolved(blueprintId: string): Promise<BlueprintVMPlaylistsResolvedResponse> {
+	return apiFetch<BlueprintVMPlaylistsResolvedResponse>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists`);
+}
+
 export async function adminListRuns(): Promise<Run[]> {
 	if (isMock) return mockApi.adminListRuns();
 	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');

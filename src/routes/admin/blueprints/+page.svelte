@@ -11,6 +11,7 @@
 	import type { CreateBlueprintRequest } from '$lib/api/client';
 	import type { Blueprint, BlueprintVM, Template } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import BlueprintPlaylistsView from '$lib/components/BlueprintPlaylistsView.svelte';
 
 	let blueprints = $state<Blueprint[]>([]);
 	let templates = $state<Template[]>([]);
@@ -52,6 +53,9 @@
 
 	// Delete confirmation
 	let deletingId = $state<string | null>(null);
+
+	// Playlist viewing
+	let selectedBlueprintForPlaylists = $state<string | null>(null);
 
 	function emptyVM() {
 		return {
@@ -590,6 +594,13 @@
 											<div class="flex items-center justify-end gap-2">
 												<button
 													class="text-xs text-primary-500 hover:text-primary-400"
+													onclick={() => selectedBlueprintForPlaylists = bp.id}
+													title="View assigned playlists"
+												>
+													Playlists
+												</button>
+												<button
+													class="text-xs text-primary-500 hover:text-primary-400"
 													onclick={() => startEdit(bp)}
 												>
 													Edit
@@ -609,6 +620,25 @@
 					</tbody>
 				</table>
 			</div>
+		</div>
+	{/if}
+
+	<!-- Blueprint playlists viewer -->
+	{#if selectedBlueprintForPlaylists}
+		<div class="mt-6 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 overflow-hidden">
+			<div class="px-5 py-4 border-b border-surface-200 dark:border-surface-800 flex items-center justify-between">
+				<h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+					Playlist Assignment for "{blueprints.find(b => b.id === selectedBlueprintForPlaylists)?.name}"
+				</h3>
+				<button
+					class="text-surface-500 hover:text-surface-900 dark:hover:text-surface-100"
+					onclick={() => (selectedBlueprintForPlaylists = null)}
+					title="Close"
+				>
+					✕
+				</button>
+			</div>
+			<BlueprintPlaylistsView blueprintId={selectedBlueprintForPlaylists} />
 		</div>
 	{/if}
 </div>
