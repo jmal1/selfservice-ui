@@ -77,7 +77,8 @@ export const mockTemplates: Template[] = [
 		default_password: 'changeme',
 		kind: 'clone_with_customize',
 		assign_ip: true,
-		is_active: true
+		is_active: true,
+		visibility: 'public'
 	},
 	{
 		id: 'tpl-windows',
@@ -95,7 +96,8 @@ export const mockTemplates: Template[] = [
 		default_password: 'P@ssw0rd!',
 		kind: 'clone_with_customize',
 		assign_ip: true,
-		is_active: true
+		is_active: true,
+		visibility: 'public'
 	},
 	{
 		id: 'tpl-mint',
@@ -113,7 +115,8 @@ export const mockTemplates: Template[] = [
 		default_password: 'student',
 		kind: 'registered_existing_vm',
 		assign_ip: true,
-		is_active: true
+		is_active: true,
+		visibility: 'public'
 	},
 	{
 		id: 'tpl-centos',
@@ -131,7 +134,8 @@ export const mockTemplates: Template[] = [
 		default_password: '',
 		kind: 'clone_no_customize',
 		assign_ip: false,
-		is_active: false
+		is_active: false,
+		visibility: 'public'
 	}
 ];
 
@@ -711,7 +715,8 @@ export const mockApi = {
 			default_password: (req.default_password as string) ?? '',
 			kind: ((req.kind as Template['kind']) ?? 'clone_with_customize'),
 			assign_ip: typeof req.assign_ip === 'boolean' ? (req.assign_ip as boolean) : true,
-			is_active: req.is_active as boolean
+			is_active: req.is_active as boolean,
+			visibility: (req.visibility as Template['visibility']) ?? 'public'
 		};
 		mockTemplates.push(tpl);
 		return tpl;
