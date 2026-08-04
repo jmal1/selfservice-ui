@@ -21,7 +21,8 @@ import type {
 	Playlist,
 	Action,
 	ImageUpload,
-	VCenterISOListResponse
+	VCenterISOListResponse,
+	ResolvedCredentialsResponse
 } from '$lib/types';
 
 const isMock = config.mock;
@@ -327,12 +328,22 @@ export function adminProvisionTemplate(id: string): Promise<WizardJobResponse> {
 
 export function adminGeneralizeTemplate(
 	id: string,
-	body: { guest_username?: string; guest_password: string }
+	body: { guest_username?: string; guest_password?: string } = {}
 ): Promise<WizardJobResponse> {
 	return apiFetch<WizardJobResponse>(`/api/v1/admin/templates/${id}/generalize`, {
 		method: 'POST',
 		body: JSON.stringify(body)
 	});
+}
+
+// adminGetResolvedCredentials calls GET .../resolved-credentials to learn
+// whether the server can supply guest credentials for the generalize step
+// without the operator typing them. The raw password is NEVER returned —
+// only has_password (boolean) and the source string.
+export function adminGetResolvedCredentials(id: string): Promise<ResolvedCredentialsResponse> {
+	return apiFetch<ResolvedCredentialsResponse>(
+		`/api/v1/admin/templates/${id}/resolved-credentials`
+	);
 }
 
 export function adminPublishTemplate(id: string): Promise<WizardStateResponse> {
