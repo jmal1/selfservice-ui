@@ -2,7 +2,7 @@
  * Mock data for local development without a backend.
  * Enable by setting PUBLIC_MOCK=true in .env
  */
-import type { Pod, PodVM, Template, User, ResourceUsage, Job, AuditEntry } from '$lib/types';
+import type { Pod, PodVM, Template, User, ResourceUsage, Job, AuditEntry, Run } from '$lib/types';
 
 // --- Helpers ---
 let idCounter = 100;
@@ -355,6 +355,136 @@ export const mockAuditLog: AuditEntry[] = [
 	}
 ];
 
+export const mockRuns: Run[] = [
+	{
+		id: 'run-001',
+		pod_id: 'pod-001',
+		playlist_id: 'playlist-001',
+		triggered_by: 'usr-001',
+		triggered_by_username: 'jmal',
+		triggered_by_display_name: 'Jordan Maloney',
+		pod_name: 'Security Lab',
+		pod_status: 'active',
+		playlist_name: 'Privilege Escalation 101',
+		status: 'completed',
+		total_workflows: 3,
+		passed_workflows: 2,
+		failed_workflows: 1,
+		total_points: 100,
+		earned_points: 80,
+		target_pod_vm_id: 'vm-201',
+		target_vm_name: 'x7k2m9-target-server',
+		target_vm_ip: '10.101.0.11',
+		error_message: '',
+		started_at: new Date(Date.now() - 5400000).toISOString(),
+		completed_at: new Date(Date.now() - 5100000).toISOString(),
+		created_at: new Date(Date.now() - 5500000).toISOString(),
+		updated_at: new Date(Date.now() - 5000000).toISOString(),
+		results: [
+			{
+				id: 'wfr-001',
+				run_id: 'run-001',
+				workflow_id: 'wf-001',
+				execution_order: 1,
+				execution_mode: 'manual',
+				status: 'pass',
+				student_message: 'Validated SSH access.',
+				action_results: [
+					{ action: 'check_ssh', status: 'pass', exit_code: 0, duration_ms: 420, message: 'SSH reachable' }
+				],
+				duration_ms: 1200,
+				started_at: new Date(Date.now() - 5395000).toISOString(),
+				completed_at: new Date(Date.now() - 5393800).toISOString(),
+				workflow_name: 'SSH access'
+			},
+			{
+				id: 'wfr-002',
+				run_id: 'run-001',
+				workflow_id: 'wf-002',
+				execution_order: 2,
+				execution_mode: 'manual',
+				status: 'fail',
+				student_message: 'Privilege escalation step needs review.',
+				action_results: [
+					{ action: 'enumerate_sudo', status: 'pass', exit_code: 0, duration_ms: 510, message: 'Sudo rights found' },
+					{ action: 'exploit', status: 'fail', exit_code: 1, duration_ms: 860, message: 'Exploit blocked by patch level' }
+				],
+				duration_ms: 2300,
+				started_at: new Date(Date.now() - 5392000).toISOString(),
+				completed_at: new Date(Date.now() - 5390000).toISOString(),
+				workflow_name: 'Privilege escalation'
+			}
+		]
+	},
+	{
+		id: 'run-002',
+		pod_id: 'pod-003',
+		playlist_id: 'playlist-002',
+		triggered_by: 'usr-002',
+		triggered_by_username: 'student1',
+		triggered_by_display_name: 'Alice Chen',
+		pod_name: '',
+		pod_status: 'deleted',
+		playlist_name: '',
+		status: 'failed',
+		total_workflows: 2,
+		passed_workflows: 0,
+		failed_workflows: 2,
+		total_points: 50,
+		earned_points: 0,
+		target_pod_vm_id: '',
+		target_vm_name: '',
+		target_vm_ip: '',
+		error_message: 'Pod was destroyed after grading completed.',
+		started_at: new Date(Date.now() - 9000000).toISOString(),
+		completed_at: new Date(Date.now() - 8900000).toISOString(),
+		created_at: new Date(Date.now() - 9050000).toISOString(),
+		updated_at: new Date(Date.now() - 8850000).toISOString(),
+		results: []
+	},
+	{
+		id: 'run-003',
+		pod_id: 'pod-002',
+		playlist_id: 'playlist-003',
+		triggered_by: 'usr-001',
+		triggered_by_username: 'jmal',
+		triggered_by_display_name: 'Jordan Maloney',
+		pod_name: 'Dev Playground',
+		pod_status: 'destroyed',
+		playlist_name: 'Container Basics',
+		status: 'running',
+		total_workflows: 4,
+		passed_workflows: 1,
+		failed_workflows: 0,
+		total_points: 120,
+		earned_points: 20,
+		target_pod_vm_id: 'vm-202',
+		target_vm_name: 'b3f8q1-docker-host',
+		target_vm_ip: '10.102.0.10',
+		error_message: '',
+		started_at: new Date(Date.now() - 1800000).toISOString(),
+		created_at: new Date(Date.now() - 1900000).toISOString(),
+		updated_at: new Date(Date.now() - 600000).toISOString(),
+		results: [
+			{
+				id: 'wfr-003',
+				run_id: 'run-003',
+				workflow_id: 'wf-003',
+				execution_order: 1,
+				execution_mode: 'auto',
+				status: 'running',
+				student_message: 'Checking container runtime.',
+				action_results: [
+					{ action: 'detect_runtime', status: 'running', exit_code: 0, duration_ms: 900, message: 'Docker daemon responding' }
+				],
+				duration_ms: 900,
+				started_at: new Date(Date.now() - 1795000).toISOString(),
+				workflow_name: 'Runtime detection'
+			}
+		]
+	}
+];
+
 // --- Simulated latency ---
 function delay(ms = 300): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms + Math.random() * 200));
@@ -521,6 +651,18 @@ export const mockApi = {
 	async adminGetAuditLog(): Promise<AuditEntry[]> {
 		await delay();
 		return mockAuditLog;
+	},
+
+	async adminListRuns(): Promise<Run[]> {
+		await delay();
+		return mockRuns;
+	},
+
+	async adminGetRun(runId: string): Promise<Run> {
+		await delay();
+		const run = mockRuns.find((r) => r.id === runId);
+		if (!run) throw new Error(`Run ${runId} not found`);
+		return run;
 	},
 
 	async adminCreateTemplate(req: Record<string, unknown>): Promise<Template> {

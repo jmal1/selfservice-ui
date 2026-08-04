@@ -332,10 +332,17 @@ export interface Run {
 	pod_id: string;
 	playlist_id?: string;
 	triggered_by: string;
+	triggered_by_username?: string;
+	triggered_by_display_name?: string;
+	pod_name?: string;
+	pod_status?: string;
+	playlist_name?: string;
 	status: RunStatus;
 	total_workflows: number;
 	passed_workflows: number;
 	failed_workflows: number;
+	total_points?: number;
+	earned_points?: number;
 	/** The pod VM this run was executed against. Name and IP are stored on the
 	 * run itself so attribution survives pod teardown; target_pod_vm_id goes
 	 * null once the pod_vms row is deleted. */
@@ -346,6 +353,7 @@ export interface Run {
 	started_at?: string;
 	completed_at?: string;
 	created_at: string;
+	updated_at?: string;
 	results?: WorkflowResult[];
 }
 

@@ -895,8 +895,14 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 }
 
 export async function adminListRuns(): Promise<Run[]> {
+	if (isMock) return mockApi.adminListRuns();
 	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');
 	return Array.isArray(data) ? data : [];
+}
+
+export function adminGetRun(runId: string): Promise<Run> {
+	if (isMock) return mockApi.adminGetRun(runId);
+	return apiFetch<Run>(`/api/v1/admin/runs/${runId}`);
 }
 
 // --- Admin Actions (Library) ---
