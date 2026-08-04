@@ -945,6 +945,29 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 	});
 }
 
+export interface BlueprintVMPlaylistsResolvedResponse {
+	vm_playlists: Array<{
+		vm_slot: number;
+		playlists: Array<{
+			playlist_id: string;
+			name: string;
+			slug: string;
+			source: 'blueprint_override' | 'template_default';
+			execution_order: number;
+		}>;
+	}>;
+}
+
+export function adminGetBlueprintVMPlaylistsResolved(blueprintId: string): Promise<BlueprintVMPlaylistsResolvedResponse> {
+	return apiFetch<BlueprintVMPlaylistsResolvedResponse>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists`);
+}
+
+export function adminDeleteBlueprintVMPlaylistsOverride(blueprintId: string, vmSlot: number): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists/${vmSlot}`, {
+		method: 'DELETE'
+	});
+}
+
 export async function adminListRuns(params?: {
 	triggered_by?: string;
 	pod_owner?: string;
