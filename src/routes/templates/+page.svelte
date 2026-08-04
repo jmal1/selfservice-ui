@@ -8,6 +8,14 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
+	let pinnedTemplates = $state<Template[]>([]);
+	let unpinnedTemplates = $state<Template[]>([]);
+
+	$effect(() => {
+		pinnedTemplates = templates.filter((t) => t.pinned);
+		unpinnedTemplates = templates.filter((t) => !t.pinned);
+	});
+
 	function osIcon(osType: string): string {
 		const lower = osType.toLowerCase();
 		if (lower.includes('windows')) return '🪟';
@@ -62,33 +70,76 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-			{#each templates as template (template.id)}
-				<div class="glass rounded-2xl p-5 {template.is_active ? '' : 'opacity-50'}">
-					<div class="mb-3 flex items-start gap-3">
-						<span class="text-2xl">{osIcon(template.os_type)}</span>
-						<div class="min-w-0 flex-1">
-							<div class="flex items-center gap-2">
-								<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
-								{#if !template.is_active}
-									<span class="rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs text-surface-500">Inactive</span>
-								{/if}
-							</div>
-							{#if template.description}
-								<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
-							{/if}
-						</div>
-					</div>
-
-					<div class="flex flex-wrap gap-2 text-xs text-surface-500">
-						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
-						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
-						<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
-						<span class="rounded-md bg-primary-500/15 px-2 py-0.5 text-primary-400">{template.os_type}</span>
-					</div>
+		{#if pinnedTemplates.length > 0}
+			<div class="space-y-4">
+				<div>
+					<h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">📌 Pinned</h2>
+					<p class="mt-1 text-sm text-surface-500">Featured this week</p>
 				</div>
-			{/each}
-		</div>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{#each pinnedTemplates as template (template.id)}
+						<div class="glass rounded-2xl p-5 {template.is_active ? '' : 'opacity-50'}">
+							<div class="mb-3 flex items-start gap-3">
+								<span class="text-2xl">{osIcon(template.os_type)}</span>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-2">
+										<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
+										{#if !template.is_active}
+											<span class="rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs text-surface-500">Inactive</span>
+										{/if}
+									</div>
+									{#if template.description}
+										<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
+									{/if}
+								</div>
+							</div>
+
+							<div class="flex flex-wrap gap-2 text-xs text-surface-500">
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
+								<span class="rounded-md bg-primary-500/15 px-2 py-0.5 text-primary-400">{template.os_type}</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		{#if unpinnedTemplates.length > 0}
+			<div class="space-y-4">
+				{#if pinnedTemplates.length > 0}
+					<h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">All Templates</h2>
+				{/if}
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{#each unpinnedTemplates as template (template.id)}
+						<div class="glass rounded-2xl p-5 {template.is_active ? '' : 'opacity-50'}">
+							<div class="mb-3 flex items-start gap-3">
+								<span class="text-2xl">{osIcon(template.os_type)}</span>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-2">
+										<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
+										{#if !template.is_active}
+											<span class="rounded-full bg-surface-200 dark:bg-surface-800 px-2 py-0.5 text-xs text-surface-500">Inactive</span>
+										{/if}
+									</div>
+									{#if template.description}
+										<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
+									{/if}
+								</div>
+							</div>
+
+							<div class="flex flex-wrap gap-2 text-xs text-surface-500">
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_vcpus} vCPU</span>
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{Math.round(template.default_ram_mb / 1024)} GB RAM</span>
+								<span class="rounded-md bg-surface-200 dark:bg-surface-800 px-2 py-0.5">{template.default_disk_gb} GB Disk</span>
+								<span class="rounded-md bg-primary-500/15 px-2 py-0.5 text-primary-400">{template.os_type}</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 		{#if templates.length === 0}
 			<div class="py-12 text-center text-surface-500">
