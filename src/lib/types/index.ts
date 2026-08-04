@@ -351,6 +351,9 @@ export interface Run {
 	triggered_by: string;
 	triggered_by_username?: string;
 	triggered_by_display_name?: string;
+	pod_owner_id?: string;
+	pod_owner_username?: string;
+	pod_owner_display_name?: string;
 	pod_name?: string;
 	pod_status?: string;
 	playlist_name?: string;

@@ -942,9 +942,25 @@ export function adminSetBlueprintVMPlaylists(blueprintId: string, vmSlot: number
 	});
 }
 
-export async function adminListRuns(): Promise<Run[]> {
+export async function adminListRuns(params?: {
+	triggered_by?: string;
+	pod_owner?: string;
+	status?: string;
+	from?: string;
+	to?: string;
+	limit?: number;
+	offset?: number;
+}): Promise<Run[]> {
 	if (isMock) return mockApi.adminListRuns();
-	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');
+	const url = new URL('/api/v1/admin/runs', config.apiBaseUrl);
+	if (params?.triggered_by) url.searchParams.set('triggered_by', params.triggered_by);
+	if (params?.pod_owner) url.searchParams.set('pod_owner', params.pod_owner);
+	if (params?.status) url.searchParams.set('status', params.status);
+	if (params?.from) url.searchParams.set('from', params.from);
+	if (params?.to) url.searchParams.set('to', params.to);
+	if (params?.limit) url.searchParams.set('limit', String(params.limit));
+	if (params?.offset) url.searchParams.set('offset', String(params.offset));
+	const data = await apiFetch<Run[] | null>(url.pathname + url.search);
 	return Array.isArray(data) ? data : [];
 }
 
