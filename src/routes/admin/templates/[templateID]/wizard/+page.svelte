@@ -13,11 +13,15 @@
 		adminCancelTemplate,
 		adminRetryTemplate,
 		adminGetResolvedCredentials,
+		adminRunPreflight,
 		ApiError,
-		type WizardStateResponse
+		type WizardStateResponse,
+		type PreflightResult,
+		type PreflightResponse
 	} from '$lib/api/client';
 	import type { ResolvedCredentialsResponse } from '$lib/types';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
+	import PreflightPanel from '$lib/components/PreflightPanel.svelte';
 	import { wizardStateToAccessInfo } from '$lib/components/vm-access-adapters';
 
 	// Per-template wizard page.
@@ -50,6 +54,27 @@
 	// true when the operator explicitly wants to type credentials
 	// instead of using the resolved ones.
 	let credsOverrideMode = $state(false);
+
+	// --- Preflight panel state (draft step only) ---
+	let preflightResults = $state<PreflightResult[] | null>(null);
+	let preflightLoading = $state(false);
+	let preflightError = $state<string | null>(null);
+	const preflightAnyBlockFailed = $derived(
+		preflightResults != null && preflightResults.some((r) => r.severity === 'block' && !r.ok)
+	);
+
+	async function runPreflight() {
+		preflightLoading = true;
+		preflightError = null;
+		try {
+			const resp: PreflightResponse = await adminRunPreflight(templateID);
+			preflightResults = resp.results;
+		} catch (err) {
+			preflightError = err instanceof ApiError ? `${err.status}: ${err.message}` : String(err);
+		} finally {
+			preflightLoading = false;
+		}
+	}
 
 	onMount(async () => {
 		if (!authStore.isInstructor && !authStore.isAdmin) {
@@ -346,14 +371,47 @@
 					attaches a NIC on <code>{wizard.staging_network}</code>. The page
 					will auto-refresh when the job completes.
 				</p>
+
+				<!-- Preflight panel: run checks before provisioning. -->
+				<div class="space-y-2">
+					<button
+						class="btn btn-secondary btn-sm"
+						disabled={preflightLoading}
+						onclick={runPreflight}
+					>
+						{preflightLoading ? 'Checking…' : 'Run preflight checks'}
+					</button>
+					{#if preflightError}
+						<p class="text-xs text-error-600 dark:text-error-400">{preflightError}</p>
+					{/if}
+					{#if preflightResults != null}
+						{#if preflightAnyBlockFailed}
+							<p class="text-sm font-semibold text-error-600 dark:text-error-400">
+								⛔ One or more checks failed — fix them before provisioning.
+							</p>
+						{:else}
+							<p class="text-sm font-semibold text-success-600 dark:text-success-400">
+								✓ All blocking checks passed.
+							</p>
+						{/if}
+						<PreflightPanel results={preflightResults} />
+					{/if}
+				</div>
+
 				<button
 					class="btn btn-primary"
-					disabled={acting || !canProvision()}
+					disabled={acting || !canProvision() || preflightAnyBlockFailed}
 					onclick={() =>
 						act('Provision', () => adminProvisionTemplate(templateID))}
 				>
 					{acting ? 'Working…' : 'Provision'}
 				</button>
+				{#if preflightAnyBlockFailed}
+					<p class="text-xs text-surface-500">
+						Provision is disabled until all blocking preflight checks pass.
+						Run the checks above to see what needs fixing.
+					</p>
+				{/if}
 			</section>
 		{/if}
 

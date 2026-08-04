@@ -374,6 +374,35 @@ export function adminGetWizardState(id: string): Promise<WizardStateResponse> {
 	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/wizard-state`);
 }
 
+// --- Preflight checks ---
+
+/** One structured result from a single preflight check (mirrors preflight.Result in the API). */
+export interface PreflightResult {
+	id: string;       // e.g. "PF-01"
+	severity: string; // "block" | "warn"
+	ok: boolean;
+	detail: string;   // what was observed, in plain language
+	fix: string;      // what to do when failing
+}
+
+/** Response shape from POST /api/v1/admin/templates/{id}/preflight */
+export interface PreflightResponse {
+	template_id: string;
+	any_block_failed: boolean;
+	results: PreflightResult[];
+}
+
+/**
+ * Run all preflight checks for the given template.
+ * Returns 200 with the result list regardless of pass/fail.
+ * Use any_block_failed to decide whether to block provisioning.
+ */
+export function adminRunPreflight(id: string): Promise<PreflightResponse> {
+	return apiFetch<PreflightResponse>(`/api/v1/admin/templates/${id}/preflight`, {
+		method: 'POST'
+	});
+}
+
 /**
  * TemplateConsoleTicket is the wire shape returned by
  * GET /api/v1/admin/templates/{id}/console/ticket. Server-side auth +
