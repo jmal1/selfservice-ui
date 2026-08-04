@@ -959,6 +959,12 @@ export function adminGetBlueprintVMPlaylistsResolved(blueprintId: string): Promi
 	return apiFetch<BlueprintVMPlaylistsResolvedResponse>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists`);
 }
 
+export function adminDeleteBlueprintVMPlaylistsOverride(blueprintId: string, vmSlot: number): Promise<{ status: string }> {
+	return apiFetch<{ status: string }>(`/api/v1/admin/blueprints/${blueprintId}/vm-playlists/${vmSlot}`, {
+		method: 'DELETE'
+	});
+}
+
 export async function adminListRuns(): Promise<Run[]> {
 	if (isMock) return mockApi.adminListRuns();
 	const data = await apiFetch<Run[] | null>('/api/v1/admin/runs');

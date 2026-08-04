@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { adminGetBlueprintVMPlaylistsResolved } from '$lib/api/client';
+	import { adminGetBlueprintVMPlaylistsResolved, adminDeleteBlueprintVMPlaylistsOverride } from '$lib/api/client';
 	import type { BlueprintVMPlaylistsResolvedResponse } from '$lib/api/client';
 
 	interface Props {
@@ -12,6 +12,7 @@
 	let loading = $state(false);
 	let error = $state<string | null>(null);
 	let expanded = $state(false);
+	let reverting = $state<number | null>(null);
 
 	async function loadPlaylists() {
 		loading = true;
@@ -22,6 +23,19 @@
 			error = e instanceof Error ? e.message : 'Failed to load playlists';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function revertToTemplate(vmSlot: number) {
+		reverting = vmSlot;
+		try {
+			await adminDeleteBlueprintVMPlaylistsOverride(blueprintId, vmSlot);
+			// Reload playlists after revert
+			await loadPlaylists();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to revert override';
+		} finally {
+			reverting = null;
 		}
 	}
 
@@ -83,6 +97,16 @@
 											<span class="text-surface-500 text-xs">({pl.slug})</span>
 										</div>
 									{/each}
+									{#if vmSlot.playlists.some(pl => pl.source === 'blueprint_override')}
+										<button
+											type="button"
+											disabled={reverting === vmSlot.vm_slot}
+											onclick={() => revertToTemplate(vmSlot.vm_slot)}
+											class="mt-1 text-xs px-2 py-1 rounded bg-surface-200 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-300 dark:hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											{reverting === vmSlot.vm_slot ? 'Reverting...' : 'Revert to Template'}
+										</button>
+									{/if}
 								</div>
 							{/if}
 						</div>
