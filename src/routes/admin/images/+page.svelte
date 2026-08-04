@@ -212,19 +212,17 @@
 				parts.push({ part_number: i + 1, etag });
 			}
 
-			entry.progress = 100;
+				entry.progress = 100;
 
-			// Step 3: complete multipart
-			entry.status = 'completing';
-			await adminCompleteImageUpload(init.id, parts);
+				// Step 3: complete multipart — this also auto-enqueues the import job
+				entry.status = 'completing';
+				await adminCompleteImageUpload(init.id, parts);
 
-			// Step 4: trigger import
-			entry.status = 'importing';
-			await adminImportImage(init.id);
-
-			entry.status = 'done';
-			toastStore.success('Upload complete', `${entry.file.name} is being imported into vCenter.`);
-			await refreshList();
+				// No explicit import call needed; the API auto-enqueues image_import
+				// on upload completion. The image moves to 'importing' in the background.
+				entry.status = 'done';
+				toastStore.success('Upload complete', `${entry.file.name} is queued for import into vCenter.`);
+				await refreshList();
 		} catch (err) {
 			if (err instanceof DOMException && err.name === 'AbortError') {
 				entry.status = 'cancelled';
@@ -283,6 +281,28 @@
 				else msg = (err.body?.error as string) ?? err.message;
 			}
 			toastStore.error('Delete failed', msg);
+		}
+	}
+
+	// --- Retry a failed import ---
+
+	let retryingId = $state<string | null>(null);
+
+	async function retryImport(img: ImageUpload) {
+		if (retryingId) return;
+		retryingId = img.id;
+		try {
+			await adminImportImage(img.id);
+			toastStore.success('Import retried', `${img.filename} is re-queued for import.`);
+			await refreshList();
+		} catch (err) {
+			let msg = String(err);
+			if (err instanceof ApiError) {
+				msg = (err.body?.message as string) ?? (err.body?.error as string) ?? err.message;
+			}
+			toastStore.error('Retry failed', msg);
+		} finally {
+			retryingId = null;
 		}
 	}
 
@@ -438,20 +458,35 @@
 										<span class="text-error-600">{img.error_message}</span>
 									{:else if img.status === 'imported' && img.datastore_path}
 										{img.datastore_path}
+									{:else if img.status === 'importing'}
+										<span class="text-warning-600">Importing into vCenter…</span>
 									{:else}
 										—
 									{/if}
 								</td>
 								<td>
-									<button
-										type="button"
-										class="btn btn-sm preset-tonal-error"
-										onclick={() => deleteImage(img)}
-										disabled={img.status === 'importing'}
-										title={img.status === 'importing' ? 'Cannot delete while importing' : 'Delete image'}
-									>
-										Delete
-									</button>
+									<div class="flex gap-2">
+										{#if img.status === 'error'}
+											<button
+												type="button"
+												class="btn btn-sm preset-tonal-warning"
+												onclick={() => retryImport(img)}
+												disabled={retryingId === img.id}
+												title="Retry import without re-uploading the file"
+											>
+												{retryingId === img.id ? 'Retrying…' : 'Retry import'}
+											</button>
+										{/if}
+										<button
+											type="button"
+											class="btn btn-sm preset-tonal-error"
+											onclick={() => deleteImage(img)}
+											disabled={img.status === 'importing'}
+											title={img.status === 'importing' ? 'Cannot delete while importing' : 'Delete image'}
+										>
+											Delete
+										</button>
+									</div>
 								</td>
 							</tr>
 						{/each}
