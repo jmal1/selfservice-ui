@@ -18,6 +18,7 @@ export type VMStatus =
 	| 'configuring'
 	| 'running'
 	| 'stopped'
+	| 'suspended'
 	| 'error'
 	| 'deleted';
 
@@ -112,6 +113,9 @@ export interface PodVM {
 	template_name: string;
 	os_type: string;
 	template?: Template;
+	// Suspend fields (migration 000025). Omitted by the API when not suspended.
+	suspended_at?: string;
+	suspend_reason?: string;
 }
 
 export interface VMSnapshot {
@@ -251,6 +255,8 @@ export interface WSVMStatusEvent {
 	pod_id: string;
 	status: VMStatus;
 	ip_address?: string;
+	suspended_at?: string;
+	suspend_reason?: string;
 }
 
 export type WSEvent = WSJobStatusEvent | WSPodStatusEvent | WSVMStatusEvent;

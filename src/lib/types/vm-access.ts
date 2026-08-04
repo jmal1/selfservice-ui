@@ -54,4 +54,13 @@ export interface VMAccessInfo {
 	 *  hint telling the user to use the console to find the IP because
 	 *  the provisioner skipped WaitForIP intentionally. */
 	noIpExpected: boolean;
+
+	/** True when the VM is in the 'suspended' state. The console button
+	 *  shows a resume prompt rather than opening the dead WMKS stream. */
+	isSuspended: boolean;
+
+	/** Human-readable reason for suspension, e.g.
+	 *  "idle: no console activity and low CPU/net for 6h".
+	 *  Undefined when the VM is not suspended or the API omitted the field. */
+	suspendReason?: string;
 }

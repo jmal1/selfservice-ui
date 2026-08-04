@@ -16,6 +16,8 @@
 	const hasCredentials = $derived(!!displayUsername || !!displayPassword);
 	const hasVCenter = $derived(!!info.vcenterVmId);
 	const isPoweredOn = $derived(info.isPoweredOn);
+	const isSuspended = $derived(info.isSuspended);
+	const suspendReason = $derived(info.suspendReason);
 
 	// Template kind drives the credential-source hint. When the template was
 	// registered with kind=registered_existing_vm or clone_no_customize, the
@@ -138,15 +140,26 @@
 			{/if}
 			<div class="ml-auto flex gap-2">
 				{#if hasVCenter && consoleHref}
-					<button
-						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
-						onclick={openConsole}
-						disabled={!isPoweredOn}
-						title={isPoweredOn ? 'Open VM console in new tab' : 'VM must be powered on'}
-					>
-						🖥 Console
-					</button>
-				{/if}
+						{#if isSuspended}
+							<!-- Suspended: navigate to console page which shows the resume interstitial -->
+							<a
+								href={consoleHref}
+								class="rounded-lg border border-warning-500/30 bg-warning-500/10 px-3 py-1 text-xs text-warning-400 transition-colors hover:bg-warning-500/20"
+								title="VM is suspended — click to resume and open console"
+							>
+								▶ Resume &amp; Console
+							</a>
+						{:else}
+							<button
+								class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs transition-colors {isPoweredOn ? 'text-primary-400 hover:bg-primary-500/10' : 'text-surface-500 cursor-not-allowed'}"
+								onclick={openConsole}
+								disabled={!isPoweredOn}
+								title={isPoweredOn ? 'Open VM console in new tab' : 'VM must be powered on'}
+							>
+								🖥 Console
+							</button>
+						{/if}
+					{/if}
 				{#if isWindows && info.ipAddress}
 					<button
 						class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs text-surface-400 transition-colors hover:text-surface-300"
@@ -173,6 +186,18 @@
 			     WaitForIP so the VM may not surface an IP via VMware Tools. -->
 			<div class="mt-2 text-[11px] italic text-surface-500">
 				This template manages its own network. Use the VM console to find or configure the IP address.
+			</div>
+		{/if}
+
+		{#if isSuspended}
+			<!-- Suspension notice: tell the student why the VM is in this state
+			     and that clicking "Resume & Console" will wake it back up. -->
+			<div class="mt-2 rounded-lg border border-warning-500/30 bg-warning-500/10 px-3 py-2 text-[11px] text-warning-400">
+				⏸ This VM was automatically suspended after 6 hours of inactivity to free cluster resources.
+				{#if suspendReason}
+					<span class="opacity-70"> ({suspendReason})</span>
+				{/if}
+				Use <strong>Resume &amp; Console</strong> above to wake it back up.
 			</div>
 		{/if}
 	</div>

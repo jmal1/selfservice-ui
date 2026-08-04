@@ -54,7 +54,36 @@ describe('podVMToAccessInfo', () => {
 		expect(info.consoleHref).toBe('/console/pod-1/vm-1');
 	});
 
-	it('marks not-powered-on when status !== running', () => {
+	it('marks isSuspended false and no suspendReason for running VM', () => {
+		const info = podVMToAccessInfo(baseVM);
+		expect(info.isSuspended).toBe(false);
+		expect(info.suspendReason).toBeUndefined();
+	});
+
+	it('marks isSuspended true and exposes suspendReason for suspended VM', () => {
+		const reason = 'idle: no console activity and low CPU/net for 6h';
+		const info = podVMToAccessInfo({
+			...baseVM,
+			status: 'suspended',
+			suspended_at: '2026-08-03T10:00:00Z',
+			suspend_reason: reason
+		});
+		expect(info.isSuspended).toBe(true);
+		expect(info.suspendReason).toBe(reason);
+	});
+
+	it('marks isSuspended true with no reason when suspend_reason is absent', () => {
+		const info = podVMToAccessInfo({ ...baseVM, status: 'suspended' });
+		expect(info.isSuspended).toBe(true);
+		expect(info.suspendReason).toBeUndefined();
+	});
+
+	it('marks not-powered-on when status is suspended', () => {
+		const info = podVMToAccessInfo({ ...baseVM, status: 'suspended' });
+		expect(info.isPoweredOn).toBe(false);
+	});
+
+	it('marks not-powered-on when status is stopped', () => {
 		const info = podVMToAccessInfo({ ...baseVM, status: 'stopped' });
 		expect(info.isPoweredOn).toBe(false);
 	});
@@ -151,5 +180,11 @@ describe('wizardStateToAccessInfo', () => {
 			template_kind: undefined
 		});
 		expect(info?.templateKind).toBe('clone_with_customize');
+	});
+
+	it('always returns isSuspended false (build VMs are never suspended)', () => {
+		const info = wizardStateToAccessInfo(baseState);
+		expect(info?.isSuspended).toBe(false);
+		expect(info?.suspendReason).toBeUndefined();
 	});
 });

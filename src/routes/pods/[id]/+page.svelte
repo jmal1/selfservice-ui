@@ -10,6 +10,7 @@
 		stopVM,
 		restartVM,
 		resetVM,
+		resumeVM,
 		deleteVM,
 		getTemplates,
 		getMyJobs
@@ -82,6 +83,7 @@
 		vm_revert: 'Snapshot restored',
 		vm_snapshot_delete: 'Snapshot deleted',
 		vm_destroy: 'VM destroyed',
+		vm_suspend: 'VM suspended',
 	};
 
 	function checkJobTransitions(newJobs: Job[]) {
@@ -122,12 +124,18 @@
 					...pod,
 					vms: (pod.vms ?? []).map((vm) =>
 						vm.id === e.vm_id
-							? { ...vm, status: e.status, ip_address: e.ip_address ?? vm.ip_address }
-							: vm
-					)
-				};
-			}
-		});
+								? {
+										...vm,
+										status: e.status,
+										ip_address: e.ip_address ?? vm.ip_address,
+										suspended_at: e.suspended_at ?? (e.status !== 'suspended' ? undefined : vm.suspended_at),
+										suspend_reason: e.suspend_reason ?? (e.status !== 'suspended' ? undefined : vm.suspend_reason)
+									}
+								: vm
+						)
+					};
+				}
+			});
 
 		// Poll for updates since WebSocket is not yet implemented on the backend
 		const interval = setInterval(() => {
@@ -434,6 +442,21 @@
 												<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 											{/if}
 										</button>
+									{:else if vm.status === 'suspended'}
+										<button
+											class="touch-target inline-flex h-10 items-center gap-1 rounded-lg border border-warning-500/40 bg-warning-500/10 px-2 text-xs font-medium text-warning-400 transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+											aria-label="Resume VM"
+											title="Resume suspended VM"
+											disabled={!!actionLoading[`resume-${vm.id}`]}
+											onclick={() => handleAction(`resume-${vm.id}`, () => resumeVM(podId, vm.id))}
+										>
+											{#if actionLoading[`resume-${vm.id}`]}
+												<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+											{:else}
+												<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+											{/if}
+											Resume
+										</button>
 									{:else if vm.status === 'running'}
 										<button class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-warning-500/10 hover:text-warning-500 disabled:opacity-50" aria-label="Stop VM" title="Stop VM" disabled={!!actionLoading[`stop-${vm.id}`]} onclick={() => handleAction(`stop-${vm.id}`, () => stopVM(podId, vm.id))}>
 											{#if actionLoading[`stop-${vm.id}`]}<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>{:else}<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" /></svg>{/if}
@@ -500,6 +523,21 @@
 										{:else}
 											<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
 										{/if}
+									</button>
+								{:else if vm.status === 'suspended'}
+									<button
+										class="inline-flex h-8 items-center gap-1 rounded-lg border border-warning-500/40 bg-warning-500/10 px-2 text-xs font-medium text-warning-400 transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+										aria-label="Resume VM"
+										title="Resume suspended VM"
+										disabled={!!actionLoading[`resume-${vm.id}`]}
+										onclick={() => handleAction(`resume-${vm.id}`, () => resumeVM(podId, vm.id))}
+									>
+										{#if actionLoading[`resume-${vm.id}`]}
+											<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+										{:else}
+											<svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+										{/if}
+										Resume
 									</button>
 								{:else if vm.status === 'running'}
 									<button
@@ -573,12 +611,25 @@
 						</div>
 						</div>
 
-						<!-- VM Access Panel (expandable) -->
-						{#if expandedVMs[vm.id]}
-							<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/30 px-5 py-3">
-								<VMAccessPanel info={podVMToAccessInfo(vm)} />
-							</div>
-						{/if}
+						<!-- Suspension banner: shown inline when VM is suspended -->
+							{#if vm.status === 'suspended'}
+								<div class="border-t border-warning-500/20 bg-warning-500/5 px-5 py-2 flex items-center gap-3">
+									<span class="text-xs text-warning-400">
+										⏸ <strong>Suspended</strong> — automatically parked after 6 hours of inactivity.
+										{#if vm.suspend_reason}
+											<span class="opacity-70"> Reason: {vm.suspend_reason}.</span>
+										{/if}
+										Use the <strong>Resume</strong> button to wake it back up.
+									</span>
+								</div>
+							{/if}
+
+							<!-- VM Access Panel (expandable) -->
+							{#if expandedVMs[vm.id]}
+								<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/30 px-5 py-3">
+									<VMAccessPanel info={podVMToAccessInfo(vm)} />
+								</div>
+							{/if}
 
 						<!-- Snapshot Panel (always visible per VM) -->
 						<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/20 px-5 py-3">
