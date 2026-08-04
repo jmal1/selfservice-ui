@@ -59,6 +59,23 @@
 	const totalNewRamMb = $derived(vmConfigs.reduce((s, c) => s + c.ram_mb, 0));
 	const totalNewVMs = $derived(vmConfigs.length);
 
+	// Sort blueprints with pinned first
+	const sortedBlueprints = $derived.by(() => {
+		const sorted = [...blueprints].sort((a, b) => {
+			// Pinned first
+			const aPin = a.pinned ? 1 : 0;
+			const bPin = b.pinned ? 1 : 0;
+			if (aPin !== bPin) return bPin - aPin;
+			// Within pinned/unpinned, sort by pin_order if applicable
+			if (a.pinned && b.pinned && a.pin_order !== b.pin_order) {
+				return (a.pin_order ?? 0) - (b.pin_order ?? 0);
+			}
+			// Fall back to name for deterministic ordering
+			return a.name.localeCompare(b.name);
+		});
+		return sorted;
+	});
+
 	onMount(async () => {
 		try {
 			const [tpl, usg, allPods, bps] = await Promise.all([

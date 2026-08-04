@@ -91,6 +91,11 @@ export interface Template {
 	created_by?: string;
 	created_at?: string;
 	updated_at?: string;
+	// Pinning fields (migration 000030). Instructors can pin templates
+	// to surface them at the top of the list.
+	pinned?: boolean;
+	pin_order?: number;
+	pinned_at?: string | null;
 }
 
 // ResolvedCredentialsResponse is the wire type returned by
@@ -165,6 +170,11 @@ export interface Blueprint {
 	updated_at: string;
 	vms: BlueprintVM[];
 	creator?: User;
+	// Pinning fields (migration 000030). Instructors can pin blueprints
+	// to surface them at the top of the list.
+	pinned?: boolean;
+	pin_order?: number;
+	pinned_at?: string | null;
 }
 
 export interface BlueprintVM {
