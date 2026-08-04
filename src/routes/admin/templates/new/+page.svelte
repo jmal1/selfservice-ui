@@ -1,20 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import {
-		adminCreateTemplateDraft,
-		adminListVCenterTemplatesFolder,
-		adminListImages,
-		adminListVCenterISOs,
-		getTemplates,
-		ApiError,
-		type CreateTemplateDraftRequest,
-		type VCenterFolderVM
-	} from '$lib/api/client';
-	import type { Template, ImageUpload, VCenterDatastoreFile } from '$lib/types';
-	import { authStore } from '$lib/stores/auth.svelte';
-	import { toastStore } from '$lib/stores/toast.svelte';
-	import { handleWizardEnter } from '$lib/utils/wizardEnter';
+		import { onMount } from 'svelte';
+		import {
+			adminCreateTemplateDraft,
+			adminListVCenterTemplatesFolder,
+			adminListVCenterISOs,
+			getTemplates,
+			ApiError,
+			type CreateTemplateDraftRequest,
+			type VCenterFolderVM
+		} from '$lib/api/client';
+		import type { Template, MergedISOEntry } from '$lib/types';
+		import { authStore } from '$lib/stores/auth.svelte';
+		import { toastStore } from '$lib/stores/toast.svelte';
+		import { handleWizardEnter } from '$lib/utils/wizardEnter';
 
 	// Step 1 of the T4 template wizard.
 	//
@@ -44,8 +43,7 @@
 
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
-	let importedISOs = $state<ImageUpload[]>([]);
-	let vcenterISOs = $state<VCenterDatastoreFile[]>([]);
+	let mergedISOs = $state<MergedISOEntry[]>([]);
 	let loadingSources = $state(true);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
@@ -66,16 +64,14 @@
 			return;
 		}
 		try {
-			const [tpls, folder, imgs, vcISOs] = await Promise.all([
+			const [tpls, folder, vcISOs] = await Promise.all([
 				getTemplates(),
 				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
-				adminListImages().catch(() => [] as ImageUpload[]),
-				adminListVCenterISOs().catch(() => ({ files: [] as VCenterDatastoreFile[], datastore: '', cached: false, cache_age_seconds: 0 }))
+				adminListVCenterISOs().catch(() => ({ isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 }))
 			]);
 			existingTemplates = tpls;
 			vcenterVMs = folder.vms ?? [];
-			importedISOs = (imgs ?? []).filter((img) => img.kind === 'iso' && img.status === 'imported');
-			vcenterISOs = vcISOs.files ?? [];
+			mergedISOs = vcISOs.isos ?? [];
 		} catch (err) {
 			console.error('load source data', err);
 			toastStore.error('Could not load source options', String(err));
@@ -273,29 +269,39 @@
 		{:else if req.source_type === 'iso'}
 				<label class="label">
 					<span class="text-sm">ISO source *</span>
-					<select class="select" bind:value={req.source_ref}>
-						<option value="">— pick an ISO —</option>
-						{#if importedISOs.length > 0}
-							<optgroup label="Uploaded & imported ISOs">
-								{#each importedISOs as img (img.id)}
-									<option value={img.datastore_path}>{img.filename}</option>
+						{#if loadingSources}
+							<p class="text-sm text-surface-500">Loading ISOs…</p>
+						{:else if mergedISOs.length === 0}
+							<!-- Empty state: guide the instructor to upload an ISO first -->
+							<aside class="card preset-tonal-warning p-3 text-sm space-y-2">
+								<p class="font-semibold">⚠️ No ISOs available yet</p>
+								<p>
+									Upload an ISO on the
+									<a href="/admin/images" class="anchor font-semibold">Images page</a>
+									and wait for the import to finish. The import starts automatically after the upload completes.
+								</p>
+							</aside>
+						{:else}
+							<select class="select" bind:value={req.source_ref}>
+								<option value="">— pick an ISO —</option>
+								{#each mergedISOs as iso (iso.image_id ?? iso.path ?? iso.name)}
+									<option value={iso.path ?? ''} disabled={iso.disabled}>
+										{#if iso.disabled}
+											{iso.status === 'error'
+												? `⚠ ${iso.name} — Import failed: ${iso.error_message ?? 'unknown error'}`
+												: `⏳ ${iso.name} — Importing…`}
+										{:else}
+											{iso.source === 'uploaded' ? '↑ ' : ''}{iso.name}
+										{/if}
+									</option>
 								{/each}
-							</optgroup>
+							</select>
+							<p class="text-xs text-surface-500 mt-1">
+								Entries labelled ⏳ are still importing and will become available shortly.
+								<a href="/admin/images" class="anchor">Manage images →</a>
+							</p>
 						{/if}
-						{#if vcenterISOs.length > 0}
-							<optgroup label="ISOs already on vCenter datastore">
-								{#each vcenterISOs as iso (iso.path)}
-									<option value={iso.path}>{iso.name}</option>
-								{/each}
-							</optgroup>
-						{/if}
-					</select>
-					<p class="text-xs text-surface-500 mt-1">
-						Don't see your ISO?
-						<a href="/admin/images" class="anchor">Upload it on the Images page</a>
-						and wait for the import to complete.
-					</p>
-				</label>
+					</label>
 
 				<div class="space-y-3 border border-surface-200 dark:border-surface-700 rounded p-4 mt-2">
 					<h3 class="text-sm font-semibold">Unattended install</h3>

@@ -438,8 +438,33 @@ export interface VCenterDatastoreFile {
 	modified_time: string;
 }
 
+/**
+ * MergedISOEntry is one entry in the /admin/vcenter/isos response.
+ * source="datastore" means the file was found directly on the vCenter datastore.
+ * source="uploaded" means it came through the image upload pipeline.
+ * When disabled=true, the entry is not yet usable (still importing or errored).
+ */
+export interface MergedISOEntry {
+	name: string;
+	path?: string;
+	folder_path?: string;
+	size_bytes?: number;
+	modified_time?: string;
+	/** "uploaded" | "datastore" */
+	source: 'uploaded' | 'datastore';
+	/** true = not yet selectable (in-flight or error) */
+	disabled: boolean;
+	/** Mirrors image_uploads.status for uploaded entries */
+	status?: ImageUploadStatus;
+	/** Set when status === 'error' */
+	error_message?: string;
+	/** image_uploads.id for uploaded entries */
+	image_id?: string;
+}
+
 export interface VCenterISOListResponse {
-	files: VCenterDatastoreFile[];
+	/** Merged list of ISOs from both the vCenter datastore and the image upload pipeline. */
+	isos: MergedISOEntry[];
 	datastore: string;
 	cached: boolean;
 	cache_age_seconds: number;
