@@ -209,6 +209,8 @@ export function adminListTemplates(): Promise<Template[]> {
 	return apiFetch<Template[]>('/api/v1/admin/templates');
 }
 
+export type TemplateVisibility = 'public' | 'instructor_only';
+
 export interface CreateTemplateRequest {
 	name: string;
 	vcenter_template: string;
@@ -225,6 +227,7 @@ export interface CreateTemplateRequest {
 	default_password: string;
 	kind?: 'clone_with_customize' | 'clone_no_customize' | 'registered_existing_vm';
 	assign_ip?: boolean;
+	visibility?: TemplateVisibility;
 }
 
 export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Template> {

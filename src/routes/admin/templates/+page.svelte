@@ -11,7 +11,7 @@
 		adminSetTemplatePlaylists,
 		ApiError
 	} from '$lib/api/client';
-	import type { CreateTemplateRequest } from '$lib/api/client';
+	import type { CreateTemplateRequest, TemplateVisibility } from '$lib/api/client';
 	import type { Template, Playlist } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import VCenterTemplatePicker from '$lib/components/VCenterTemplatePicker.svelte';
