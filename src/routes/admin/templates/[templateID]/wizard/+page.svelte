@@ -287,6 +287,11 @@
 		</a>
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Template wizard</h1>
 		<p class="text-surface-500 text-sm">Template ID: <code>{templateID}</code></p>
+		<p class="text-sm">
+			<a class="anchor" href="/wiki?file=docs/instructor/templates.md" target="_blank" rel="noopener">
+				📖 Step-by-step guide ↗
+			</a>
+		</p>
 	</header>
 
 	{#if loading}
