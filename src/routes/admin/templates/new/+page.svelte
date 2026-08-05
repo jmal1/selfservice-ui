@@ -170,6 +170,24 @@
 		</p>
 	</header>
 
+	<aside class="card preset-tonal-primary p-4 space-y-1">
+		<p class="font-semibold">📖 New to building templates? Read this first.</p>
+		<p class="text-sm">
+			The guide tells you <strong>exactly what to type in every field</strong>,
+			including the standard build login
+			<code>Student</code> / <code>Changeme123!</code>. Not sure where to start?
+			Paste the AI prompt into an assistant and it'll walk you through it.
+		</p>
+		<p class="text-sm flex flex-wrap gap-x-4 gap-y-1">
+			<a class="anchor" href="/wiki?file=docs/instructor/templates.md" target="_blank" rel="noopener">
+				Step-by-step guide ↗
+			</a>
+			<a class="anchor" href="/wiki?file=docs/ai-prompts/create-a-template.md" target="_blank" rel="noopener">
+				AI prompt: "Help me create a template" ↗
+			</a>
+		</p>
+	</aside>
+
 	{#if error}
 		<aside class="card preset-tonal-error p-4">
 			<p class="font-semibold">⚠️ {error}</p>
@@ -240,6 +258,11 @@
 				<option value="clone_vcenter">Clone an existing vCenter VM</option>
 				<option value="iso">ISO install</option>
 			</select>
+			<span class="text-xs text-surface-500 mt-1 block">
+				Easiest is <strong>Clone an existing Crucible template</strong> — start
+				from something that already works. Pick <strong>ISO install</strong> only
+				if you're installing an OS from scratch.
+			</span>
 		</label>
 
 		{#if loadingSources}
@@ -305,6 +328,14 @@
 
 				<div class="space-y-3 border border-surface-200 dark:border-surface-700 rounded p-4 mt-2">
 					<h3 class="text-sm font-semibold">Unattended install</h3>
+					<p class="text-xs text-surface-500">
+						Pick the mode that matches your ISO, then type the username and
+						password. Anything you leave blank uses a sensible default.
+						<strong>Ubuntu Server →</strong> <code>cloudinit_cidata</code>;
+						<strong>Kali/Debian →</strong> <code>debian_preseed</code>;
+						<strong>Windows →</strong> <code>windows_autounattend</code>.
+						Not sure? Use <code>manual</code> and install it yourself in the console.
+					</p>
 
 					<label class="label">
 						<span class="text-sm">Install mode</span>
@@ -321,31 +352,45 @@
 							<label class="label">
 								<span class="text-sm">Hostname</span>
 								<input class="input" type="text" bind:value={unattendHostname} placeholder="crucible-vm" />
+								<span class="text-xs text-surface-500 mt-1 block">Optional. Leave blank for a generic name.</span>
 							</label>
 							<label class="label">
 								<span class="text-sm">Username</span>
 								<input class="input" type="text" bind:value={unattendUsername} placeholder="student" />
+								<span class="text-xs text-surface-500 mt-1 block">
+									Type <code>student</code> (Linux) or <code>Student</code> (Windows).
+									Linux <strong>must</strong> be <code>student</code>.
+								</span>
 							</label>
 							<label class="label">
 								<span class="text-sm">Password</span>
 								<input class="input" type="password" bind:value={unattendPassword} autocomplete="new-password" />
+								<span class="text-xs text-surface-500 mt-1 block">
+									Use the standard build password <code>Changeme123!</code>. Don't leave this blank.
+								</span>
 							</label>
 							<label class="label">
 								<span class="text-sm">Locale</span>
 								<input class="input" type="text" bind:value={unattendLocale} placeholder="en_US.UTF-8" />
+								<span class="text-xs text-surface-500 mt-1 block">Optional. Blank = en_US.UTF-8.</span>
 							</label>
 							<label class="label">
 								<span class="text-sm">Time zone</span>
 								<input class="input" type="text" bind:value={unattendTimeZone} placeholder="America/New_York" />
+								<span class="text-xs text-surface-500 mt-1 block">Optional. Blank = America/New_York.</span>
 							</label>
 							<label class="label">
 								<span class="text-sm">APT proxy</span>
 								<input class="input" type="text" bind:value={unattendAptProxy} placeholder="http://10.10.30.20:3142" />
+								<span class="text-xs text-surface-500 mt-1 block">
+									Linux only, optional. Add <code>http://10.10.30.20:3142</code> for faster package downloads.
+								</span>
 							</label>
 						</div>
 						<label class="label">
 							<span class="text-sm">Extra packages (comma-separated)</span>
 							<input class="input" type="text" bind:value={unattendExtraPkgs} placeholder="curl, git, vim" />
+							<span class="text-xs text-surface-500 mt-1 block">Optional. Tools to pre-install, e.g. <code>curl, git, vim</code>.</span>
 						</label>
 					{/if}
 				</div>
@@ -390,14 +435,19 @@
 	<section class="card p-6 space-y-4">
 		<h2 class="h4">Guest credentials</h2>
 		<p class="text-sm text-surface-500">
-			Used by the wizard to push the generalize script via VMware Tools.
-			Students will see these on the pod-detail page after launch.
+			The login the wizard uses to clean the VM during Generalize. Students
+			will see their own <strong>randomly-generated</strong> password on the
+			pod page after launch — this is <strong>not</strong> that password.
 		</p>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<label class="label">
 				<span class="text-sm">Default username</span>
-				<input class="input" type="text" bind:value={req.default_username} placeholder="ubuntu" />
+				<input class="input" type="text" bind:value={req.default_username} placeholder="student" />
+				<span class="text-xs text-surface-500 mt-1 block">
+					Linux must be <code>student</code>; Windows use <code>Student</code>.
+					Leave blank when cloning — it's copied from the source.
+				</span>
 			</label>
 			<label class="label">
 				<span class="text-sm">Default password</span>
@@ -405,9 +455,12 @@
 					class="input"
 					type="password"
 					bind:value={req.default_password}
-					placeholder="set during configure step"
+					placeholder="Changeme123!"
 					autocomplete="new-password"
 				/>
+				<span class="text-xs text-surface-500 mt-1 block">
+					Standard build password is <code>Changeme123!</code>. Leave blank when cloning.
+				</span>
 			</label>
 		</div>
 	</section>
