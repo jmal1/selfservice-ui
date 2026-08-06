@@ -29,7 +29,6 @@
 		os_type: 'linux',
 		source_type: 'clone_template',
 		source_ref: '',
-		staging_network: 'PG-VM-Lab',
 		vcpus: 2,
 		ram_mb: 4096,
 		disk_gb: 40,
@@ -220,12 +219,12 @@
 
 			<label class="label">
 				<span class="text-sm">Staging network</span>
-				<input
-					class="input"
-					type="text"
-					bind:value={req.staging_network}
-					placeholder="PG-VM-Lab"
-				/>
+				<input class="input" type="text" value="PG-VM-Lab" readonly disabled />
+				<span class="text-xs text-surface-500">
+					Fixed. Every build VM is placed on the isolated <code>PG-VM-Lab</code>
+					(VLAN 30) network so a half-built image can never touch your real
+					network. This is a security control and can't be changed here.
+				</span>
 			</label>
 		</div>
 
