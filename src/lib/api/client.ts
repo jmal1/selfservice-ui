@@ -262,7 +262,6 @@ export interface CreateTemplateDraftRequest {
 	os_type: 'linux' | 'windows';
 	source_type: 'clone_template' | 'clone_vcenter' | 'iso';
 	source_ref: string;
-	staging_network?: string;
 	vcpus?: number;
 	ram_mb?: number;
 	disk_gb?: number;
