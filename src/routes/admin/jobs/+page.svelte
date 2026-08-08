@@ -65,20 +65,68 @@
 		return new Date(iso).toLocaleString();
 	}
 
+	// Coerce a job payload/result into a plain object for display. The API
+	// returns these as real JSON objects, but older builds (and any code path
+	// that double-encodes) can hand us a JSON string or a base64-encoded JSON
+	// string. Without this guard, Object.entries() on a string iterates it
+	// character-by-character and renders "0: e, 1: y, 2: J, …" — the bug this
+	// panel used to show for base64 payloads.
+	function asJobObject(value: unknown): Record<string, unknown> {
+		if (value == null) return {};
+		if (typeof value === 'object') return value as Record<string, unknown>;
+		if (typeof value !== 'string') return {};
+		const tryParse = (s: string): Record<string, unknown> | null => {
+			try {
+				const parsed = JSON.parse(s);
+				return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+					? (parsed as Record<string, unknown>)
+					: null;
+			} catch {
+				return null;
+			}
+		};
+		// Direct JSON string.
+		const direct = tryParse(value);
+		if (direct) return direct;
+		// Base64-encoded JSON string.
+		try {
+			const decoded = atob(value.trim());
+			const fromB64 = tryParse(decoded);
+			if (fromB64) return fromB64;
+		} catch {
+			// not base64 — fall through
+		}
+		return { value };
+	}
+
 	function getJobError(job: Job): string | null {
-		const result = job.result as Record<string, unknown> | null;
+		const result = asJobObject(job.result);
 		if (!result?.error) return null;
 		return String(result.error);
 	}
 
 	function getJobPayloadSummary(job: Job): { key: string; value: string }[] {
-		if (!job.payload) return [];
+		const payload = asJobObject(job.payload);
 		const entries: { key: string; value: string }[] = [];
-		for (const [key, value] of Object.entries(job.payload)) {
+		for (const [key, value] of Object.entries(payload)) {
 			if (key === 'user_id') continue; // Not useful for admin display
 			entries.push({ key, value: String(value) });
 		}
 		return entries;
+	}
+
+	function getJobResult(job: Job): Record<string, unknown> {
+		return asJobObject(job.result);
+	}
+
+	function getJobVMName(job: Job): string | null {
+		const payload = asJobObject(job.payload);
+		return typeof payload.vm_name === 'string' ? payload.vm_name : null;
+	}
+
+	function getJobPodName(job: Job): string | null {
+		const payload = asJobObject(job.payload);
+		return typeof payload.pod_name === 'string' ? payload.pod_name : null;
 	}
 
 	function toggleExpand(jobId: string) {
@@ -161,8 +209,8 @@
 									</td>
 									<td class="px-5 py-3">
 										<div class="font-medium text-surface-900 dark:text-surface-100">{formatType(job.type)}</div>
-										{#if job.payload?.vm_name}
-											<div class="text-xs text-surface-500">{job.payload.vm_name}{job.payload.pod_name ? ` · ${job.payload.pod_name}` : ''}</div>
+										{#if getJobVMName(job)}
+											<div class="text-xs text-surface-500">{getJobVMName(job)}{getJobPodName(job) ? ` · ${getJobPodName(job)}` : ''}</div>
 										{/if}
 									</td>
 									<td class="px-5 py-3"><StatusBadge status={job.status} /></td>
@@ -218,10 +266,10 @@
 												{/if}
 
 												<!-- Result -->
-												{#if job.result && Object.keys(job.result).length > 0}
+												{#if Object.keys(getJobResult(job)).length > 0}
 													<div>
 														<span class="text-xs font-semibold uppercase tracking-wider text-surface-500">Result</span>
-														<pre class="mt-1 rounded-lg bg-surface-800/50 px-3 py-2 text-xs text-surface-300 overflow-x-auto">{JSON.stringify(job.result, null, 2)}</pre>
+														<pre class="mt-1 rounded-lg bg-surface-800/50 px-3 py-2 text-xs text-surface-300 overflow-x-auto">{JSON.stringify(getJobResult(job), null, 2)}</pre>
 													</div>
 												{/if}
 											</div>
