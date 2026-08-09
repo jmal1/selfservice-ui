@@ -330,6 +330,25 @@ export function adminCreateTemplateDraft(req: CreateTemplateDraftRequest): Promi
 	});
 }
 
+// GuestOSOption is one entry in the wizard's "Guest OS" dropdown. It maps a
+// friendly Label to the vSphere guest_id an ISO build needs, plus the os_type
+// family (linux/windows) the wizard should auto-select. Sourced from
+// GET /admin/templates/guest-os-catalog (models.GuestOSCatalog in the API), so
+// the list stays in one place — adding an OS server-side surfaces here with no
+// UI change. The catalog is NOT an allowlist: instructors can also type any
+// "<name>Guest"-shaped id via the "Other (advanced)" field.
+export interface GuestOSOption {
+	label: string;
+	guest_id: string;
+	os_type: 'linux' | 'windows';
+	group: string;
+	note?: string;
+}
+
+export function adminListGuestOSCatalog(): Promise<{ options: GuestOSOption[] }> {
+	return apiFetch<{ options: GuestOSOption[] }>('/api/v1/admin/templates/guest-os-catalog');
+}
+
 export function adminProvisionTemplate(id: string): Promise<WizardJobResponse> {
 	return apiFetch<WizardJobResponse>(`/api/v1/admin/templates/${id}/provision`, {
 		method: 'POST'

@@ -5,9 +5,11 @@
 			adminCreateTemplateDraft,
 			adminListVCenterTemplatesFolder,
 			adminListVCenterISOs,
+			adminListGuestOSCatalog,
 			getTemplates,
 			ApiError,
 			type CreateTemplateDraftRequest,
+			type GuestOSOption,
 			type VCenterFolderVM
 		} from '$lib/api/client';
 		import type { Template, MergedISOEntry } from '$lib/types';
@@ -36,6 +38,7 @@
 		icon_url: '',
 		default_username: '',
 		default_password: '',
+		guest_id: '',
 		unattend_mode: 'manual',
 		unattend_config: {}
 	});
@@ -46,6 +49,55 @@
 	let loadingSources = $state(true);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
+
+	// Guest OS catalog powers the ISO "Guest OS" dropdown. The list comes from
+	// the API (GET /admin/templates/guest-os-catalog) so it stays in one place;
+	// if the call fails we fall back to a short built-in list of the OSes the
+	// os-recipes guide covers, so the wizard is never unusable. The sentinel
+	// OTHER value reveals a free-text box for typing an uncommon/future
+	// "<name>Guest" id by hand.
+	const OTHER = '__other__';
+	const guestOSFallback: GuestOSOption[] = [
+		{ label: 'Ubuntu / Linux Mint (64-bit)', guest_id: 'ubuntu64Guest', os_type: 'linux', group: 'Ubuntu family' },
+		{ label: 'Debian 12 / Kali (64-bit)', guest_id: 'debian12_64Guest', os_type: 'linux', group: 'Debian family' },
+		{ label: 'Debian 13 (64-bit)', guest_id: 'debian13_64Guest', os_type: 'linux', group: 'Debian family' },
+		{ label: 'Other Linux (64-bit)', guest_id: 'otherLinux64Guest', os_type: 'linux', group: 'Other' },
+		{ label: 'Windows 10 (64-bit)', guest_id: 'windows9_64Guest', os_type: 'windows', group: 'Windows client' },
+		{ label: 'Windows 11 (64-bit)', guest_id: 'windows11_64Guest', os_type: 'windows', group: 'Windows client' },
+		{ label: 'Windows Server 2016', guest_id: 'windows9Server64Guest', os_type: 'windows', group: 'Windows Server' },
+		{ label: 'Windows Server 2019', guest_id: 'windows2019srv_64Guest', os_type: 'windows', group: 'Windows Server' },
+		{ label: 'Windows Server 2022', guest_id: 'windows2019srvNext_64Guest', os_type: 'windows', group: 'Windows Server' },
+		{ label: 'Windows Server 2025', guest_id: 'windows2022srvNext_64Guest', os_type: 'windows', group: 'Windows Server' }
+	];
+	let guestOSCatalog = $state<GuestOSOption[]>(guestOSFallback);
+	// The dropdown selection: a guest_id from the catalog, '' (nothing picked),
+	// or OTHER (type it by hand). guest_id in req is the source of truth sent to
+	// the API; guestChoice just drives the UI.
+	let guestChoice = $state('');
+
+	// Group the catalog for <optgroup> rendering, preserving first-seen order.
+	let guestOSGroups = $derived.by(() => {
+		const groups: { name: string; options: GuestOSOption[] }[] = [];
+		for (const o of guestOSCatalog) {
+			let g = groups.find((x) => x.name === o.group);
+			if (!g) {
+				g = { name: o.group || 'Other', options: [] };
+				groups.push(g);
+			}
+			g.options.push(o);
+		}
+		return groups;
+	});
+
+	function onGuestChoice() {
+		if (guestChoice === OTHER) {
+			// Keep whatever the user has typed; don't clobber os_type.
+			return;
+		}
+		req.guest_id = guestChoice;
+		const opt = guestOSCatalog.find((o) => o.guest_id === guestChoice);
+		if (opt) req.os_type = opt.os_type;
+	}
 
 	// Unattend config fields (bound separately, merged into req.unattend_config on submit)
 	let unattendHostname = $state('');
@@ -63,14 +115,18 @@
 			return;
 		}
 		try {
-			const [tpls, folder, vcISOs] = await Promise.all([
+			const [tpls, folder, vcISOs, catalog] = await Promise.all([
 				getTemplates(),
 				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
-				adminListVCenterISOs().catch(() => ({ isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 }))
+				adminListVCenterISOs().catch(() => ({ isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 })),
+				adminListGuestOSCatalog().catch(() => ({ options: guestOSFallback }))
 			]);
 			existingTemplates = tpls;
 			vcenterVMs = folder.vms ?? [];
 			mergedISOs = vcISOs.isos ?? [];
+			if (catalog.options && catalog.options.length > 0) {
+				guestOSCatalog = catalog.options;
+			}
 		} catch (err) {
 			console.error('load source data', err);
 			toastStore.error('Could not load source options', String(err));
@@ -86,6 +142,10 @@
 		}
 		if (!req.source_ref) {
 			error = 'Pick a source';
+			return false;
+		}
+		if (req.source_type === 'iso' && !(req.guest_id ?? '').trim()) {
+			error = 'Pick a Guest OS (or choose "Other (advanced)" and type a guest OS ID) for an ISO build';
 			return false;
 		}
 		if ((req.vcpus ?? 0) < 1 || (req.ram_mb ?? 0) < 512 || (req.disk_gb ?? 0) < 10) {
@@ -118,6 +178,7 @@
 				req.unattend_config = Object.keys(cfg).length > 0 ? cfg : {};
 			} else {
 				// Clear ISO-only fields for non-ISO installs
+				req.guest_id = undefined;
 				req.unattend_mode = undefined;
 				req.unattend_config = undefined;
 			}
@@ -324,6 +385,44 @@
 							</p>
 						{/if}
 					</label>
+
+				<label class="label">
+					<span class="text-sm">Guest OS *</span>
+					<select class="select" bind:value={guestChoice} onchange={onGuestChoice}>
+						<option value="">— pick the OS you're installing —</option>
+						{#each guestOSGroups as g (g.name)}
+							<optgroup label={g.name}>
+								{#each g.options as o (o.guest_id)}
+									<option value={o.guest_id}>{o.label} ({o.guest_id})</option>
+								{/each}
+							</optgroup>
+						{/each}
+						<option value={OTHER}>Other (advanced) — type a guest OS ID…</option>
+					</select>
+					<span class="text-xs text-surface-500 mt-1 block">
+						Tells VMware which OS you're installing. Pick the entry that matches
+						your ISO. The recipe for your OS in the
+						<a href="/wiki?file=docs/instructor/os-recipes.md" class="anchor">OS recipes guide</a>
+						lists the exact code to confirm. Choosing an OS also sets the
+						<strong>OS family</strong> above.
+					</span>
+					{#if guestChoice === OTHER}
+						<input
+							class="input mt-2"
+							type="text"
+							bind:value={req.guest_id}
+							placeholder="e.g. fedora64Guest"
+							autocomplete="off"
+							spellcheck="false"
+						/>
+						<span class="text-xs text-surface-500 mt-1 block">
+							Type any vSphere guest OS ID — it must look like
+							<code>&lt;name&gt;Guest</code> (e.g. <code>fedora64Guest</code>,
+							<code>rockylinux_64Guest</code>). Also set the correct
+							<strong>OS family</strong> above yourself.
+						</span>
+					{/if}
+				</label>
 
 				<div class="space-y-3 border border-surface-200 dark:border-surface-700 rounded p-4 mt-2">
 					<h3 class="text-sm font-semibold">Unattended install</h3>
