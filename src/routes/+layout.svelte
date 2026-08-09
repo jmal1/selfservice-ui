@@ -4,7 +4,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { config } from '$lib/config';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
 	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
@@ -309,6 +309,28 @@
 
 	<!-- Main content -->
 	<main id="main-content" class="{showSidebar ? 'md:ml-64' : ''} {showSidebar ? 'mt-14 md:mt-0' : ''} flex-1 overflow-y-auto p-4 md:p-6">
+		{#if updated.current}
+			<!--
+				A newer build was deployed while this tab was open. Serving stale
+				JS is what made the template wizard's "ISO install" branch appear
+				stuck. Reloading loads the fresh bundle. Non-destructive: the user
+				chooses when to reload so in-progress form input isn't lost.
+			-->
+			<aside
+				class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary-400/40 bg-primary-500/10 px-4 py-3 text-sm"
+				role="status"
+			>
+				<span class="font-medium text-surface-900 dark:text-surface-100">
+					A new version of Crucible is available.
+				</span>
+				<button
+					onclick={() => location.reload()}
+					class="rounded-md bg-primary-500 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+				>
+					Reload now
+				</button>
+			</aside>
+		{/if}
 		{@render children()}
 	</main>
 
