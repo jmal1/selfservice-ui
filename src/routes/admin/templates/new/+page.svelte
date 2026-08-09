@@ -46,6 +46,12 @@
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
 	let mergedISOs = $state<MergedISOEntry[]>([]);
+	// When the ISO fetch fails (auth/vCenter/timeout) we must NOT silently show
+	// "No ISOs available yet" — that misleads the instructor into uploading an
+	// ISO that already exists. Capture the failure so the ISO branch can show a
+	// distinct "Couldn't load ISOs — <reason>" panel with a Retry button.
+	let isoLoadError = $state<string | null>(null);
+	let refreshingISOs = $state(false);
 	let loadingSources = $state(true);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
@@ -99,6 +105,22 @@
 		if (opt) req.os_type = opt.os_type;
 	}
 
+	// Re-fetch the ISO list on demand (force a fresh vCenter scan, bypassing the
+	// server cache) — used by the Retry button after a load error and the
+	// "Refresh ISOs" button after an instructor uploads/imports a new ISO.
+	async function reloadISOs() {
+		refreshingISOs = true;
+		isoLoadError = null;
+		try {
+			const r = await adminListVCenterISOs(true);
+			mergedISOs = r.isos ?? [];
+		} catch (e) {
+			isoLoadError = e instanceof ApiError ? `${e.status} ${e.message}` : String(e);
+		} finally {
+			refreshingISOs = false;
+		}
+	}
+
 	// Unattend config fields (bound separately, merged into req.unattend_config on submit)
 	let unattendHostname = $state('');
 	let unattendUsername = $state('');
@@ -118,7 +140,10 @@
 			const [tpls, folder, vcISOs, catalog] = await Promise.all([
 				getTemplates(),
 				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
-				adminListVCenterISOs().catch(() => ({ isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 })),
+				adminListVCenterISOs().catch((e) => {
+					isoLoadError = e instanceof ApiError ? `${e.status} ${e.message}` : String(e);
+					return { isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 };
+				}),
 				adminListGuestOSCatalog().catch(() => ({ options: guestOSFallback }))
 			]);
 			existingTemplates = tpls;
@@ -352,8 +377,18 @@
 		{:else if req.source_type === 'iso'}
 				<label class="label">
 					<span class="text-sm">ISO source *</span>
-						{#if loadingSources}
+						{#if refreshingISOs}
 							<p class="text-sm text-surface-500">Loading ISOs…</p>
+						{:else if isoLoadError}
+							<!-- Distinct error state: the fetch failed, so we do NOT
+							     claim there are no ISOs. Show why + let them retry. -->
+							<aside class="card preset-tonal-error p-3 text-sm space-y-2">
+								<p class="font-semibold">⚠️ Couldn't load ISOs</p>
+								<p>{isoLoadError}</p>
+								<button type="button" class="btn btn-sm preset-filled-primary" onclick={reloadISOs}>
+									Retry
+								</button>
+							</aside>
 						{:else if mergedISOs.length === 0}
 							<!-- Empty state: guide the instructor to upload an ISO first -->
 							<aside class="card preset-tonal-warning p-3 text-sm space-y-2">
@@ -363,6 +398,9 @@
 									<a href="/admin/images" class="anchor font-semibold">Images page</a>
 									and wait for the import to finish. The import starts automatically after the upload completes.
 								</p>
+								<button type="button" class="btn btn-sm preset-tonal" onclick={reloadISOs}>
+									Refresh ISOs
+								</button>
 							</aside>
 						{:else}
 							<select class="select" bind:value={req.source_ref}>
@@ -379,10 +417,15 @@
 									</option>
 								{/each}
 							</select>
-							<p class="text-xs text-surface-500 mt-1">
-								Entries labelled ⏳ are still importing and will become available shortly.
-								<a href="/admin/images" class="anchor">Manage images →</a>
-							</p>
+							<div class="flex items-center gap-3 mt-1">
+								<p class="text-xs text-surface-500">
+									Entries labelled ⏳ are still importing and will become available shortly.
+									<a href="/admin/images" class="anchor">Manage images →</a>
+								</p>
+								<button type="button" class="btn btn-sm preset-tonal ml-auto" onclick={reloadISOs}>
+									Refresh ISOs
+								</button>
+							</div>
 						{/if}
 					</label>
 
