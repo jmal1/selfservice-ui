@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { getTemplates, getResourceUsage, createPod, getPods, addVM, getBlueprints, deployBlueprint } from '$lib/api/client';
@@ -99,7 +100,7 @@
 				}
 			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load data';
+			error = friendlyError(e, 'Failed to load data');
 		} finally {
 			loading = false;
 		}
@@ -181,7 +182,7 @@
 				await goto('/');
 			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to deploy';
+			error = friendlyError(e, 'Failed to deploy');
 			submitting = false;
 		}
 	}

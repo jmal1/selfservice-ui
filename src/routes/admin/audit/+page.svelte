@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminSearchAuditLog, adminListSessions } from '$lib/api/client';
 	import type { AuditEntry, AuditLogPage, ActiveSession } from '$lib/types';
@@ -34,7 +35,7 @@
 			if (sinceFilter) params.since = new Date(sinceFilter).toISOString();
 			page = await adminSearchAuditLog(params);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load audit log';
+			error = friendlyError(e, 'Failed to load audit log');
 		} finally {
 			loading = false;
 		}

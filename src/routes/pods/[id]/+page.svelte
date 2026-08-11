@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import {
@@ -68,7 +69,7 @@
 			pod.expires_at = result.expires_at;
 			toastStore.success(`Extended by ${result.extended_by_days} days`);
 		} catch (e) {
-			toastStore.error(`Failed to extend: ${e instanceof Error ? e.message : 'Unknown error'}`);
+			toastStore.error(friendlyError(e, 'Failed to extend your environment. Please try again.'));
 		} finally {
 			extendLoading = false;
 		}
@@ -167,7 +168,7 @@
 		try {
 			pod = await getPod(podId);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load pod';
+			error = friendlyError(e, 'Failed to load pod');
 		} finally {
 			loading = false;
 		}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
 		adminListTemplates,
@@ -82,7 +83,7 @@
 				playlistsLoaded = true;
 			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load templates';
+			error = friendlyError(e, 'Failed to load templates');
 		} finally {
 			loading = false;
 		}
@@ -121,7 +122,7 @@
 			toastStore.success('Playlists updated');
 			playlistEditingTemplateId = null;
 		} catch (e: any) {
-			error = e instanceof Error ? e.message : 'Failed to save playlists';
+			error = friendlyError(e, 'Failed to save playlists');
 		} finally {
 			savingPlaylists = false;
 		}
@@ -172,7 +173,7 @@
 					'This template was modified by another admin since you opened the edit form. ' +
 					'Cancel and re-open the row to load the latest version, then re-apply your changes.';
 			} else {
-				error = e instanceof Error ? e.message : 'Failed to update template';
+				error = friendlyError(e, 'Failed to update template');
 			}
 		} finally {
 			saving = false;
@@ -186,7 +187,7 @@
 			const updated = await adminUpdateTemplate(t.id, { is_active: !t.is_active });
 			templates = templates.map((tmpl) => (tmpl.id === t.id ? updated : tmpl));
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to toggle template';
+			error = friendlyError(e, 'Failed to toggle template');
 		} finally {
 			saving = false;
 		}
@@ -209,7 +210,7 @@
 			templates = [...templates, created];
 			showCreate = false;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to create template';
+			error = friendlyError(e, 'Failed to create template');
 		} finally {
 			saving = false;
 		}
@@ -223,7 +224,7 @@
 			templates = templates.filter((t) => t.id !== id);
 			deletingId = null;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to delete template';
+			error = friendlyError(e, 'Failed to delete template');
 		} finally {
 			saving = false;
 		}

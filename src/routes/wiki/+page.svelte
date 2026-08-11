@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { page } from '$app/state';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
@@ -125,7 +126,7 @@
 			index = await wikiGetIndex();
 			indexError = null;
 		} catch (e) {
-			indexError = e instanceof Error ? e.message : 'Failed to load wiki index';
+			indexError = friendlyError(e, 'Failed to load wiki index');
 		} finally {
 			loadingIndex = false;
 		}
@@ -139,7 +140,7 @@
 		try {
 			pageBody = await wikiGetPage(path);
 		} catch (e) {
-			pageError = e instanceof Error ? e.message : 'Failed to load page';
+			pageError = friendlyError(e, 'Failed to load page');
 			pageBody = '';
 		} finally {
 			loadingPage = false;

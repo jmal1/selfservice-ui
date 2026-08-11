@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetHealth, type HealthResponse, type HealthDepStatus } from '$lib/api/client';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
@@ -18,7 +19,7 @@
 			error = null;
 			lastFetched = new Date();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load health';
+			error = friendlyError(e, 'Failed to load health');
 		} finally {
 			loading = false;
 			fetching = false;

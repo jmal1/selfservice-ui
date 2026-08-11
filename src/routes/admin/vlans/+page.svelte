@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
 		adminGetVLANPool,
@@ -54,7 +55,7 @@
 		try {
 			vlans = await adminGetVLANPool();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load VLAN pool';
+			error = friendlyError(e, 'Failed to load VLAN pool');
 		} finally {
 			loading = false;
 		}
@@ -86,7 +87,7 @@
 			showAdd = false;
 			flash(`VLAN ${entry.vlan_tag} added`);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to add VLAN';
+			error = friendlyError(e, 'Failed to add VLAN');
 		} finally {
 			saving = false;
 		}
@@ -126,7 +127,7 @@
 			showBatchAdd = false;
 			flash(`Added ${added} VLANs` + (skipped ? `, ${skipped} skipped (already exist)` : ''));
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Batch add failed';
+			error = friendlyError(e, 'Batch add failed');
 		} finally {
 			saving = false;
 		}
@@ -146,7 +147,7 @@
 			editingId = null;
 			flash(`VLAN ${updated.vlan_tag} scope updated to "${updated.host_scope}"`);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to update VLAN';
+			error = friendlyError(e, 'Failed to update VLAN');
 		} finally {
 			saving = false;
 		}
@@ -162,7 +163,7 @@
 			deletingId = null;
 			flash(`VLAN ${entry?.vlan_tag ?? id} removed`);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to remove VLAN';
+			error = friendlyError(e, 'Failed to remove VLAN');
 		} finally {
 			saving = false;
 		}
