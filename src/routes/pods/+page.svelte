@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { getPods } from '$lib/api/client';
 	import type { Pod } from '$lib/types';
 	import PodList from '$lib/components/PodList.svelte';
@@ -13,7 +14,7 @@
 		try {
 			pods = await getPods();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load environments';
+			error = friendlyError(e, 'Failed to load environments');
 		} finally {
 			loading = false;
 		}

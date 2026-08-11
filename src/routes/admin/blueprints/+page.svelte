@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import {
 		adminGetBlueprints,
@@ -86,7 +87,7 @@
 			blueprints = bps;
 			templates = tpls;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load data';
+			error = friendlyError(e, 'Failed to load data');
 		} finally {
 			loading = false;
 		}
@@ -96,7 +97,7 @@
 		try {
 			blueprints = await adminGetBlueprints();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load blueprints';
+			error = friendlyError(e, 'Failed to load blueprints');
 		}
 	}
 
@@ -178,7 +179,7 @@
 			blueprints = [...blueprints, created];
 			showCreate = false;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to create blueprint';
+			error = friendlyError(e, 'Failed to create blueprint');
 		} finally {
 			saving = false;
 		}
@@ -215,7 +216,7 @@
 			blueprints = blueprints.map((b) => (b.id === id ? updated : b));
 			editingId = null;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to update blueprint';
+			error = friendlyError(e, 'Failed to update blueprint');
 		} finally {
 			saving = false;
 		}
@@ -229,7 +230,7 @@
 			const updated = await adminUpdateBlueprint(bp.id, { is_active: !bp.is_active } as unknown as CreateBlueprintRequest);
 			blueprints = blueprints.map((b) => (b.id === bp.id ? updated : b));
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to toggle blueprint';
+			error = friendlyError(e, 'Failed to toggle blueprint');
 		} finally {
 			saving = false;
 		}
@@ -244,7 +245,7 @@
 			blueprints = blueprints.filter((b) => b.id !== id);
 			deletingId = null;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to delete blueprint';
+			error = friendlyError(e, 'Failed to delete blueprint');
 		} finally {
 			saving = false;
 		}

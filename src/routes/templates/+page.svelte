@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { getTemplates } from '$lib/api/client';
 	import type { Template } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
@@ -28,7 +29,7 @@
 		try {
 			templates = await getTemplates();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load templates';
+			error = friendlyError(e, 'Failed to load templates');
 		} finally {
 			loading = false;
 		}

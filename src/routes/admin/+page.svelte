@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { getPods, adminGetUsers } from '$lib/api/client';
 	import type { Pod, User } from '$lib/types';
@@ -17,12 +18,12 @@
 		try {
 			pods = await getPods();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load admin data';
+			error = friendlyError(e, 'Failed to load admin data');
 		}
 		try {
 			users = await adminGetUsers();
 		} catch (e) {
-			if (!error) error = e instanceof Error ? e.message : 'Failed to load users';
+			if (!error) error = friendlyError(e, 'Failed to load users');
 		}
 		loading = false;
 	}

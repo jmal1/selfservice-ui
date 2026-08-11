@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
@@ -37,7 +38,7 @@
 		try {
 			jobs = await adminGetJobs();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load jobs';
+			error = friendlyError(e, 'Failed to load jobs');
 		} finally {
 			loading = false;
 		}

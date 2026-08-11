@@ -16,6 +16,7 @@
 -->
 <script lang="ts">
 	import { page } from '$app/state';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { config } from '$lib/config';
 	import { getPod, resumeVM } from '$lib/api/client';
 	import { onMount } from 'svelte';
@@ -70,7 +71,7 @@
 			isSuspended = false;
 			readyForConsole = true;
 		} catch (e) {
-			resumeError = e instanceof Error ? e.message : 'Resume failed. Please try again.';
+			resumeError = friendlyError(e, 'Resume failed. Please try again.');
 		} finally {
 			resumeLoading = false;
 		}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetUsers, adminUpdateQuota } from '$lib/api/client';
 	import type { User } from '$lib/types';
@@ -20,7 +21,7 @@
 		try {
 			users = await adminGetUsers();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load users';
+			error = friendlyError(e, 'Failed to load users');
 		} finally {
 			loading = false;
 		}
@@ -57,7 +58,7 @@
 			users = users.map((u) => (u.id === userId ? updated : u));
 			editingId = null;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to update quota';
+			error = friendlyError(e, 'Failed to update quota');
 		} finally {
 			saving = false;
 		}
