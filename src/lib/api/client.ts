@@ -2,7 +2,14 @@ import { goto } from '$app/navigation';
 import { authStore } from '$lib/stores/auth.svelte';
 import { config } from '$lib/config';
 import { mockApi } from './mock';
-import { normalizeBlueprint } from './normalize';
+import {
+	normalizeBlueprint,
+	normalizePod,
+	normalizeWorkflow,
+	normalizePlaylist,
+	normalizeRun,
+	asArray
+} from './normalize';
 import type {
 	Pod,
 	PodVM,
@@ -82,15 +89,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 // --- Pods ---
 
-// Normalize pod data — ensure vms array is never null
-function normalizePod(pod: Pod): Pod {
-	return { ...pod, vms: pod.vms ?? [] };
-}
-
 export async function getPods(): Promise<Pod[]> {
 	if (isMock) return mockApi.getPods();
 	const pods = await apiFetch<Pod[]>('/api/v1/pods');
-	return (pods ?? []).map(normalizePod);
+	return asArray(pods).map(normalizePod);
 }
 
 export async function getPod(id: string): Promise<Pod> {
@@ -198,7 +200,7 @@ export function getConsoleTicket(podId: string, vmId: string): Promise<ConsoleTi
 
 export function getTemplates(): Promise<Template[]> {
 	if (isMock) return mockApi.getTemplates();
-	return apiFetch<Template[]>('/api/v1/templates');
+	return apiFetch<Template[]>('/api/v1/templates').then(asArray);
 }
 
 // adminListTemplates returns ALL templates regardless of is_active or
@@ -207,7 +209,7 @@ export function getTemplates(): Promise<Template[]> {
 // is_active=true and would hide them).
 export function adminListTemplates(): Promise<Template[]> {
 	if (isMock) return mockApi.getTemplates();
-	return apiFetch<Template[]>('/api/v1/admin/templates');
+	return apiFetch<Template[]>('/api/v1/admin/templates').then(asArray);
 }
 
 export type TemplateVisibility = 'public' | 'instructor_only';
@@ -533,14 +535,14 @@ export async function getResourceUsage(): Promise<ResourceUsage> {
 export async function getMyJobs(): Promise<Job[]> {
 	if (isMock) return mockApi.adminGetJobs();
 	const jobs = await apiFetch<Job[]>('/api/v1/jobs');
-	return jobs ?? [];
+	return asArray(jobs);
 }
 
 // --- Admin ---
 
 export function adminGetUsers(): Promise<User[]> {
 	if (isMock) return mockApi.adminGetUsers();
-	return apiFetch<User[]>('/api/v1/admin/users');
+	return apiFetch<User[]>('/api/v1/admin/users').then(asArray);
 }
 
 export interface UpdateQuotaRequest {
@@ -559,12 +561,12 @@ export function adminUpdateQuota(userId: string, req: UpdateQuotaRequest): Promi
 
 export function adminGetJobs(): Promise<Job[]> {
 	if (isMock) return mockApi.adminGetJobs();
-	return apiFetch<Job[]>('/api/v1/admin/jobs');
+	return apiFetch<Job[]>('/api/v1/admin/jobs').then(asArray);
 }
 
 export function adminGetAuditLog(): Promise<AuditEntry[]> {
 	if (isMock) return mockApi.adminGetAuditLog();
-	return apiFetch<AuditEntry[]>('/api/v1/admin/audit');
+	return apiFetch<AuditEntry[]>('/api/v1/admin/audit').then(asArray);
 }
 
 export function adminSearchAuditLog(params: {
@@ -589,7 +591,7 @@ export function adminSearchAuditLog(params: {
 }
 
 export function adminListSessions(): Promise<ActiveSession[]> {
-	return apiFetch<ActiveSession[]>('/api/v1/admin/sessions');
+	return apiFetch<ActiveSession[]>('/api/v1/admin/sessions').then(asArray);
 }
 
 // --- Admin Health Dashboard ---
@@ -722,7 +724,7 @@ export function adminRemoveVLAN(id: number): Promise<void> {
 // --- Snapshot Operations ---
 
 export function listSnapshots(podId: string, vmId: string): Promise<VMSnapshot[]> {
-	return apiFetch<VMSnapshot[]>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots`);
+	return apiFetch<VMSnapshot[]>(`/api/v1/pods/${podId}/vms/${vmId}/snapshots`).then(asArray);
 }
 
 export function createSnapshot(
@@ -858,11 +860,11 @@ export function createTestingRun(
 }
 
 export function listTestingRuns(podId: string): Promise<Run[]> {
-	return apiFetch<Run[]>(`/api/v1/pods/${podId}/testing/runs`);
+	return apiFetch<Run[]>(`/api/v1/pods/${podId}/testing/runs`).then((d) => asArray(d).map(normalizeRun));
 }
 
 export function getTestingRun(podId: string, runId: string): Promise<Run> {
-	return apiFetch<Run>(`/api/v1/pods/${podId}/testing/runs/${runId}`);
+	return apiFetch<Run>(`/api/v1/pods/${podId}/testing/runs/${runId}`).then(normalizeRun);
 }
 
 export function cancelTestingRun(podId: string, runId: string): Promise<{ status: string }> {
@@ -875,11 +877,11 @@ export function cancelTestingRun(podId: string, runId: string): Promise<{ status
 
 export async function adminListWorkflows(): Promise<Workflow[]> {
 	const data = await apiFetch<Workflow[] | null>('/api/v1/admin/workflows');
-	return Array.isArray(data) ? data : [];
+	return asArray(data).map(normalizeWorkflow);
 }
 
 export function adminGetWorkflow(id: string): Promise<Workflow> {
-	return apiFetch<Workflow>(`/api/v1/admin/workflows/${id}`);
+	return apiFetch<Workflow>(`/api/v1/admin/workflows/${id}`).then(normalizeWorkflow);
 }
 
 export function adminCreateWorkflow(wf: Partial<Workflow>): Promise<Workflow> {
@@ -920,18 +922,18 @@ export function adminImportWorkflows(workflows: Partial<Workflow>[]): Promise<{ 
 }
 
 export function adminExportWorkflows(): Promise<Workflow[]> {
-	return apiFetch<Workflow[]>('/api/v1/admin/workflows/export');
+	return apiFetch<Workflow[]>('/api/v1/admin/workflows/export').then((d) => asArray(d).map(normalizeWorkflow));
 }
 
 // --- Admin Playlists ---
 
 export async function adminListPlaylists(): Promise<Playlist[]> {
 	const data = await apiFetch<Playlist[] | null>('/api/v1/admin/playlists');
-	return Array.isArray(data) ? data : [];
+	return asArray(data).map(normalizePlaylist);
 }
 
 export function adminGetPlaylist(id: string): Promise<Playlist> {
-	return apiFetch<Playlist>(`/api/v1/admin/playlists/${id}`);
+	return apiFetch<Playlist>(`/api/v1/admin/playlists/${id}`).then(normalizePlaylist);
 }
 
 export function adminCreatePlaylist(pl: { name: string; slug: string; description: string; workflow_ids: string[] }): Promise<Playlist> {
@@ -1012,12 +1014,12 @@ export async function adminListRuns(params?: {
 	if (params?.limit) url.searchParams.set('limit', String(params.limit));
 	if (params?.offset) url.searchParams.set('offset', String(params.offset));
 	const data = await apiFetch<Run[] | null>(url.pathname + url.search);
-	return Array.isArray(data) ? data : [];
+	return asArray(data).map(normalizeRun);
 }
 
 export function adminGetRun(runId: string): Promise<Run> {
 	if (isMock) return mockApi.adminGetRun(runId);
-	return apiFetch<Run>(`/api/v1/admin/runs/${runId}`);
+	return apiFetch<Run>(`/api/v1/admin/runs/${runId}`).then(normalizeRun);
 }
 
 // --- Admin Actions (Library) ---
