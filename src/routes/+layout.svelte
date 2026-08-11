@@ -6,6 +6,7 @@
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
 	import Toast from '$lib/components/Toast.svelte';
+	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
 
 	let { children } = $props();
 
@@ -331,7 +332,18 @@
 				</button>
 			</aside>
 		{/if}
-		{@render children()}
+		<!--
+			Render-time crash boundary. A throw while rendering a page (e.g. the
+			Blueprints outage: iterating an array the API omitted) is contained
+			here so only the main content shows a fallback while the sidebar and
+			the rest of the app keep working. Keyed on the pathname so navigating
+			to another route mounts a fresh boundary and clears any prior crash.
+		-->
+		{#key page.url.pathname}
+			<ErrorBoundary label="this page">
+				{@render children()}
+			</ErrorBoundary>
+		{/key}
 	</main>
 
 	<Toast />
