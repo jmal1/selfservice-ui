@@ -2,6 +2,7 @@ import { goto } from '$app/navigation';
 import { authStore } from '$lib/stores/auth.svelte';
 import { config } from '$lib/config';
 import { mockApi } from './mock';
+import { normalizeBlueprint } from './normalize';
 import type {
 	Pod,
 	PodVM,
@@ -779,9 +780,11 @@ export function deployBlueprint(id: string, name: string): Promise<{ job_id: str
 
 // --- Admin Blueprints ---
 
+// Normalize blueprint data — ensure vms array is never null/undefined.
+// See normalizeBlueprint in ./normalize for why the API can omit `vms`.
 export async function adminGetBlueprints(): Promise<Blueprint[]> {
 	const blueprints = await apiFetch<Blueprint[]>('/api/v1/admin/blueprints');
-	return blueprints ?? [];
+	return (blueprints ?? []).map(normalizeBlueprint);
 }
 
 export interface CreateBlueprintRequest {
@@ -800,18 +803,22 @@ export interface CreateBlueprintRequest {
 	}[];
 }
 
-export function adminCreateBlueprint(req: CreateBlueprintRequest): Promise<Blueprint> {
-	return apiFetch<Blueprint>('/api/v1/admin/blueprints', {
-		method: 'POST',
-		body: JSON.stringify(req)
-	});
+export async function adminCreateBlueprint(req: CreateBlueprintRequest): Promise<Blueprint> {
+	return normalizeBlueprint(
+		await apiFetch<Blueprint>('/api/v1/admin/blueprints', {
+			method: 'POST',
+			body: JSON.stringify(req)
+		})
+	);
 }
 
-export function adminUpdateBlueprint(id: string, req: CreateBlueprintRequest): Promise<Blueprint> {
-	return apiFetch<Blueprint>(`/api/v1/admin/blueprints/${id}`, {
-		method: 'PUT',
-		body: JSON.stringify(req)
-	});
+export async function adminUpdateBlueprint(id: string, req: CreateBlueprintRequest): Promise<Blueprint> {
+	return normalizeBlueprint(
+		await apiFetch<Blueprint>(`/api/v1/admin/blueprints/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(req)
+		})
+	);
 }
 
 export function adminDeleteBlueprint(id: string): Promise<void> {
