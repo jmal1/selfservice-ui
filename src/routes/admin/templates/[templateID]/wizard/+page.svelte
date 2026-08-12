@@ -14,10 +14,12 @@
 		adminRetryTemplate,
 		adminGetResolvedCredentials,
 		adminRunPreflight,
+		adminTemplatePower,
 		ApiError,
 		type WizardStateResponse,
 		type PreflightResult,
-		type PreflightResponse
+		type PreflightResponse,
+		type TemplatePowerAction
 	} from '$lib/api/client';
 	import type { ResolvedCredentialsResponse } from '$lib/types';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
@@ -125,6 +127,33 @@
 			error = err instanceof ApiError ? `${err.status}: ${err.message}` : String(err);
 		} finally {
 			loading = false;
+		}
+	}
+
+	// Power controls for the staging build VM (wizard-only). The power endpoint
+	// just acks the command, so we re-fetch wizard-state a couple of times after
+	// it succeeds to pick up the new build_vm_power_on once vCenter settles.
+	async function handlePower(action: TemplatePowerAction) {
+		const labels: Record<TemplatePowerAction, string> = {
+			start: 'Start',
+			stop: 'Stop',
+			restart: 'Restart',
+			reset: 'Reset'
+		};
+		const label = labels[action];
+		try {
+			await adminTemplatePower(templateID, action);
+			toastStore.success(`${label} VM`, 'Power command sent.');
+			// Poll a few times: power state doesn't flip instantly in vCenter.
+			await reload();
+			for (let i = 0; i < 2; i++) {
+				await new Promise((r) => setTimeout(r, 1500));
+				await reload();
+			}
+		} catch (err) {
+			const reason =
+				err instanceof ApiError ? (err.body?.reason as string) ?? err.message : String(err);
+			toastStore.error(`${label} VM failed`, reason);
 		}
 	}
 
@@ -451,7 +480,7 @@
 				</p>
 
 				{#if buildVMAccess}
-					<VMAccessPanel info={buildVMAccess} />
+					<VMAccessPanel info={buildVMAccess} showPowerControls onPower={handlePower} />
 				{/if}
 
 				{#if credentialsResolved && !credsOverrideMode}

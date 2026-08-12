@@ -1,8 +1,26 @@
 <script lang="ts">
 	import type { VMAccessInfo } from '$lib/types/vm-access';
+	import type { TemplatePowerAction } from '$lib/api/client';
 	import { copyToClipboard } from '$lib/utils/clipboard';
 
-	let { info }: { info: VMAccessInfo } = $props();
+	let {
+		info,
+		showPowerControls = false,
+		onPower
+	}: {
+		info: VMAccessInfo;
+		/** When true (and the VM has a vCenter moref), render Start/Stop/
+		 *  Restart/Reset controls. Off by default so the student pod usage of
+		 *  this panel is unchanged — power controls are wizard-only. */
+		showPowerControls?: boolean;
+		/** Handler invoked with the chosen power action. The panel awaits it
+		 *  and shows a busy state on the clicked button while it runs. */
+		onPower?: (action: TemplatePowerAction) => void | Promise<void>;
+	} = $props();
+
+	// Which power action is currently in-flight (null when idle). Drives the
+	// disabled/spinner state on every power button while a request runs.
+	let powerBusy = $state<TemplatePowerAction | null>(null);
 
 	let copiedField = $state<string | null>(null);
 	let showPassword = $state(false);
@@ -42,6 +60,16 @@
 	function openConsole() {
 		if (!consoleHref) return;
 		window.open(consoleHref, '_blank');
+	}
+
+	async function handlePower(action: TemplatePowerAction) {
+		if (!onPower || powerBusy) return;
+		powerBusy = action;
+		try {
+			await onPower(action);
+		} finally {
+			powerBusy = null;
+		}
 	}
 
 	function downloadRdp() {
@@ -170,6 +198,55 @@
 				{/if}
 			</div>
 		</div>
+
+		{#if showPowerControls && hasVCenter && onPower}
+			<!-- Wizard-only: power controls for the staging build VM. Start is
+			     available when the VM is off; Stop/Restart/Reset when it's on.
+			     Hidden entirely in the student pod view (showPowerControls off). -->
+			<div class="mt-3 flex flex-wrap items-center gap-2 border-t border-surface-200 dark:border-surface-800/50 pt-3">
+				<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">Power</span>
+				<button
+					class="rounded-lg border border-success-500/30 bg-success-500/10 px-3 py-1 text-xs font-medium text-success-400 transition-colors hover:bg-success-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+					onclick={() => handlePower('start')}
+					disabled={isPoweredOn || powerBusy !== null}
+					aria-busy={powerBusy === 'start'}
+					aria-label="Start staging VM"
+					title={isPoweredOn ? 'VM is already powered on' : 'Power on the staging VM'}
+				>
+					{powerBusy === 'start' ? '… Starting' : '▶ Start'}
+				</button>
+				<button
+					class="rounded-lg border border-error-500/30 bg-error-500/10 px-3 py-1 text-xs font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+					onclick={() => handlePower('stop')}
+					disabled={!isPoweredOn || powerBusy !== null}
+					aria-busy={powerBusy === 'stop'}
+					aria-label="Stop staging VM"
+					title={isPoweredOn ? 'Power off the staging VM' : 'VM is already powered off'}
+				>
+					{powerBusy === 'stop' ? '… Stopping' : '⏹ Stop'}
+				</button>
+				<button
+					class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs font-medium text-surface-500 dark:text-surface-300 transition-colors hover:bg-surface-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+					onclick={() => handlePower('restart')}
+					disabled={!isPoweredOn || powerBusy !== null}
+					aria-busy={powerBusy === 'restart'}
+					aria-label="Restart staging VM"
+					title={isPoweredOn ? 'Gracefully restart the staging VM' : 'VM must be powered on'}
+				>
+					{powerBusy === 'restart' ? '… Restarting' : '↻ Restart'}
+				</button>
+				<button
+					class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1 text-xs font-medium text-surface-500 dark:text-surface-300 transition-colors hover:bg-surface-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+					onclick={() => handlePower('reset')}
+					disabled={!isPoweredOn || powerBusy !== null}
+					aria-busy={powerBusy === 'reset'}
+					aria-label="Reset staging VM"
+					title={isPoweredOn ? 'Hard-reset (power-cycle) the staging VM' : 'VM must be powered on'}
+				>
+					{powerBusy === 'reset' ? '… Resetting' : '⤾ Reset'}
+				</button>
+			</div>
+		{/if}
 
 		{#if isStaticCreds && hasCredentials}
 			<!-- T3.4: shared-credentials hint. These creds are baked into the

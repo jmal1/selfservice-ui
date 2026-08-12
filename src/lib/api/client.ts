@@ -84,7 +84,14 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 		return undefined as T;
 	}
 
-	return (await response.json()) as T;
+	// Some endpoints (e.g. 202 Accepted for a power action) return success
+	// with no body. Read the text once and only parse when there's content so
+	// a bodyless 2xx doesn't blow up on response.json().
+	const text = await response.text();
+	if (!text) {
+		return undefined as T;
+	}
+	return JSON.parse(text) as T;
 }
 
 // --- Pods ---
@@ -399,6 +406,18 @@ export function adminCancelTemplate(id: string): Promise<WizardStateResponse> {
 export function adminRetryTemplate(id: string): Promise<WizardStateResponse> {
 	return apiFetch<WizardStateResponse>(`/api/v1/admin/templates/${id}/retry`, {
 		method: 'POST'
+	});
+}
+
+// Power actions for the staging (build) VM during the wizard. The endpoint is
+// a simple command surface — it returns 200/202 on success and the caller is
+// expected to re-fetch wizard-state to observe the new build_vm_power_on.
+export type TemplatePowerAction = 'start' | 'stop' | 'restart' | 'reset';
+
+export function adminTemplatePower(id: string, action: TemplatePowerAction): Promise<void> {
+	return apiFetch<void>(`/api/v1/admin/templates/${id}/power`, {
+		method: 'POST',
+		body: JSON.stringify({ action })
 	});
 }
 
