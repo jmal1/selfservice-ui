@@ -85,9 +85,10 @@
 	let guestOSGroups = $derived.by(() => {
 		const groups: { name: string; options: GuestOSOption[] }[] = [];
 		for (const o of guestOSCatalog) {
-			let g = groups.find((x) => x.name === o.group);
+			const name = o.group || 'Other';
+			let g = groups.find((x) => x.name === name);
 			if (!g) {
-				g = { name: o.group || 'Other', options: [] };
+				g = { name, options: [] };
 				groups.push(g);
 			}
 			g.options.push(o);
@@ -435,7 +436,7 @@
 						<option value="">— pick the OS you're installing —</option>
 						{#each guestOSGroups as g (g.name)}
 							<optgroup label={g.name}>
-								{#each g.options as o (o.guest_id)}
+								{#each g.options as o (o.guest_id + '::' + o.label)}
 									<option value={o.guest_id}>{o.label} ({o.guest_id})</option>
 								{/each}
 							</optgroup>
