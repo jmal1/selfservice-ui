@@ -47,22 +47,59 @@ const marked = new Marked(
 marked.setOptions({ gfm: true, breaks: false });
 
 /**
- * Normalize GFM alert tokens to uppercase so marked-alert recognises
- * them. The plugin builds its match regex as `^\[!{TYPE}\]` (case-
- * sensitive, uppercase) but our docs are authored in the Obsidian
- * convention `> [!note]` / `> [!tip]` (lowercase). Without this
- * pre-pass, lowercase callouts silently fall through and render as
- * plain blockquotes.
+ * Normalize supported GFM alert tokens to the uppercase form
+ * `marked-alert` recognises. The plugin builds its match regex as
+ * `^\[!{TYPE}\]` (case-sensitive, uppercase), while our docs commonly
+ * use lowercase Obsidian-style tokens. The legacy DANGER alias maps to
+ * GFM's supported CAUTION token; unknown tokens remain literal text.
  *
  * The replacement is anchored on `> [!xxx]` at the start of a line so
  * we don't rewrite arbitrary text that happens to contain `[!foo]`
- * inside code or prose. Mixed-case (e.g. `[!Note]`) is also normalised
- * for forgiveness.
+ * inside code or prose. Fenced and indented code stay literal, and
+ * mixed-case (e.g. `[!Note]`) remains supported for forgiveness.
  */
 function normalizeAlertSyntax(md: string): string {
-	return md.replace(/^(\s*>\s*\[!)([A-Za-z]+)(\])/gm, (_m, prefix, kind, suffix) => {
-		return `${prefix}${kind.toUpperCase()}${suffix}`;
-	});
+	const tokens: Record<string, string> = {
+		note: 'NOTE',
+		tip: 'TIP',
+		important: 'IMPORTANT',
+		warning: 'WARNING',
+		caution: 'CAUTION',
+		danger: 'CAUTION'
+	};
+	let fence: { character: '`' | '~'; length: number } | undefined;
+
+	return md
+		.split(/(\r?\n)/)
+		.map((line) => {
+			if (line === '\n' || line === '\r\n') return line;
+
+			if (fence) {
+				const closingFence = new RegExp(
+					`^ {0,3}(?:>[ \\t]?)*${fence.character}{${fence.length},}[ \\t]*$`
+				);
+				if (closingFence.test(line)) fence = undefined;
+				return line;
+			}
+
+			const openingFence = line.match(/^ {0,3}(?:>[ \t]?)*(`{3,}|~{3,})/);
+			if (openingFence) {
+				fence = {
+					character: openingFence[1][0] as '`' | '~',
+					length: openingFence[1].length
+				};
+				return line;
+			}
+
+			// Four spaces begin an indented code block outside list syntax.
+			if (/^ {4,}/.test(line)) return line;
+
+			return line.replace(/^ {0,3}(>[ \t]*\[!)([A-Za-z]+)(\])/, (match, prefix, kind, suffix) => {
+				const token = tokens[kind.toLowerCase()];
+				return token ? `${prefix}${token}${suffix}` : match;
+			});
+		})
+		.join('');
 }
 
 /**
@@ -140,7 +177,8 @@ function rewriteIntraBundleLinks(md: string, sourcePath: string): string {
  * Render a markdown source string to sanitized HTML, ready for
  * `{@html}`. The result includes:
  *   * GitHub-flavoured-markdown extras (tables, strikethrough, task lists)
- *   * `> [!note]` / `[!tip]` / `[!warning]` / `[!danger]` callouts
+ *   * `> [!note]` / `[!tip]` / `[!warning]` / `[!caution]` callouts
+ *     (with legacy DANGER aliases rendered as CAUTION)
  *   * Auto-generated heading IDs for TOC + deep-linking
  *   * Syntax-highlighted code blocks (hljs)
  *   * Rewritten intra-bundle links (`](workflows.md)` from
