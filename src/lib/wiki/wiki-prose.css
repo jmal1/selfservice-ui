@@ -15,6 +15,7 @@
 	color: var(--color-surface-800);
 	font-size: 0.95rem;
 	line-height: 1.65;
+	max-inline-size: 75ch;
 	word-wrap: break-word;
 }
 .dark .wiki-prose {
@@ -265,29 +266,27 @@ html:not(.dark) .wiki-prose pre .wiki-copy-btn {
 /* marked-alert wraps the body in `.markdown-alert.markdown-alert-<type>` */
 
 .wiki-prose .markdown-alert {
-	border-left: 4px solid;
-	background-color: var(--color-surface-100);
-	padding: 0.9em 1.2em;
-	margin: 1.2em 0;
-	border-radius: 6px;
+	border-left: 3px solid var(--wiki-alert-accent);
+	background-color: var(--wiki-alert-background);
+	padding: 0.65em 0.85em;
+	margin: 0.9em 0;
+	border-radius: 4px;
 	font-style: normal;
 }
 .dark .wiki-prose .markdown-alert {
-	background-color: var(--color-surface-900);
+	background-color: var(--wiki-alert-background);
 }
 
 .wiki-prose .markdown-alert-title {
 	display: flex;
 	align-items: center;
-	gap: 0.4em;
-	font-weight: 700;
-	margin-bottom: 0.5em;
-	font-size: 0.9em;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	font-weight: 600;
+	margin-bottom: 0.25em;
+	font-size: 0.85em;
+	color: var(--wiki-alert-accent);
 }
 .wiki-prose .markdown-alert > p {
-	margin: 0.3em 0;
+	margin: 0.2em 0;
 }
 .wiki-prose .markdown-alert > p:last-child {
 	margin-bottom: 0;
@@ -295,69 +294,65 @@ html:not(.dark) .wiki-prose pre .wiki-copy-btn {
 
 /* Note — blue */
 .wiki-prose .markdown-alert-note {
-	border-color: var(--color-secondary-500);
-}
-.wiki-prose .markdown-alert-note .markdown-alert-title {
-	color: var(--color-secondary-500);
-}
-.wiki-prose .markdown-alert-note .markdown-alert-title::before {
-	content: 'ℹ';
+	--wiki-alert-accent: var(--color-secondary-500);
+	--wiki-alert-background: oklch(0.96 0.02 250);
 }
 
 /* Tip — green */
 .wiki-prose .markdown-alert-tip {
-	border-color: var(--color-success-500);
-}
-.wiki-prose .markdown-alert-tip .markdown-alert-title {
-	color: var(--color-success-500);
-}
-.wiki-prose .markdown-alert-tip .markdown-alert-title::before {
-	content: '✓';
+	--wiki-alert-accent: var(--color-success-500);
+	--wiki-alert-background: oklch(0.96 0.02 145);
 }
 
 /* Important — gold/orange */
 .wiki-prose .markdown-alert-important {
-	border-color: var(--color-tertiary-500);
-}
-.wiki-prose .markdown-alert-important .markdown-alert-title {
-	color: var(--color-tertiary-600);
-}
-.wiki-prose .markdown-alert-important .markdown-alert-title::before {
-	content: '★';
+	--wiki-alert-accent: var(--color-tertiary-600);
+	--wiki-alert-background: oklch(0.97 0.025 85);
 }
 
 /* Warning — amber */
 .wiki-prose .markdown-alert-warning {
-	border-color: var(--color-warning-500);
-}
-.wiki-prose .markdown-alert-warning .markdown-alert-title {
-	color: var(--color-warning-600);
-}
-.wiki-prose .markdown-alert-warning .markdown-alert-title::before {
-	content: '⚠';
+	--wiki-alert-accent: var(--color-warning-600);
+	--wiki-alert-background: oklch(0.97 0.03 85);
 }
 
-/* Caution / Danger — red */
+/* Caution — red */
 .wiki-prose .markdown-alert-caution {
-	border-color: var(--color-error-500);
+	--wiki-alert-accent: var(--color-error-500);
+	--wiki-alert-background: oklch(0.97 0.025 25);
 }
-.wiki-prose .markdown-alert-caution .markdown-alert-title {
-	color: var(--color-error-500);
+
+.dark .wiki-prose .markdown-alert-note {
+	--wiki-alert-background: oklch(0.25 0.02 250);
 }
-.wiki-prose .markdown-alert-caution .markdown-alert-title::before {
-	content: '⛔';
+.dark .wiki-prose .markdown-alert-tip {
+	--wiki-alert-background: oklch(0.25 0.02 145);
+}
+.dark .wiki-prose .markdown-alert-important {
+	--wiki-alert-background: oklch(0.26 0.025 85);
+}
+.dark .wiki-prose .markdown-alert-warning {
+	--wiki-alert-accent: oklch(0.82 0.15 85);
+	--wiki-alert-background: oklch(0.27 0.03 85);
+}
+.dark .wiki-prose .markdown-alert-caution {
+	--wiki-alert-accent: oklch(0.78 0.16 25);
+	--wiki-alert-background: oklch(0.27 0.03 25);
 }
 
 /* ── Tables ──────────────────────────────────────────────────────── */
 
 .wiki-prose table {
+	display: block;
 	width: 100%;
+	max-width: 100%;
 	border-collapse: collapse;
 	margin: 1em 0;
 	font-size: 0.9em;
 	border: 1px solid var(--color-surface-200);
 	border-radius: 6px;
-	overflow: hidden;
+	overflow-x: auto;
+	white-space: nowrap;
 }
 .dark .wiki-prose table {
 	border-color: var(--color-surface-800);

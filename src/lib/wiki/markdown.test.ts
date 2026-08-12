@@ -8,7 +8,7 @@
 // paths the bundler never validated, which silently 404s for users.
 
 import { describe, expect, it } from 'vitest';
-import { __test } from './markdown';
+import { __test, renderMarkdown } from './markdown';
 
 const { resolveBundlePath, rewriteIntraBundleLinks, normalizeAlertSyntax } = __test;
 
@@ -87,9 +87,10 @@ describe('normalizeAlertSyntax', () => {
 		expect(normalizeAlertSyntax(input)).toBe('> [!NOTE]\n> Body text.');
 	});
 
-	it('handles all five GFM alert types', () => {
+	it('handles all five GFM alert types in any case', () => {
 		for (const kind of ['note', 'tip', 'important', 'warning', 'caution']) {
-			const input = `> [!${kind}]\n> Body.`;
+			const mixedCase = `${kind[0].toUpperCase()}${kind.slice(1)}`;
+			const input = `> [!${mixedCase}]\n> Body.`;
 			expect(normalizeAlertSyntax(input)).toContain(`[!${kind.toUpperCase()}]`);
 		}
 	});
@@ -103,10 +104,21 @@ describe('normalizeAlertSyntax', () => {
 		expect(normalizeAlertSyntax('> [!Tip]\n> Body.')).toBe('> [!TIP]\n> Body.');
 	});
 
-	it('does not rewrite [!foo] inside prose or inline code', () => {
-		// The pattern is anchored to start-of-line with `>` so an inline
-		// `[!foo]` mention stays untouched.
-		const input = 'See `[!note]` for the literal syntax we use.';
+	it('maps legacy danger aliases to CAUTION', () => {
+		expect(normalizeAlertSyntax('> [!danger]\n> Body.')).toContain('[!CAUTION]');
+		expect(normalizeAlertSyntax('> [!DaNgEr]\n> Body.')).toContain('[!CAUTION]');
+	});
+
+	it('leaves unknown tokens and literal code unchanged', () => {
+		const input = [
+			'> [!foo]',
+			'> Unknown token.',
+			'See `[!note]` for the literal syntax we use.',
+			'```markdown',
+			'> [!danger]',
+			'```',
+			'    > [!warning]'
+		].join('\n');
 		expect(normalizeAlertSyntax(input)).toBe(input);
 	});
 
@@ -115,5 +127,14 @@ describe('normalizeAlertSyntax', () => {
 		// whitespace; our regex permits leading \s* so those still match.
 		const input = '- item\n  > [!warning]\n  > body';
 		expect(normalizeAlertSyntax(input)).toContain('[!WARNING]');
+	});
+});
+
+describe('renderMarkdown', () => {
+	it('renders legacy danger callouts as caution alerts', () => {
+		const html = renderMarkdown('> [!DaNgEr]\n> Treat this as destructive.', 'docs/getting-started.md');
+
+		expect(html).toContain('markdown-alert-caution');
+		expect(html).not.toContain('[!DANGER]');
 	});
 });
