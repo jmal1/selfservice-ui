@@ -706,6 +706,32 @@ export function wikiPageDownloadURL(path: string): string {
 	return `${config.apiBaseUrl}/api/v1/wiki/page/${path}?download=1`;
 }
 
+// --- Student Guide ---
+
+// The student guide exposes the same manifest shape as the instructor wiki,
+// but its API only includes the allowlisted docs/student pages.
+export type StudentGuideIndex = WikiIndex;
+
+export function studentGuideGetIndex(): Promise<StudentGuideIndex> {
+	return apiFetch<StudentGuideIndex>('/api/v1/student-guide/index');
+}
+
+// studentGuideGetPage is intentionally separate from wikiGetPage so student
+// navigation can only use the API's student-document allowlist.
+export async function studentGuideGetPage(path: string): Promise<string> {
+	const url = `${config.apiBaseUrl}/api/v1/student-guide/page/${path}`;
+	const resp = await fetch(url, { credentials: 'include' });
+	if (resp.status === 401) {
+		authStore.clearState();
+		await goto('/login');
+		throw new ApiError(401, 'Unauthorized', null);
+	}
+	if (!resp.ok) {
+		throw new ApiError(resp.status, resp.statusText, null);
+	}
+	return resp.text();
+}
+
 // --- VLAN Pool Admin ---
 
 export async function adminGetVLANPool(): Promise<VLANPoolEntry[]> {
