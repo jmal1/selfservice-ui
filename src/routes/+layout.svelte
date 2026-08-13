@@ -31,7 +31,8 @@
 	const navItems = [
 		{ href: '/', label: 'Dashboard', icon: 'dashboard' },
 		{ href: '/pods', label: 'My Labs', icon: 'pods' },
-		{ href: '/templates', label: 'Templates', icon: 'templates' }
+		{ href: '/templates', label: 'Templates', icon: 'templates' },
+		{ href: '/guide', label: 'Student Guide', icon: 'guide' }
 	];
 
 	const instructorItems = [
@@ -117,6 +118,8 @@
 		<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10" /></svg>
 	{:else if icon === 'audit'}
 		<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+	{:else if icon === 'guide'}
+		<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 014 16.5v-11zM4 16.5A2.5 2.5 0 016.5 14H20M8 7h8m-8 3h6" /></svg>
 	{/if}
 {/snippet}
 
