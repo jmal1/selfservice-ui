@@ -74,9 +74,10 @@ describe('ProvisioningStore', () => {
 	);
 
 	it.each(['create pod', 'deploy blueprint', 'add VM'])(
-		'keeps the %s surface disabled when a stale status refresh resolves after a 503',
+		'blocks new %s mutations during refresh and keeps a concurrent 503 authoritative',
 		async () => {
 			let resolveRefresh: ((status: { enabled: boolean; message: string }) => void) | undefined;
+			let rejectRunningMutation: ((reason?: unknown) => void) | undefined;
 			const fetchStatus = vi
 				.fn()
 				.mockResolvedValueOnce({
@@ -91,13 +92,28 @@ describe('ProvisioningStore', () => {
 				);
 			const store = new ProvisioningStore(fetchStatus);
 			await store.load();
+			const runningMutation = store.runMutation(
+				() =>
+					new Promise<never>((_resolve, reject) => {
+						rejectRunningMutation = reject;
+					})
+			);
 			const refresh = store.load({ force: true });
 			const error = new ApiError(503, 'Service Unavailable', {
 				error: 'Provisioning is temporarily unavailable for maintenance.',
 				request_id: 'request-123'
 			});
 
-			await expect(store.runMutation(async () => Promise.reject(error))).rejects.toBe(error);
+			expect(store.availability).toBe('loading');
+			expect(store.canProvision).toBe(false);
+			const blockedMutation = vi.fn(async () => 'queued');
+			await expect(store.runMutation(blockedMutation)).rejects.toEqual(
+				new ProvisioningUnavailableError(PROVISIONING_STATUS_UNAVAILABLE)
+			);
+			expect(blockedMutation).not.toHaveBeenCalled();
+
+			rejectRunningMutation?.(error);
+			await expect(runningMutation).rejects.toBe(error);
 
 			expect(store.availability).toBe('disabled');
 			expect(store.canProvision).toBe(false);

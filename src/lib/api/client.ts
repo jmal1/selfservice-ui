@@ -101,6 +101,9 @@ export interface ProvisioningStatus {
 	message: string;
 }
 
+const PROVISIONING_ENABLED_MESSAGE = 'Provisioning is available.';
+const PROVISIONING_DISABLED_MESSAGE = 'Provisioning is temporarily unavailable for maintenance.';
+
 export async function getProvisioningStatus(): Promise<ProvisioningStatus> {
 	if (isMock) return mockApi.getProvisioningStatus();
 
@@ -114,7 +117,16 @@ export async function getProvisioningStatus(): Promise<ProvisioningStatus> {
 		throw new TypeError('Invalid provisioning status response');
 	}
 
-	return status as ProvisioningStatus;
+	const provisioningStatus = status as ProvisioningStatus;
+	const isValidPair =
+		(provisioningStatus.enabled && provisioningStatus.message === PROVISIONING_ENABLED_MESSAGE) ||
+		(!provisioningStatus.enabled &&
+			provisioningStatus.message === PROVISIONING_DISABLED_MESSAGE);
+	if (!isValidPair) {
+		throw new TypeError('Invalid provisioning status response');
+	}
+
+	return provisioningStatus;
 }
 
 // --- Pods ---

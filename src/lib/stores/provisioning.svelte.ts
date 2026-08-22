@@ -37,10 +37,8 @@ export class ProvisioningStore {
 		if (!force && this.loadedAt > 0 && Date.now() - this.loadedAt < STATUS_TTL_MS) return;
 		if (this.inFlight) return this.inFlight;
 
-		if (this.loadedAt === 0) {
-			this.availability = 'loading';
-			this.message = PROVISIONING_STATUS_UNAVAILABLE;
-		}
+		this.availability = 'loading';
+		this.message = PROVISIONING_STATUS_UNAVAILABLE;
 
 		const requestVersion = ++this.requestVersion;
 		const request = this.fetchStatus()

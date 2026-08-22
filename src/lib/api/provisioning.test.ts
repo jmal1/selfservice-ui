@@ -22,11 +22,13 @@ describe('provisioning API', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('loads the exact provisioning status contract', async () => {
-		const status = {
+	it.each([
+		{ enabled: true, message: 'Provisioning is available.' },
+		{
 			enabled: false,
 			message: 'Provisioning is temporarily unavailable for maintenance.'
-		};
+		}
+	])('loads the exact provisioning status pair %#', async (status) => {
 		fetchSpy.mockResolvedValue(new Response(JSON.stringify(status)));
 
 		await expect(getProvisioningStatus()).resolves.toEqual(status);
@@ -42,7 +44,11 @@ describe('provisioning API', () => {
 		{},
 		{ enabled: 'false', message: 'maintenance' },
 		{ enabled: false },
-		{ enabled: false, message: 503 }
+		{ enabled: false, message: 503 },
+		{ enabled: true, message: '' },
+		{ enabled: false, message: '' },
+		{ enabled: true, message: 'Provisioning is temporarily unavailable for maintenance.' },
+		{ enabled: false, message: 'Provisioning is available.' }
 	])('rejects malformed status payloads without enabling provisioning', async (payload) => {
 		fetchSpy.mockResolvedValue(new Response(JSON.stringify(payload)));
 
