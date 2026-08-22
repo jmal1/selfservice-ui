@@ -94,6 +94,41 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 	return JSON.parse(text) as T;
 }
 
+// --- Provisioning availability ---
+
+export interface ProvisioningStatus {
+	enabled: boolean;
+	message: string;
+}
+
+const PROVISIONING_ENABLED_MESSAGE = 'Provisioning is available.';
+const PROVISIONING_DISABLED_MESSAGE = 'Provisioning is temporarily unavailable for maintenance.';
+
+export async function getProvisioningStatus(): Promise<ProvisioningStatus> {
+	if (isMock) return mockApi.getProvisioningStatus();
+
+	const status = await apiFetch<unknown>('/api/v1/provisioning/status');
+	if (
+		typeof status !== 'object' ||
+		status === null ||
+		typeof (status as Record<string, unknown>).enabled !== 'boolean' ||
+		typeof (status as Record<string, unknown>).message !== 'string'
+	) {
+		throw new TypeError('Invalid provisioning status response');
+	}
+
+	const provisioningStatus = status as ProvisioningStatus;
+	const isValidPair =
+		(provisioningStatus.enabled && provisioningStatus.message === PROVISIONING_ENABLED_MESSAGE) ||
+		(!provisioningStatus.enabled &&
+			provisioningStatus.message === PROVISIONING_DISABLED_MESSAGE);
+	if (!isValidPair) {
+		throw new TypeError('Invalid provisioning status response');
+	}
+
+	return provisioningStatus;
+}
+
 // --- Pods ---
 
 export async function getPods(): Promise<Pod[]> {

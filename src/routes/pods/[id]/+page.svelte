@@ -19,6 +19,7 @@
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
@@ -381,15 +382,29 @@
 				<h2 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
 					Virtual Machines ({(pod.vms ?? []).length})
 				</h2>
-				<a
-					href="/pods/new?pod={podId}"
-					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
-				>
-					<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-					</svg>
-					Add VM
-				</a>
+				{#if provisioningStore.canProvision}
+					<a
+						href="/pods/new?pod={podId}"
+						class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
+					>
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+						</svg>
+						Add VM
+					</a>
+				{:else}
+					<span
+						class="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-surface-200 px-3 py-1.5 text-xs font-semibold text-surface-500 dark:bg-surface-800"
+						role="link"
+						aria-disabled="true"
+						title={provisioningStore.message}
+					>
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+						</svg>
+						Add VM
+					</span>
+				{/if}
 			</div>
 
 			{#if (pod.vms ?? []).length === 0}

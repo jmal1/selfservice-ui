@@ -4,6 +4,7 @@
 	import { getPods, getResourceUsage, getMyJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import type { Pod, ResourceUsage, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import ResourceGauges from '$lib/components/ResourceGauges.svelte';
 	import PodList from '$lib/components/PodList.svelte';
@@ -135,15 +136,29 @@
 			<h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100">Dashboard</h1>
 			<p class="mt-1 text-sm text-surface-500">Overview of your lab resources</p>
 		</div>
-		<a
-			href="/deploy"
-			class="glow-primary inline-flex items-center gap-2 rounded-[10px] bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-primary-600"
-		>
-			<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-			</svg>
-			Deploy VM
-		</a>
+		{#if provisioningStore.canProvision}
+			<a
+				href="/deploy"
+				class="glow-primary inline-flex items-center gap-2 rounded-[10px] bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-primary-600"
+			>
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+				</svg>
+				Deploy VM
+			</a>
+		{:else}
+			<span
+				class="inline-flex cursor-not-allowed items-center gap-2 rounded-[10px] bg-surface-300 px-5 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
+				role="link"
+				aria-disabled="true"
+				title={provisioningStore.message}
+			>
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+				</svg>
+				Deploy VM
+			</span>
+		{/if}
 	</div>
 
 	{#if error}
