@@ -94,6 +94,29 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 	return JSON.parse(text) as T;
 }
 
+// --- Provisioning availability ---
+
+export interface ProvisioningStatus {
+	enabled: boolean;
+	message: string;
+}
+
+export async function getProvisioningStatus(): Promise<ProvisioningStatus> {
+	if (isMock) return mockApi.getProvisioningStatus();
+
+	const status = await apiFetch<unknown>('/api/v1/provisioning/status');
+	if (
+		typeof status !== 'object' ||
+		status === null ||
+		typeof (status as Record<string, unknown>).enabled !== 'boolean' ||
+		typeof (status as Record<string, unknown>).message !== 'string'
+	) {
+		throw new TypeError('Invalid provisioning status response');
+	}
+
+	return status as ProvisioningStatus;
+}
+
 // --- Pods ---
 
 export async function getPods(): Promise<Pod[]> {

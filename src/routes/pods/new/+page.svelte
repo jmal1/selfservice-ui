@@ -6,6 +6,10 @@
 	import { getTemplates, getResourceUsage, createPod, getPods, addVM, getBlueprints, deployBlueprint } from '$lib/api/client';
 	import type { Template, ResourceUsage, Pod, Blueprint } from '$lib/types';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import {
+		ProvisioningUnavailableError,
+		provisioningStore
+	} from '$lib/stores/provisioning.svelte';
 	import WizardStepper from '$lib/components/WizardStepper.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
@@ -154,35 +158,46 @@
 		error = null;
 		try {
 			if (deployMode === 'blueprint' && selectedBlueprint) {
-				await deployBlueprint(selectedBlueprint.id, podName.trim());
-				toastStore.success(`Deploying "${podName}" from blueprint "${selectedBlueprint.name}"`);
+				const blueprint = selectedBlueprint;
+				await provisioningStore.runMutation(() =>
+					deployBlueprint(blueprint.id, podName.trim())
+				);
+				toastStore.success(`Deploying "${podName}" from blueprint "${blueprint.name}"`);
 				await goto('/');
 			} else if (isExisting && targetPod) {
+				const pod = targetPod;
 				for (const c of vmConfigs) {
-					await addVM(targetPod.id, {
-						template_id: c.template_id,
-						display_name: c.name.trim(),
-						vcpus: c.vcpus,
-						ram_mb: c.ram_mb,
-						disk_gb: c.disk_gb
-					});
+					await provisioningStore.runMutation(() =>
+						addVM(pod.id, {
+							template_id: c.template_id,
+							display_name: c.name.trim(),
+							vcpus: c.vcpus,
+							ram_mb: c.ram_mb,
+							disk_gb: c.disk_gb
+						})
+					);
 				}
-				await goto(`/pods/${targetPod.id}`);
+				await goto(`/pods/${pod.id}`);
 			} else {
-				await createPod({
-					name: podName.trim(),
-					vms: vmConfigs.map((c) => ({
-						template_id: c.template_id,
-						display_name: c.name.trim(),
-						vcpus: c.vcpus,
-						ram_mb: c.ram_mb,
-						disk_gb: c.disk_gb
-					}))
-				});
+				await provisioningStore.runMutation(() =>
+					createPod({
+						name: podName.trim(),
+						vms: vmConfigs.map((c) => ({
+							template_id: c.template_id,
+							display_name: c.name.trim(),
+							vcpus: c.vcpus,
+							ram_mb: c.ram_mb,
+							disk_gb: c.disk_gb
+						}))
+					})
+				);
 				await goto('/');
 			}
 		} catch (e) {
-			error = friendlyError(e, 'Failed to deploy');
+			error =
+				e instanceof ProvisioningUnavailableError
+					? e.message
+					: friendlyError(e, 'Failed to deploy');
 			submitting = false;
 		}
 	}
@@ -199,7 +214,7 @@
 			isLastStep: () => step === steps.length,
 			advance: nextStep,
 			submit: handleSubmit,
-			busy: () => submitting || loading
+			busy: () => submitting || loading || !provisioningStore.canProvision
 		})}
 />
 
@@ -516,8 +531,9 @@
 		{:else}
 			<button
 				class="rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
-				disabled={submitting}
+				disabled={submitting || !provisioningStore.canProvision}
 				onclick={handleSubmit}
+				title={!provisioningStore.canProvision ? provisioningStore.message : undefined}
 			>
 				{#if submitting}
 					<span class="inline-flex items-center gap-2">

@@ -5,6 +5,7 @@
 	import type { Pod } from '$lib/types';
 	import PodList from '$lib/components/PodList.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 
 	let pods = $state<Pod[]>([]);
 	let loading = $state(true);
@@ -34,15 +35,29 @@
 <div class="mx-auto max-w-7xl space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">My Labs</h1>
-		<a
-			href="/deploy"
-			class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
-		>
-			<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-			</svg>
-			Deploy VM
-		</a>
+		{#if provisioningStore.canProvision}
+			<a
+				href="/deploy"
+				class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+			>
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+				</svg>
+				Deploy VM
+			</a>
+		{:else}
+			<span
+				class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-surface-300 px-4 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
+				role="link"
+				aria-disabled="true"
+				title={provisioningStore.message}
+			>
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+				</svg>
+				Deploy VM
+			</span>
+		{/if}
 	</div>
 
 	{#if error}

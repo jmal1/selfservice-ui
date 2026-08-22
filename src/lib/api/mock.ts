@@ -2,6 +2,7 @@
  * Mock data for local development without a backend.
  * Enable by setting PUBLIC_MOCK=true in .env
  */
+import type { ProvisioningStatus } from './client';
 import type { Pod, PodVM, Template, User, ResourceUsage, Job, AuditEntry, Run } from '$lib/types';
 
 // --- Helpers ---
@@ -507,6 +508,11 @@ function delay(ms = 300): Promise<void> {
 
 // --- Mock API implementations ---
 export const mockApi = {
+	async getProvisioningStatus(): Promise<ProvisioningStatus> {
+		await delay(100);
+		return { enabled: true, message: 'Provisioning is available.' };
+	},
+
 	async getMe(): Promise<User> {
 		await delay(100);
 		return mockUser;
