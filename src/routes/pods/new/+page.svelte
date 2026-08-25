@@ -13,6 +13,7 @@
 	import WizardStepper from '$lib/components/WizardStepper.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import InternetFilteringWarning from '$lib/components/InternetFilteringWarning.svelte';
 	import { handleWizardEnter } from '$lib/utils/wizardEnter';
 
 	// Destination: 'new' = new environment, or a pod ID for existing
@@ -228,6 +229,8 @@
 			<p class="text-sm text-surface-500">{isExisting ? `Adding to ${targetPod?.name}` : 'Set up an isolated network with your VMs'}</p>
 		</div>
 	</div>
+
+	<InternetFilteringWarning />
 
 	<WizardStepper {steps} current={step} />
 
