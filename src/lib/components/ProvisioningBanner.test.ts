@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { describe, expect, it, vi } from 'vitest';
 import { ProvisioningStore } from '$lib/stores/provisioning.svelte';
 import ProvisioningBanner from './ProvisioningBanner.svelte';
@@ -42,5 +43,40 @@ describe('ProvisioningBanner', () => {
 		);
 
 		expect(fetchStatus).toHaveBeenCalledTimes(2);
+	});
+
+	it('does not mount a loading banner while a known enabled state revalidates', async () => {
+		let resolveRefresh: ((status: { enabled: boolean; message: string }) => void) | undefined;
+		const fetchStatus = vi
+			.fn()
+			.mockResolvedValueOnce({
+				enabled: true,
+				message: 'Provisioning is available.'
+			})
+			.mockImplementationOnce(
+				() =>
+					new Promise<{ enabled: boolean; message: string }>((resolve) => {
+						resolveRefresh = resolve;
+					})
+			);
+		const store = new ProvisioningStore(fetchStatus);
+		await store.load();
+		render(ProvisioningBanner, { props: { store } });
+
+		const refresh = store.load({ force: true });
+		await tick();
+		expect(store.refreshing).toBe(true);
+		expect(screen.queryByText('Checking provisioning availability…')).toBeNull();
+		expect(screen.queryByRole('status')).toBeNull();
+		expect(screen.queryByRole('alert')).toBeNull();
+
+		resolveRefresh?.({
+			enabled: false,
+			message: 'Provisioning has just been paused.'
+		});
+		await refresh;
+
+		const alert = await screen.findByRole('alert', { name: 'New deployments are paused' });
+		expect(alert.textContent).toContain('Provisioning has just been paused.');
 	});
 });
