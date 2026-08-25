@@ -25,6 +25,18 @@ const instances: WmksInstance[] = [];
 const resizeObservers: Array<{ disconnect: ReturnType<typeof vi.fn> }> = [];
 const physicalKeydown = vi.fn();
 
+// Mirrors the REAL WMKS SDK (static/wmks/wmks.js):
+//   WMKS.createWMKS(containerId, opts) -> $("#"+containerId).nwmks(opts)
+//   WMKS.widgetProto.connectEvents binds native keydown/keypress/keyup
+//   handlers to `this.element` (the jQuery-wrapped container passed to
+//   createWMKS), NOT to the internal <canvas> it creates for rendering.
+// The internal canvas only ever gets focus/blur bound to it for shadow
+// cursor cosmetics. It is also destroyed and recreated by the SDK on every
+// connect/reconnect. A correct fix must keep native keyboard capture wired
+// to the persistent #console-canvas container, so this mock deliberately
+// attaches `physicalKeydown` to the CONTAINER — attaching it to the nested
+// canvas instead would make these tests a false positive, exactly like the
+// pre-fix mock did.
 function installWmksMock(): void {
 	(window as any).WMKS = {
 		CONST: {
@@ -40,8 +52,12 @@ function installWmksMock(): void {
 		},
 		createWMKS: vi.fn((containerId: string) => {
 			const container = document.getElementById(containerId);
+			container?.addEventListener('keydown', physicalKeydown);
+
+			// The SDK still creates an internal rendering canvas — nested
+			// canvas rendering must be preserved — but it is NOT the
+			// keyboard capture target.
 			const canvas = document.createElement('canvas');
-			canvas.addEventListener('keydown', physicalKeydown);
 			container?.appendChild(canvas);
 
 			const handlers = new Map<string, (_event: unknown, data: any) => void>();
@@ -102,25 +118,34 @@ async function renderConnectedConsole() {
 	});
 	await waitFor(() => expect(instances).toHaveLength(1));
 	instances[0].emitConnectionState('connected');
-	const canvas = document.querySelector<HTMLCanvasElement>('#console-canvas canvas');
-	await waitFor(() => expect(document.activeElement).toBe(canvas));
-	return { ...result, canvas: canvas! };
+	const container = document.getElementById('console-canvas') as HTMLDivElement;
+	await waitFor(() => expect(document.activeElement).toBe(container));
+	return { ...result, container };
 }
 
 describe('WMKSConsole keyboard focus', () => {
-	it('makes the SDK canvas focusable after CONNECTED so native key events reach WMKS', async () => {
-		const { canvas } = await renderConnectedConsole();
+	it('makes the #console-canvas container (not the nested canvas) focusable after CONNECTED', async () => {
+		const { container } = await renderConnectedConsole();
 
-		expect(canvas.tabIndex).toBe(0);
-		expect(canvas.getAttribute('aria-label')).toBe('Ubuntu console display');
+		expect(container.tabIndex).toBe(0);
+		expect(container.getAttribute('aria-label')).toBe('Ubuntu console display');
+
+		// Nested canvas rendering must still be preserved…
+		const nestedCanvas = container.querySelector('canvas');
+		expect(nestedCanvas).not.toBeNull();
+		// …but it must NOT be the element the SDK's real keyboard capture
+		// binds to, and it must NOT hold DOM focus.
+		expect(document.activeElement).not.toBe(nestedCanvas);
+		expect(document.activeElement).toBe(container);
+
 		await fireEvent.keyDown(document.activeElement!, { key: 'a', code: 'KeyA' });
 
 		expect(physicalKeydown).toHaveBeenCalledTimes(1);
 		expect(physicalKeydown.mock.calls[0][0]).toMatchObject({ key: 'a', code: 'KeyA' });
 	});
 
-	it('reacquires canvas focus on pointer and click interaction without stealing form input', async () => {
-		const { canvas } = await renderConnectedConsole();
+	it('reacquires container focus on pointer and click interaction without stealing form input', async () => {
+		const { container } = await renderConnectedConsole();
 
 		await fireEvent.click(screen.getByRole('button', { name: /Text Input/i }));
 		const textarea = screen.getByRole('textbox');
@@ -137,11 +162,11 @@ describe('WMKSConsole keyboard focus', () => {
 		expect(navigator.clipboard.readText).not.toHaveBeenCalled();
 		expect(document.activeElement).toBe(textarea);
 
-		await fireEvent.pointerDown(canvas);
-		expect(document.activeElement).toBe(canvas);
+		await fireEvent.pointerDown(container);
+		expect(document.activeElement).toBe(container);
 		textarea.focus();
-		await fireEvent.click(canvas);
-		expect(document.activeElement).toBe(canvas);
+		await fireEvent.click(container);
+		expect(document.activeElement).toBe(container);
 	});
 
 	it('does not steal focus from text input when CONNECTED arrives', async () => {
@@ -158,18 +183,18 @@ describe('WMKSConsole keyboard focus', () => {
 
 		instances[0].emitConnectionState('connected');
 		await waitFor(() => {
-			const canvas = document.querySelector<HTMLCanvasElement>('#console-canvas canvas');
-			expect(canvas?.tabIndex).toBe(0);
-			expect(canvas?.getAttribute('aria-label')).toBe('Ubuntu console display');
+			const container = document.getElementById('console-canvas');
+			expect(container?.tabIndex).toBe(0);
+			expect(container?.getAttribute('aria-label')).toBe('Ubuntu console display');
 		});
 		expect(document.activeElement).toBe(textarea);
 	});
 
 	it('preserves the Ctrl+Shift+V console shortcut', async () => {
-		const { canvas } = await renderConnectedConsole();
+		const { container } = await renderConnectedConsole();
 		vi.mocked(navigator.clipboard.readText).mockResolvedValueOnce('');
 
-		const eventWasNotCancelled = await fireEvent.keyDown(canvas, {
+		const eventWasNotCancelled = await fireEvent.keyDown(container, {
 			key: 'V',
 			code: 'KeyV',
 			ctrlKey: true,
@@ -181,8 +206,9 @@ describe('WMKSConsole keyboard focus', () => {
 		expect(physicalKeydown).not.toHaveBeenCalled();
 	});
 
-	it('focuses a newly created canvas after reconnect and cleans up each SDK instance', async () => {
-		const { unmount, canvas: firstCanvas } = await renderConnectedConsole();
+	it('keeps focus (and native keyboard capture) on the persistent container across reconnect, even though the nested canvas is replaced', async () => {
+		const { unmount, container } = await renderConnectedConsole();
+		const firstNestedCanvas = container.querySelector('canvas');
 		instances[0].emitConnectionState('disconnected');
 
 		const reconnectButtons = await screen.findAllByRole('button', { name: 'Reconnect' });
@@ -190,18 +216,55 @@ describe('WMKSConsole keyboard focus', () => {
 		expect(instances[0].disconnect).toHaveBeenCalledTimes(1);
 		expect(instances[0].destroy).toHaveBeenCalledTimes(1);
 		expect(resizeObservers[0].disconnect).toHaveBeenCalledTimes(1);
-		expect(firstCanvas.isConnected).toBe(false);
+		expect(firstNestedCanvas?.isConnected).toBe(false);
 
 		expect(instances).toHaveLength(2);
 		instances[1].emitConnectionState('connected');
-		const secondCanvas = document.querySelector<HTMLCanvasElement>('#console-canvas canvas');
-		await waitFor(() => expect(document.activeElement).toBe(secondCanvas));
-		expect(secondCanvas).not.toBe(firstCanvas);
-		expect(secondCanvas?.tabIndex).toBe(0);
+		await waitFor(() => expect(document.activeElement).toBe(container));
+
+		const secondNestedCanvas = container.querySelector('canvas');
+		expect(secondNestedCanvas).not.toBe(firstNestedCanvas);
+		// The container — not the (replaced) nested canvas — is what holds
+		// focus and keyboard capture after reconnect.
+		expect(container.tabIndex).toBe(0);
+		await fireEvent.keyDown(document.activeElement!, { key: 'b', code: 'KeyB' });
+		expect(physicalKeydown).toHaveBeenCalledTimes(1);
 
 		unmount();
 		expect(instances[1].disconnect).toHaveBeenCalledTimes(1);
 		expect(instances[1].destroy).toHaveBeenCalledTimes(1);
 		expect(resizeObservers[1].disconnect).toHaveBeenCalledTimes(1);
+	});
+
+	it('demonstrates why nested-canvas focus is fragile: focus (and thus keyboard capture) is lost to <body> once the nested canvas is torn down, but the persistent container survives it', async () => {
+		const { container } = await renderConnectedConsole();
+		const nestedCanvas = container.querySelector('canvas')!;
+
+		// Simulate the OLD (buggy) approach of focusing the SDK-owned
+		// nested canvas instead of the persistent container.
+		nestedCanvas.tabIndex = 0;
+		nestedCanvas.focus();
+		expect(document.activeElement).toBe(nestedCanvas);
+
+		// WMKS destroys/recreates this internal canvas across its own
+		// lifecycle (e.g. reconnect, resolution change). Per DOM semantics,
+		// removing the focused element drops focus to <body>.
+		nestedCanvas.remove();
+		expect(document.activeElement).toBe(document.body);
+
+		// Physical keydown now targets <body>, which is NOT a descendant
+		// of #console-canvas, so it never bubbles into the container's
+		// native keydown binding — physical keyboard input to the guest is
+		// silently dropped. This is the real regression.
+		await fireEvent.keyDown(document.body, { key: 'c', code: 'KeyC' });
+		expect(physicalKeydown).not.toHaveBeenCalled();
+
+		// The fix's persistent container, by contrast, is never removed —
+		// refocusing it (as focusConsoleAfterConnect/focusConsole do)
+		// immediately restores keyboard capture.
+		container.focus();
+		expect(document.activeElement).toBe(container);
+		await fireEvent.keyDown(container, { key: 'c', code: 'KeyC' });
+		expect(physicalKeydown).toHaveBeenCalledTimes(1);
 	});
 });
