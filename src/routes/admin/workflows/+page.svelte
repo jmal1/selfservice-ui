@@ -17,6 +17,7 @@
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import ContextBadge from '$lib/components/ContextBadge.svelte';
 	import ScriptEditor from '$lib/components/ScriptEditor.svelte';
+	import { formatRunActionCall } from '$lib/workflows/actionInvocation';
 	import type { Workflow, Action } from '$lib/types';
 
 	// ── List mode state ──
@@ -104,11 +105,7 @@
 					lines.push(`ctx_set "${k}" "${v}"`);
 				});
 			}
-			const identifier = action.slug || action.action_type;
-			const paramsStr = cliParams
-				.map(([k, v]) => `${k}="${v}"`)
-				.join(' ');
-			lines.push(`run_action "${action.name}" ${identifier}${paramsStr ? ' ' + paramsStr : ''}`);
+			lines.push(formatRunActionCall(action, cliParams));
 			lines.push('');
 		});
 		return lines.join('\n');
