@@ -34,15 +34,28 @@
 	});
 
 	onMount(() => {
+		let refreshScheduled = false;
+		let destroyed = false;
 		const refreshProvisioningStatus = () => {
-			if (authStore.isAuthenticated && document.visibilityState === 'visible') {
-				void provisioningStore.load({ force: true });
-			}
+			if (
+				refreshScheduled ||
+				!authStore.isAuthenticated ||
+				document.visibilityState !== 'visible'
+			) return;
+
+			refreshScheduled = true;
+			queueMicrotask(() => {
+				refreshScheduled = false;
+				if (!destroyed && authStore.isAuthenticated && document.visibilityState === 'visible') {
+					void provisioningStore.load();
+				}
+			});
 		};
 
 		window.addEventListener('focus', refreshProvisioningStatus);
 		document.addEventListener('visibilitychange', refreshProvisioningStatus);
 		return () => {
+			destroyed = true;
 			window.removeEventListener('focus', refreshProvisioningStatus);
 			document.removeEventListener('visibilitychange', refreshProvisioningStatus);
 		};

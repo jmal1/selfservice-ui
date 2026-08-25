@@ -20,6 +20,7 @@ export class ProvisioningUnavailableError extends Error {
 export class ProvisioningStore {
 	availability = $state<ProvisioningAvailability>('loading');
 	message = $state(PROVISIONING_STATUS_UNAVAILABLE);
+	refreshing = $state(false);
 
 	private loadedAt = 0;
 	private inFlight: Promise<void> | null = null;
@@ -30,15 +31,25 @@ export class ProvisioningStore {
 	) {}
 
 	get canProvision(): boolean {
-		return this.availability === 'enabled';
+		return this.availability === 'enabled' && !this.refreshing;
+	}
+
+	get mutationUnavailableMessage(): string {
+		return this.refreshing ? PROVISIONING_STATUS_UNAVAILABLE : this.message;
 	}
 
 	async load({ force = false }: { force?: boolean } = {}): Promise<void> {
-		if (!force && this.loadedAt > 0 && Date.now() - this.loadedAt < STATUS_TTL_MS) return;
 		if (this.inFlight) return this.inFlight;
+		if (!force && this.loadedAt > 0 && Date.now() - this.loadedAt < STATUS_TTL_MS) return;
 
-		this.availability = 'loading';
-		this.message = PROVISIONING_STATUS_UNAVAILABLE;
+		this.refreshing = true;
+		if (
+			this.availability !== 'enabled' &&
+			this.availability !== 'disabled'
+		) {
+			this.availability = 'loading';
+			this.message = PROVISIONING_STATUS_UNAVAILABLE;
+		}
 
 		const requestVersion = ++this.requestVersion;
 		const request = this.fetchStatus()
@@ -59,6 +70,7 @@ export class ProvisioningStore {
 			.finally(() => {
 				if (requestVersion !== this.requestVersion) return;
 				this.loadedAt = Date.now();
+				this.refreshing = false;
 				this.inFlight = null;
 			});
 
@@ -72,6 +84,7 @@ export class ProvisioningStore {
 		this.availability = 'disabled';
 		this.message = friendlyError(error, PROVISIONING_MAINTENANCE_FALLBACK);
 		this.loadedAt = Date.now();
+		this.refreshing = false;
 		this.requestVersion++;
 		this.inFlight = null;
 		return true;
@@ -79,7 +92,7 @@ export class ProvisioningStore {
 
 	async runMutation<T>(mutation: () => Promise<T>): Promise<T> {
 		if (!this.canProvision) {
-			throw new ProvisioningUnavailableError(this.message);
+			throw new ProvisioningUnavailableError(this.mutationUnavailableMessage);
 		}
 
 		try {
@@ -93,6 +106,7 @@ export class ProvisioningStore {
 	reset(): void {
 		this.availability = 'loading';
 		this.message = PROVISIONING_STATUS_UNAVAILABLE;
+		this.refreshing = false;
 		this.loadedAt = 0;
 		this.inFlight = null;
 		this.requestVersion++;

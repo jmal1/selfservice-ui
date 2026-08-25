@@ -104,7 +104,8 @@ describe('ProvisioningStore', () => {
 				request_id: 'request-123'
 			});
 
-			expect(store.availability).toBe('loading');
+			expect(store.availability).toBe('enabled');
+			expect(store.refreshing).toBe(true);
 			expect(store.canProvision).toBe(false);
 			const blockedMutation = vi.fn(async () => 'queued');
 			await expect(store.runMutation(blockedMutation)).rejects.toEqual(
@@ -129,4 +130,61 @@ describe('ProvisioningStore', () => {
 			expect(store.canProvision).toBe(false);
 		}
 	);
+
+	it('keeps known presentation state while revalidating and applies a disabled result atomically', async () => {
+		let resolveRefresh: ((status: { enabled: boolean; message: string }) => void) | undefined;
+		const fetchStatus = vi
+			.fn()
+			.mockResolvedValueOnce({
+				enabled: true,
+				message: 'Provisioning is available.'
+			})
+			.mockImplementationOnce(
+				() =>
+					new Promise<{ enabled: boolean; message: string }>((resolve) => {
+						resolveRefresh = resolve;
+					})
+			);
+		const store = new ProvisioningStore(fetchStatus);
+		await store.load();
+
+		const refresh = store.load({ force: true });
+		expect(store.availability).toBe('enabled');
+		expect(store.message).toBe('Provisioning is available.');
+		expect(store.refreshing).toBe(true);
+		expect(store.canProvision).toBe(false);
+
+		resolveRefresh?.({
+			enabled: false,
+			message: 'Maintenance begins now.'
+		});
+		await refresh;
+
+		expect(store.availability).toBe('disabled');
+		expect(store.message).toBe('Maintenance begins now.');
+		expect(store.refreshing).toBe(false);
+		expect(store.canProvision).toBe(false);
+	});
+
+	it('deduplicates refreshes and respects the status TTL', async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date('2026-08-24T12:00:00Z'));
+		try {
+			const fetchStatus = vi.fn(async () => ({
+				enabled: true,
+				message: 'Provisioning is available.'
+			}));
+			const store = new ProvisioningStore(fetchStatus);
+			await store.load();
+
+			await Promise.all([store.load(), store.load()]);
+			expect(fetchStatus).toHaveBeenCalledTimes(1);
+
+			vi.advanceTimersByTime(60_001);
+			await Promise.all([store.load(), store.load()]);
+			expect(fetchStatus).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

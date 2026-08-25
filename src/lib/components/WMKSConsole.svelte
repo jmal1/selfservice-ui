@@ -97,8 +97,41 @@
 	function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 	function getWmksCanvas(): HTMLElement | null {
-		return document.querySelector('#console-canvas canvas') as HTMLElement
-			|| document.getElementById('mainCanvas');
+		return (
+			(canvasContainer?.querySelector('#console-canvas canvas') as HTMLElement | null) ||
+			canvasContainer?.querySelector<HTMLElement>('#mainCanvas') ||
+			null
+		);
+	}
+
+	function prepareWmksCanvas(): HTMLElement | null {
+		const target = getWmksCanvas();
+		if (!target) return null;
+
+		target.tabIndex = 0;
+		target.setAttribute('aria-label', `${title} display`);
+		return target;
+	}
+
+	function isFormControl(target: EventTarget | null): boolean {
+		return (
+			target instanceof HTMLElement &&
+			(target.isContentEditable || target.closest('input, textarea, select, button, a') !== null)
+		);
+	}
+
+	function focusConsole(): void {
+		const target = prepareWmksCanvas();
+		if (!target) return;
+
+		target.focus({ preventScroll: true });
+	}
+
+	function focusConsoleAfterConnect(): void {
+		const target = prepareWmksCanvas();
+		if (!target || isFormControl(document.activeElement)) return;
+
+		target.focus({ preventScroll: true });
 	}
 
 	async function typeTextToVM(text: string) {
@@ -186,6 +219,7 @@
 					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
 						try { wmks.updateScreen(); } catch {}
+						queueMicrotask(focusConsoleAfterConnect);
 						break;
 					case WMKS.CONST.ConnectionState.DISCONNECTED:
 						status = 'disconnected';
@@ -219,6 +253,10 @@
 	}
 
 	function reconnect() {
+		if (resizeObserver) {
+			resizeObserver.disconnect();
+			resizeObserver = null;
+		}
 		if (wmks) {
 			try { wmks.disconnect(); } catch {}
 			try { wmks.destroy(); } catch {}
@@ -261,6 +299,8 @@
 	}
 
 	function handlePageKeydown(e: KeyboardEvent) {
+		if (isFormControl(e.target)) return;
+
 		if (e.ctrlKey && e.shiftKey && e.key === 'V') {
 			e.preventDefault();
 			e.stopPropagation();
@@ -312,7 +352,7 @@
 </svelte:head>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="fixed inset-0 flex flex-col overflow-hidden bg-black" onkeydown={handlePageKeydown}>
+<div class="fixed inset-0 flex flex-col overflow-hidden bg-black" onkeydowncapture={handlePageKeydown}>
 	<!-- Toolbar -->
 	<div class="flex items-center gap-3 bg-surface-900 px-4 py-2">
 		<span class="text-sm font-semibold text-surface-200">{title}</span>
@@ -429,7 +469,9 @@
 	{/if}
 
 	<div class="relative flex-1 overflow-hidden" bind:this={canvasContainer}>
-		<div id="console-canvas"></div>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div id="console-canvas" onpointerdown={focusConsole} onclick={focusConsole}></div>
 
 		{#if status === 'error'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/80">
