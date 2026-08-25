@@ -643,10 +643,7 @@
 							<!-- VM Access Panel (expandable) -->
 							{#if expandedVMs[vm.id]}
 								<div class="border-t border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/30 px-5 py-3">
-									<VMAccessPanel
-										info={podVMToAccessInfo(vm)}
-										showInternetFilteringWarning
-									/>
+									<VMAccessPanel info={podVMToAccessInfo(vm)} />
 								</div>
 							{/if}
 

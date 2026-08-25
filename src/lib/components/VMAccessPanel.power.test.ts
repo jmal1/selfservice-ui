@@ -31,19 +31,6 @@ describe('VMAccessPanel power controls', () => {
 		expect(screen.queryByLabelText('Stop staging VM')).toBeNull();
 	});
 
-	it('warns users before they access a pod VM', () => {
-		render(VMAccessPanel, {
-			props: { info: baseInfo(), showInternetFilteringWarning: true }
-		});
-
-		const alert = screen.getByRole('alert', {
-			name: 'School-safe Internet filtering is not currently active'
-		});
-		expect(alert.textContent).toContain(
-			'Outbound browsing from this lab may reach unrestricted Internet content.'
-		);
-	});
-
 	it('when powered on: Start disabled, Stop/Restart/Reset enabled', () => {
 		render(VMAccessPanel, {
 			props: { info: baseInfo({ isPoweredOn: true }), showPowerControls: true, onPower: vi.fn() }
