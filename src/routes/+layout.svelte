@@ -25,8 +25,21 @@
 
 	let mobileMenuOpen = $state(false);
 
+	// Edge-trigger this effect: `$effect` re-runs on every write to the
+	// `token`/`user` $state fields it reads through `isAuthenticated`, even
+	// when the resulting boolean doesn't actually change (e.g. a session
+	// re-validation that re-sets an equal user object). A plain (non-reactive)
+	// closure variable lets us only call load()/reset() on a genuine
+	// authenticated <-> unauthenticated transition, so incidental auth-state
+	// churn can never re-trigger a provisioning fetch or reset the banner to
+	// its loading state.
+	let wasAuthenticated: boolean | undefined;
 	$effect(() => {
-		if (authStore.isAuthenticated) {
+		const isAuthenticated = authStore.isAuthenticated;
+		if (isAuthenticated === wasAuthenticated) return;
+		wasAuthenticated = isAuthenticated;
+
+		if (isAuthenticated) {
 			void provisioningStore.load();
 		} else {
 			provisioningStore.reset();

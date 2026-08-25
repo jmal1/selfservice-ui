@@ -31,6 +31,17 @@
 	let { wsUrl, title, backHref, backLabel = '← Back' }: Props = $props();
 
 	let canvasContainer: HTMLDivElement;
+	// The #console-canvas div itself — NOT the <canvas> WMKS creates inside
+	// it. WMKS.createWMKS('console-canvas', ...) calls $("#console-canvas")
+	// .nwmks(...), and the SDK's connectEvents() binds native
+	// keydown/keypress/keyup handlers to that jQuery-wrapped *element*
+	// (this.element), not to the nested canvas. The nested canvas is
+	// destroyed/recreated by WMKS on every connect/reconnect, so focusing it
+	// is fragile — if it's replaced out from under an existing focus, the
+	// browser silently drops focus to <body> and physical keystrokes never
+	// reach the SDK's capture at all. This container persists across
+	// reconnects, so it's the only reliable, correct focus/dispatch target.
+	let consoleElement: HTMLDivElement;
 	let wmks: any = null;
 	let WMKS: any = null;
 	let resizeObserver: ResizeObserver | null = null;
@@ -96,23 +107,6 @@
 
 	function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
-	function getWmksCanvas(): HTMLElement | null {
-		return (
-			(canvasContainer?.querySelector('#console-canvas canvas') as HTMLElement | null) ||
-			canvasContainer?.querySelector<HTMLElement>('#mainCanvas') ||
-			null
-		);
-	}
-
-	function prepareWmksCanvas(): HTMLElement | null {
-		const target = getWmksCanvas();
-		if (!target) return null;
-
-		target.tabIndex = 0;
-		target.setAttribute('aria-label', `${title} display`);
-		return target;
-	}
-
 	function isFormControl(target: EventTarget | null): boolean {
 		return (
 			target instanceof HTMLElement &&
@@ -121,21 +115,16 @@
 	}
 
 	function focusConsole(): void {
-		const target = prepareWmksCanvas();
-		if (!target) return;
-
-		target.focus({ preventScroll: true });
+		consoleElement?.focus({ preventScroll: true });
 	}
 
 	function focusConsoleAfterConnect(): void {
-		const target = prepareWmksCanvas();
-		if (!target || isFormControl(document.activeElement)) return;
-
-		target.focus({ preventScroll: true });
+		if (!consoleElement || isFormControl(document.activeElement)) return;
+		consoleElement.focus({ preventScroll: true });
 	}
 
 	async function typeTextToVM(text: string) {
-		const target = getWmksCanvas();
+		const target = consoleElement;
 		if (!target) {
 			toastStore.error('Console canvas not found');
 			return;
@@ -471,7 +460,17 @@
 	<div class="relative flex-1 overflow-hidden" bind:this={canvasContainer}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div id="console-canvas" onpointerdown={focusConsole} onclick={focusConsole}></div>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			id="console-canvas"
+			bind:this={consoleElement}
+			tabindex="0"
+			role="application"
+			aria-label={`${title} display`}
+			onpointerdown={focusConsole}
+			onclick={focusConsole}
+		></div>
 
 		{#if status === 'error'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/80">
