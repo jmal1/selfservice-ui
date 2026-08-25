@@ -66,10 +66,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
-  build:
-    needs: test
+  # Run PR image builds in parallel with test; push builds stay gated.
+  build-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    steps:
+    steps: &build_steps
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -103,3 +104,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  build:
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    steps: *build_steps
