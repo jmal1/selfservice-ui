@@ -20,23 +20,15 @@
 <script lang="ts">
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import InternetFilteringWarning from './InternetFilteringWarning.svelte';
 
 	type Props = {
 		wsUrl: string;
 		title: string;
 		backHref?: string;
 		backLabel?: string;
-		showInternetFilteringWarning?: boolean;
 	};
 
-	let {
-		wsUrl,
-		title,
-		backHref,
-		backLabel = '← Back',
-		showInternetFilteringWarning = false
-	}: Props = $props();
+	let { wsUrl, title, backHref, backLabel = '← Back' }: Props = $props();
 
 	let canvasContainer: HTMLDivElement;
 	let wmks: any = null;
@@ -396,10 +388,6 @@
 			{/if}
 		</div>
 	</div>
-
-	{#if showInternetFilteringWarning}
-		<InternetFilteringWarning compact />
-	{/if}
 
 	{#if showTextDrawer}
 		<div class="border-b border-surface-700 bg-surface-900/95 px-4 py-3">

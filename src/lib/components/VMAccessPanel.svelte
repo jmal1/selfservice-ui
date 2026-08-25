@@ -2,12 +2,10 @@
 	import type { VMAccessInfo } from '$lib/types/vm-access';
 	import type { TemplatePowerAction } from '$lib/api/client';
 	import { copyToClipboard } from '$lib/utils/clipboard';
-	import InternetFilteringWarning from './InternetFilteringWarning.svelte';
 
 	let {
 		info,
 		showPowerControls = false,
-		showInternetFilteringWarning = false,
 		onPower
 	}: {
 		info: VMAccessInfo;
@@ -15,8 +13,6 @@
 		 *  Restart/Reset controls. Off by default so the student pod usage of
 		 *  this panel is unchanged — power controls are wizard-only. */
 		showPowerControls?: boolean;
-		/** Show the temporary student Internet filtering disclosure. */
-		showInternetFilteringWarning?: boolean;
 		/** Handler invoked with the chosen power action. The panel awaits it
 		 *  and shows a busy state on the clicked button while it runs. */
 		onPower?: (action: TemplatePowerAction) => void | Promise<void>;
@@ -94,12 +90,6 @@
 	 still get the console/credentials view even without an IP). -->
 {#if info.ipAddress || hasVCenter}
 	<div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
-		{#if showInternetFilteringWarning}
-			<div class="mb-3">
-				<InternetFilteringWarning compact />
-			</div>
-		{/if}
-
 		{#if info.ipAddress}
 			{#if isLinux}
 				<!-- SSH: primary command -->
