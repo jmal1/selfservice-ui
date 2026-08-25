@@ -21,6 +21,7 @@
 	import { getPod, resumeVM } from '$lib/api/client';
 	import { onMount } from 'svelte';
 	import WMKSConsole from '$lib/components/WMKSConsole.svelte';
+	import InternetFilteringWarning from '$lib/components/InternetFilteringWarning.svelte';
 
 	const podId = $derived(page.params.podId as string);
 	const vmId = $derived(page.params.vmId as string);
@@ -98,6 +99,9 @@
 	<!-- Resume interstitial — shown when navigating to console for a suspended VM -->
 	<div class="flex min-h-screen flex-col items-center justify-center bg-surface-950 p-6">
 		<div class="w-full max-w-sm rounded-2xl border border-warning-500/30 bg-surface-900 p-8 shadow-xl">
+			<div class="mb-4">
+				<InternetFilteringWarning compact />
+			</div>
 			<div class="mb-4 flex items-center gap-3">
 				<span class="text-3xl">⏸</span>
 				<div>
@@ -149,5 +153,11 @@
 		</div>
 	</div>
 {:else if readyForConsole}
-	<WMKSConsole {wsUrl} {title} backHref="/pods/{podId}" backLabel="← Back to Pod" />
+	<WMKSConsole
+		{wsUrl}
+		{title}
+		backHref="/pods/{podId}"
+		backLabel="← Back to Pod"
+		showInternetFilteringWarning
+	/>
 {/if}
