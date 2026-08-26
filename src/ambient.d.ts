@@ -9,6 +9,10 @@ declare module 'monaco-editor/esm/vs/editor/editor.worker?worker' {
 		constructor();
 	}
 }
+declare module '*.yaml?raw' {
+	const content: string;
+	export default content;
+}
 declare module 'sh-syntax/main.wasm?url' {
 	const url: string;
 	export default url;
