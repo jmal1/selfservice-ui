@@ -12,7 +12,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:ui": "vitest --ui"
+		"test:ui": "vitest --ui",
+		"verify": "node -e \"const fs=require('fs'); const src='.env.production'; const dst='.env'; if (fs.existsSync(src) && !fs.existsSync(dst)) fs.copyFileSync(src, dst);\" && npm run check && npm test && npm run build"
 	},
 	"devDependencies": {
 		"@fontsource/inter": "^5.2.8",
