@@ -29,6 +29,16 @@ npm run dev
 npm run dev -- --open
 ```
 
+## Before pushing
+
+Run the project pre-push gate before opening a PR or pushing to a remote branch:
+
+```sh
+npm run verify
+```
+
+This runs the canonical local checks in order: Svelte/TypeScript validation, Vitest unit tests, and the production build.
+
 ## Building
 
 To create a production version of your app:

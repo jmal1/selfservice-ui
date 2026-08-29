@@ -60,11 +60,8 @@ jobs:
         # for every variable used in src/lib/config.ts.
         run: cp .env.production .env
 
-      - name: Type check
-        run: npm run check
-
-      - name: Unit tests
-        run: npm test
+      - name: Verify
+        run: npm run verify
 
   # Run PR image builds in parallel with test; push builds stay gated.
   build-pr:
