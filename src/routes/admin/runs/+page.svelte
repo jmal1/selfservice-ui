@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { friendlyError } from '$lib/errors/friendly';
 	import { adminListRuns } from '$lib/api/client';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
@@ -15,6 +16,7 @@
 
 	let runs: Run[] = $state([]);
 	let loading = $state(true);
+	let error = $state<string | null>(null);
 
 	// Filter state from URL query params
 	let triggeredBy = $state('');
@@ -24,6 +26,7 @@
 	let toDate = $state('');
 
 	async function loadRuns() {
+		error = null;
 		try {
 			const params: any = {};
 			if (triggeredBy) params.triggered_by = triggeredBy;
@@ -32,7 +35,9 @@
 			if (fromDate) params.from = fromDate;
 			if (toDate) params.to = toDate;
 			runs = (await adminListRuns(Object.keys(params).length > 0 ? params : undefined)) ?? [];
-		} catch { /* ignore */ }
+		} catch (e) {
+			error = friendlyError(e, 'Failed to load runs');
+		}
 		finally { loading = false; }
 	}
 
@@ -149,6 +154,10 @@
 
 	{#if loading}
 		<LoadingSkeleton />
+	{:else if error}
+		<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
+			{error}
+		</div>
 	{:else if runs.length === 0}
 		<p class="text-surface-600 dark:text-surface-400">
 			{triggeredBy || podOwner || status || fromDate || toDate

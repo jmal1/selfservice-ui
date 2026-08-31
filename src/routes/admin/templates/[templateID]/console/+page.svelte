@@ -32,6 +32,7 @@
 	});
 
 	const title = $derived(ticket ? `Build Console: ${ticket.vm_name}` : 'Template Build Console');
+	const wizardHref = $derived(`/admin/templates/${templateID}/wizard`);
 
 	onMount(async () => {
 		try {
@@ -48,7 +49,7 @@
 			<p class="text-lg font-semibold text-error-400">Cannot open console</p>
 			<p class="mt-2 text-sm text-surface-300">{loadError}</p>
 			<a
-				href="/admin/templates/{templateID}/wizard"
+				href={wizardHref}
 				class="mt-4 inline-block rounded border border-primary-500/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-400 transition-colors hover:bg-primary-500/20"
 			>
 				← Back to wizard
@@ -65,7 +66,7 @@
 	<WMKSConsole
 		{wsUrl}
 		{title}
-		backHref="/admin/templates/{templateID}/wizard"
+		backHref={wizardHref}
 		backLabel="← Back to wizard"
 	/>
 {/if}
