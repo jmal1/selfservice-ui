@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { friendlyError } from '$lib/errors/friendly';
+	import { friendlyError, safeErrorText } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
@@ -101,9 +101,7 @@
 	}
 
 	function getJobError(job: Job): string | null {
-		const result = asJobObject(job.result);
-		if (!result?.error) return null;
-		return String(result.error);
+		return safeErrorText(job.result);
 	}
 
 	function getJobPayloadSummary(job: Job): { key: string; value: string }[] {

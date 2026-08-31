@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { safeErrorText } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import {
@@ -151,8 +152,7 @@
 				await reload();
 			}
 		} catch (err) {
-			const reason =
-				err instanceof ApiError ? (err.body?.reason as string) ?? err.message : String(err);
+			const reason = err instanceof ApiError ? safeErrorText(err.body) ?? err.message : String(err);
 			toastStore.error(`${label} VM failed`, reason);
 		}
 	}
@@ -203,7 +203,7 @@
 		} catch (err) {
 			if (err instanceof ApiError) {
 				applyConflictBody(err.body);
-				const reason = (err.body?.reason as string) ?? err.message;
+				const reason = safeErrorText(err.body) ?? err.message;
 				toastStore.error(`${label} failed`, reason);
 			} else {
 				toastStore.error(`${label} failed`, String(err));
@@ -284,6 +284,7 @@
 		stateToStep(wizard?.template_state, !!wizard?.vcenter_vm_id, wizard?.last_job_type)
 	);
 	const isErrored = $derived(wizard?.template_state === 'error');
+	const lastJobError = $derived(wizard ? safeErrorText(wizard.last_job_error) : null);
 
 	function stateBadgeClass(s: string | undefined): string {
 		switch (s) {
@@ -637,9 +638,9 @@
 				<h3 class="text-base font-semibold text-error-500">
 					{failedStepLabel} failed
 				</h3>
-				{#if wizard.last_job_error}
+				{#if lastJobError}
 					<pre
-						class="rounded-lg border border-error-500/30 bg-error-500/10 p-3 text-xs text-error-500 whitespace-pre-wrap break-words font-mono">{wizard.last_job_error}</pre>
+						class="rounded-lg border border-error-500/30 bg-error-500/10 p-3 text-xs text-error-500 whitespace-pre-wrap break-words font-mono">{lastJobError}</pre>
 				{/if}
 				<p class="text-sm text-surface-600 dark:text-surface-300">
 					Fix the underlying cause, then retry to re-run the {failedStepLabel.toLowerCase()} step. Full job

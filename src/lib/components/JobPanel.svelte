@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { safeErrorText } from '$lib/errors/friendly';
 	import type { Job } from '$lib/types';
 
 	let { jobs }: { jobs: Job[] } = $props();
@@ -213,9 +214,7 @@
 
 	function jobErrorMessage(job: Job): string | null {
 		if (job.status !== 'failed') return null;
-		const result = job.result as Record<string, unknown> | null;
-		if (!result?.error) return null;
-		return String(result.error);
+		return safeErrorText(job.result);
 	}
 </script>
 

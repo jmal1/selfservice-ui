@@ -21,6 +21,56 @@ import { ApiError } from '$lib/api/client';
 import { toErrorMessage } from '$lib/errors/reportClientError';
 
 const DEFAULT_FALLBACK = 'Something went wrong. Please try again.';
+const ERROR_KEYS = new Set(['error', 'message', 'reason', 'detail', 'title', 'summary', 'description']);
+
+function normalizeErrorText(value: string | null | undefined): string | null {
+	if (typeof value !== 'string') return null;
+	const trimmed = value.trim();
+	if (!trimmed) return null;
+	const lowered = trimmed.toLowerCase();
+	if (lowered === 'internal server error' || lowered === 'unknown error') return null;
+	return trimmed;
+}
+
+/**
+ * Extract a human-readable server message from a structured API payload without
+ * ever letting a raw object stringify to `[object Object]`.
+ */
+export function safeErrorText(value: unknown): string | null {
+	if (value == null) return null;
+	if (typeof value === 'string') return normalizeErrorText(value);
+	if (typeof value === 'number' || typeof value === 'boolean') {
+		const str = String(value);
+		return str ? str : null;
+	}
+	if (Array.isArray(value)) {
+		for (const entry of value) {
+			const nested = safeErrorText(entry);
+			if (nested) return nested;
+		}
+		return null;
+	}
+	if (typeof value !== 'object') return null;
+
+	const record = value as Record<string, unknown>;
+	for (const key of Object.keys(record)) {
+		if (ERROR_KEYS.has(key.toLowerCase())) {
+			const found = safeErrorText(record[key]);
+			if (found) return found;
+		}
+	}
+
+	for (const nested of Object.values(record)) {
+		if (nested === null || typeof nested !== 'object') continue;
+		const nestedKeys = Object.keys(nested as Record<string, unknown>);
+		const hasMessageLikeKey = nestedKeys.some((key) => ERROR_KEYS.has(key.toLowerCase()));
+		if (!hasMessageLikeKey) continue;
+		const found = safeErrorText(nested);
+		if (found) return found;
+	}
+
+	return null;
+}
 
 /**
  * Pull a usable, human-readable message out of an ApiError body if the server
@@ -28,18 +78,7 @@ const DEFAULT_FALLBACK = 'Something went wrong. Please try again.';
  * fall back to the status map). Accepts common server key spellings.
  */
 function serverMessage(body: Record<string, unknown> | null): string | null {
-	if (!body) return null;
-	for (const key of ['error', 'message', 'reason', 'detail']) {
-		const value = body[key];
-		if (typeof value === 'string') {
-			const trimmed = value.trim();
-			// Ignore empty strings and bare status echoes that aren't helpful.
-			if (trimmed && trimmed.toLowerCase() !== 'internal server error') {
-				return trimmed;
-			}
-		}
-	}
-	return null;
+	return safeErrorText(body);
 }
 
 /**
@@ -115,4 +154,4 @@ export function friendlyErrorText(e: unknown, fallback: string = DEFAULT_FALLBAC
 }
 
 // Exported for tests only.
-export const __test = { serverMessage, statusMessage, DEFAULT_FALLBACK, toErrorMessage };
+export const __test = { serverMessage, statusMessage, DEFAULT_FALLBACK, toErrorMessage, safeErrorText };
