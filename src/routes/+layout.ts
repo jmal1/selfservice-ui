@@ -18,7 +18,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	}
 
 	const isLoginPage = url.pathname.startsWith('/login');
-	const isPublicPage = url.pathname.startsWith('/ai');
+	const isPublicPage = url.pathname === '/ai';
 
 	try {
 		const res = await fetch(`${config.apiBaseUrl}/auth/me`, {
