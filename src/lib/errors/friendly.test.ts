@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { friendlyError, friendlyErrorText, __test } from './friendly';
+import { friendlyError, friendlyErrorText, safeErrorText, __test } from './friendly';
 import { ApiError } from '$lib/api/client';
 
 describe('friendlyError', () => {
@@ -84,6 +84,44 @@ describe('friendlyError', () => {
 		};
 		expect(() => friendlyError(hostile, 'safe')).not.toThrow();
 		expect(friendlyError(hostile, 'safe')).toBe('safe');
+	});
+
+	it('unwraps nested structured errors and ignores malformed object payloads', () => {
+		const fixtures = [
+			{
+				name: 'nested server error object',
+				value: { error: { message: 'vCenter clone failed while attaching the NIC.', details: { code: 'VC-42' } } },
+				expected: 'vCenter clone failed while attaching the NIC.'
+			},
+			{
+				name: 'plain string error',
+				value: 'The template is still in use by an active pod.',
+				expected: 'The template is still in use by an active pod.'
+			},
+			{
+				name: 'null payload',
+				value: null,
+				expected: null
+			},
+			{
+				name: 'malformed but safe object',
+				value: { error: { code: 42, context: { inner: 'secret' } } },
+				expected: null
+			}
+		] as const;
+
+		for (const fixture of fixtures) {
+			expect(safeErrorText(fixture.value)).toBe(fixture.expected);
+		}
+
+		expect(
+			friendlyError(
+				new ApiError(400, 'Bad Request', {
+					error: { message: 'Guest credentials do not match the recorded build profile.' }
+				}),
+				'Failed to provision template'
+			)
+		).toBe('Guest credentials do not match the recorded build profile.');
 	});
 
 	it('friendlyErrorText behaves identically to friendlyError', () => {

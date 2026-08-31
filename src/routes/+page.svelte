@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { friendlyError } from '$lib/errors/friendly';
+	import { friendlyError, safeErrorText } from '$lib/errors/friendly';
 	import { getPods, getResourceUsage, getMyJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -47,8 +47,8 @@
 			if (job.status === 'completed' && prev !== 'completed') {
 				toastStore.success(label, detail);
 			} else if (job.status === 'failed' && prev !== 'failed') {
-				const errorMsg = (job.result as Record<string, unknown>)?.error;
-				toastStore.error(`${label} failed`, errorMsg ? String(errorMsg) : detail);
+				const errorMsg = safeErrorText(job.result) ?? detail;
+				toastStore.error(`${label} failed`, errorMsg);
 			}
 		}
 		prevJobStatuses = new Map(newJobs.map(j => [j.id, j.status]));

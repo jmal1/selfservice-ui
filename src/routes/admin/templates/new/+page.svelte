@@ -15,6 +15,7 @@
 		import type { Template, MergedISOEntry } from '$lib/types';
 		import { authStore } from '$lib/stores/auth.svelte';
 		import { toastStore } from '$lib/stores/toast.svelte';
+		import { safeErrorText } from '$lib/errors/friendly';
 		import { handleWizardEnter } from '$lib/utils/wizardEnter';
 
 	// Step 1 of the T4 template wizard.
@@ -214,7 +215,7 @@
 			await goto(`/admin/templates/${tmpl.id}/wizard`);
 		} catch (err) {
 			if (err instanceof ApiError) {
-				error = (err.body?.error as string) ?? err.message;
+				error = safeErrorText(err.body) ?? err.message;
 			} else {
 				error = String(err);
 			}
