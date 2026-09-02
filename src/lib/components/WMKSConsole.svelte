@@ -231,19 +231,20 @@
 		}
 
 		try {
-			wmks = WMKS.createWMKS('console-canvas', {
+			const instance = WMKS.createWMKS('console-canvas', {
 				rescale: true,
 				changeResolution: true,
 				fitToParent: true,
 				fitGuest: true,
 				position: WMKS.CONST.Position.CENTER,
 			});
+			wmks = instance;
 
-			wmks.register(WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (_event: any, data: any) => {
+			instance.register(WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (_event: any, data: any) => {
 				switch (data.state) {
 					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
-						try { wmks.updateScreen(); } catch {}
+						try { instance.updateScreen(); } catch {}
 						queueMicrotask(focusConsoleAfterConnect);
 						break;
 					case WMKS.CONST.ConnectionState.DISCONNECTED:
@@ -252,12 +253,12 @@
 				}
 			});
 
-			wmks.register(WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
+			instance.register(WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
 				status = 'error';
 				errorMessage = data?.message || 'Console connection error';
 			});
 
-			wmks.connect(wsUrl);
+			instance.connect(wsUrl);
 
 			resizeObserver = new ResizeObserver(() => {
 				if (wmks && status === 'connected') {
