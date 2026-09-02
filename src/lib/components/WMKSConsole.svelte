@@ -6,7 +6,12 @@
 
   Owns: WMKS SDK loading, WebSocket connection lifecycle, the canvas,
   status badge, paste/text-input drawer, Ctrl+Alt+Del button, reconnect
-  button, error overlay, and the keyboard-event synthesis for paste.
+  button, error overlay, and keyboard delivery to the *live* WMKS object.
+
+  Native keys are not left on a DOM layer. While connected they are
+  handed to wmks.wmksData._keyboardManager (KeyboardManager2 →
+  onKeyVScan). Disconnected keys are dropped, never queued — a deferred
+  queue is what flushed into the guest on navigate-away/remount.
 
   Caller provides: the WebSocket URL, a window title, and an optional
   back link (href + label). Caller does NOT manage WMKS lifecycle —
@@ -20,6 +25,14 @@
 <script lang="ts">
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import {
+		deliverNativeKeyToLiveWmks,
+		getLiveWmksElement,
+		isConsolePasteChord,
+		isEditableFormControl,
+		toWmksKeyEvent,
+		type LiveWmks
+	} from '$lib/console/wmksKeyboard';
 
 	type Props = {
 		wsUrl: string;
@@ -31,18 +44,20 @@
 	let { wsUrl, title, backHref, backLabel = '← Back' }: Props = $props();
 
 	let canvasContainer: HTMLDivElement;
-	// The #console-canvas div itself — NOT the <canvas> WMKS creates inside
-	// it. WMKS.createWMKS('console-canvas', ...) calls $("#console-canvas")
-	// .nwmks(...), and the SDK's connectEvents() binds native
-	// keydown/keypress/keyup handlers to that jQuery-wrapped *element*
-	// (this.element), not to the nested canvas. The nested canvas is
-	// destroyed/recreated by WMKS on every connect/reconnect, so focusing it
-	// is fragile — if it's replaced out from under an existing focus, the
-	// browser silently drops focus to <body> and physical keystrokes never
-	// reach the SDK's capture at all. This container persists across
-	// reconnects, so it's the only reliable, correct focus/dispatch target.
+	let consoleRoot: HTMLDivElement;
+	// Persistent #console-canvas container (WMKS this.element). Used as a
+	// focus/fallback target. Native keys are delivered to the live WMKS
+	// keyboard manager, not merely dispatched at this node — a stale jQuery
+	// widget bound here is what swallowed keys until remount flushed them.
 	let consoleElement: HTMLDivElement;
-	let wmks: any = null;
+	let wmks: (LiveWmks & {
+		connect: (url: string) => void;
+		disconnect: () => void;
+		destroy: () => void;
+		sendCAD: () => void;
+		updateScreen: () => void;
+		register: (event: string, handler: (_event: any, data: any) => void) => void;
+	}) | null = null;
 	let WMKS: any = null;
 	let resizeObserver: ResizeObserver | null = null;
 	let status = $state<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
@@ -51,6 +66,7 @@
 	let showTextDrawer = $state(false);
 	let textInput = $state('');
 	let sending = $state(false);
+	let destroyed = false;
 
 	// US keyboard layout: char → [keyCode, code, needsShift]
 	const KEY_MAP: Record<string, [number, string, boolean]> = {
@@ -107,30 +123,25 @@
 
 	function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
-	function isFormControl(target: EventTarget | null): boolean {
-		return (
-			target instanceof HTMLElement &&
-			(target.isContentEditable || target.closest('input, textarea, select, button, a') !== null)
-		);
-	}
-
 	function focusConsole(): void {
-		consoleElement?.focus({ preventScroll: true });
+		const target = getLiveWmksElement(wmks, consoleElement);
+		target?.focus({ preventScroll: true });
 	}
 
 	function focusConsoleAfterConnect(): void {
-		if (!consoleElement || isFormControl(document.activeElement)) return;
-		consoleElement.focus({ preventScroll: true });
+		if (isEditableFormControl(document.activeElement)) return;
+		focusConsole();
 	}
 
-	async function typeTextToVM(text: string) {
-		const target = consoleElement;
-		if (!target) {
-			toastStore.error('Console canvas not found');
-			return;
-		}
+	function restoreConsoleFocusAfterToolbar(): void {
+		queueMicrotask(() => {
+			if (isEditableFormControl(document.activeElement)) return;
+			focusConsole();
+		});
+	}
 
-		const baseProps = {
+	function synthesizeKey(type: 'keydown' | 'keyup', init: KeyboardEventInit & { keyCode?: number }): KeyboardEvent {
+		const event = new KeyboardEvent(type, {
 			bubbles: true,
 			cancelable: true,
 			charCode: 0,
@@ -139,7 +150,32 @@
 			metaKey: false,
 			repeat: false,
 			location: KeyboardEvent.DOM_KEY_LOCATION_STANDARD,
-		};
+			...init
+		});
+		if (init.keyCode != null) {
+			Object.defineProperty(event, 'keyCode', { get: () => init.keyCode });
+			Object.defineProperty(event, 'which', { get: () => init.keyCode });
+		}
+		return event;
+	}
+
+	function sendSyntheticKey(event: KeyboardEvent): void {
+		const km = wmks && status === 'connected' ? (wmks.wmksData?._keyboardManager ?? wmks._keyboardManager) : null;
+		if (km) {
+			const wrapped = toWmksKeyEvent(event);
+			if (event.type === 'keydown') km.onKeyDown?.(wrapped);
+			else if (event.type === 'keyup') km.onKeyUp?.(wrapped);
+			return;
+		}
+		const target = getLiveWmksElement(wmks, consoleElement);
+		target?.dispatchEvent(event);
+	}
+
+	async function typeTextToVM(text: string) {
+		if (status !== 'connected' || (!wmks && !consoleElement)) {
+			toastStore.error('Console canvas not found');
+			return;
+		}
 
 		let shiftHeld = false;
 		let typed = 0;
@@ -151,33 +187,33 @@
 			const [keyCode, code, needsShift] = mapping;
 
 			if (needsShift && !shiftHeld) {
-				target.dispatchEvent(new KeyboardEvent('keydown', {
-					...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: true,
+				sendSyntheticKey(synthesizeKey('keydown', {
+					code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: true
 				}));
 				shiftHeld = true;
 				await sleep(10);
 			}
 			if (!needsShift && shiftHeld) {
-				target.dispatchEvent(new KeyboardEvent('keyup', {
-					...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false,
+				sendSyntheticKey(synthesizeKey('keyup', {
+					code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false
 				}));
 				shiftHeld = false;
 				await sleep(10);
 			}
 
-			target.dispatchEvent(new KeyboardEvent('keydown', {
-				...baseProps, code, key: char, keyCode, shiftKey: needsShift,
+			sendSyntheticKey(synthesizeKey('keydown', {
+				code, key: char, keyCode, shiftKey: needsShift
 			}));
-			target.dispatchEvent(new KeyboardEvent('keyup', {
-				...baseProps, code, key: char, keyCode, shiftKey: needsShift,
+			sendSyntheticKey(synthesizeKey('keyup', {
+				code, key: char, keyCode, shiftKey: needsShift
 			}));
 			typed++;
 			await sleep(10);
 		}
 
 		if (shiftHeld) {
-			target.dispatchEvent(new KeyboardEvent('keyup', {
-				...baseProps, code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false,
+			sendSyntheticKey(synthesizeKey('keyup', {
+				code: 'ShiftLeft', key: 'Shift', keyCode: 16, shiftKey: false
 			}));
 		}
 
@@ -195,19 +231,20 @@
 		}
 
 		try {
-			wmks = WMKS.createWMKS('console-canvas', {
+			const instance = WMKS.createWMKS('console-canvas', {
 				rescale: true,
 				changeResolution: true,
 				fitToParent: true,
 				fitGuest: true,
 				position: WMKS.CONST.Position.CENTER,
 			});
+			wmks = instance;
 
-			wmks.register(WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (_event: any, data: any) => {
+			instance.register(WMKS.CONST.Events.CONNECTION_STATE_CHANGE, (_event: any, data: any) => {
 				switch (data.state) {
 					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
-						try { wmks.updateScreen(); } catch {}
+						try { instance.updateScreen(); } catch {}
 						queueMicrotask(focusConsoleAfterConnect);
 						break;
 					case WMKS.CONST.ConnectionState.DISCONNECTED:
@@ -216,12 +253,12 @@
 				}
 			});
 
-			wmks.register(WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
+			instance.register(WMKS.CONST.Events.ERROR, (_event: any, data: any) => {
 				status = 'error';
 				errorMessage = data?.message || 'Console connection error';
 			});
 
-			wmks.connect(wsUrl);
+			instance.connect(wsUrl);
 
 			resizeObserver = new ResizeObserver(() => {
 				if (wmks && status === 'connected') {
@@ -229,6 +266,11 @@
 				}
 			});
 			resizeObserver.observe(canvasContainer);
+
+			// The SDK creates the nested framebuffer canvas with tabindex=1,
+			// which would otherwise steal focus from the live widget element.
+			const nested = consoleElement?.querySelector('canvas');
+			if (nested instanceof HTMLElement) nested.tabIndex = -1;
 		} catch (e) {
 			status = 'error';
 			errorMessage = `Failed to initialize console: ${e}`;
@@ -270,6 +312,7 @@
 			toastStore.warning('Clipboard access denied — use the text input panel');
 		} finally {
 			sending = false;
+			restoreConsoleFocusAfterToolbar();
 		}
 	}
 
@@ -284,17 +327,28 @@
 			toastStore.error('Failed to send text to VM');
 		} finally {
 			sending = false;
+			restoreConsoleFocusAfterToolbar();
 		}
 	}
 
-	function handlePageKeydown(e: KeyboardEvent) {
-		if (isFormControl(e.target)) return;
+	function handleNativeKey(e: KeyboardEvent) {
+		if (isEditableFormControl(e.target)) return;
 
-		if (e.ctrlKey && e.shiftKey && e.key === 'V') {
-			e.preventDefault();
-			e.stopPropagation();
-			handlePaste();
+		if (isConsolePasteChord(e)) {
+			if (e.type === 'keydown') {
+				e.preventDefault();
+				e.stopPropagation();
+				handlePaste();
+			}
+			return;
 		}
+
+		deliverNativeKeyToLiveWmks({
+			wmks,
+			event: e,
+			connected: status === 'connected',
+			consoleRoot
+		});
 	}
 
 	onMount(async () => {
@@ -320,6 +374,7 @@
 				throw new Error('WMKS SDK failed to load');
 			}
 
+			if (destroyed) return;
 			connect();
 		} catch (e) {
 			status = 'error';
@@ -328,11 +383,15 @@
 	});
 
 	onDestroy(() => {
+		destroyed = true;
 		if (resizeObserver) resizeObserver.disconnect();
 		if (wmks) {
 			try { wmks.disconnect(); } catch {}
 			try { wmks.destroy(); } catch {}
 		}
+		// Drop the live pointer with no deferred key flush — navigate-away
+		// must not replay keys into a later session.
+		wmks = null;
 	});
 </script>
 
@@ -340,10 +399,24 @@
 	<title>{title}</title>
 </svelte:head>
 
+<svelte:window
+	onkeydowncapture={handleNativeKey}
+	onkeypresscapture={handleNativeKey}
+	onkeyupcapture={handleNativeKey}
+/>
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="fixed inset-0 flex flex-col overflow-hidden bg-black" onkeydowncapture={handlePageKeydown}>
+<div
+	class="fixed inset-0 flex flex-col overflow-hidden bg-black"
+	bind:this={consoleRoot}
+>
 	<!-- Toolbar -->
-	<div class="flex items-center gap-3 bg-surface-900 px-4 py-2">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<div
+		class="flex items-center gap-3 bg-surface-900 px-4 py-2"
+		onclick={restoreConsoleFocusAfterToolbar}
+	>
 		<span class="text-sm font-semibold text-surface-200">{title}</span>
 
 		{#if status === 'connecting'}
