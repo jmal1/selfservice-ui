@@ -6,17 +6,22 @@
 			adminListVCenterTemplatesFolder,
 			adminListVCenterISOs,
 			adminListGuestOSCatalog,
+			adminListImages,
 			getTemplates,
 			ApiError,
 			type CreateTemplateDraftRequest,
 			type GuestOSOption,
 			type VCenterFolderVM
 		} from '$lib/api/client';
-		import type { Template, MergedISOEntry } from '$lib/types';
+		import type { Template, MergedISOEntry, ImageUpload } from '$lib/types';
 		import { authStore } from '$lib/stores/auth.svelte';
 		import { toastStore } from '$lib/stores/toast.svelte';
 		import { safeErrorText } from '$lib/errors/friendly';
 		import { handleWizardEnter } from '$lib/utils/wizardEnter';
+		import {
+			sourceTypeAllowsSkipGeneralize,
+			validateTemplateDraftSource
+		} from '$lib/api/templateDraft';
 
 	// Step 1 of the T4 template wizard.
 	//
@@ -46,7 +51,13 @@
 
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
+	// Imported OVAs from Images/ImportOVA. source_ref is the vCenter moref
+	// (vcenter_vm_id), never the image-upload UUID.
+	let importedOVAs = $state<ImageUpload[]>([]);
 	let mergedISOs = $state<MergedISOEntry[]>([]);
+	// Local checkbox state. Only copied onto the draft request when true so
+	// clone/iso payloads stay unchanged when the box is off (default false).
+	let skipGeneralize = $state(false);
 	// When the ISO fetch fails (auth/vCenter/timeout) we must NOT silently show
 	// "No ISOs available yet" — that misleads the instructor into uploading an
 	// ISO that already exists. Capture the failure so the ISO branch can show a
@@ -139,18 +150,22 @@
 			return;
 		}
 		try {
-			const [tpls, folder, vcISOs, catalog] = await Promise.all([
+			const [tpls, folder, vcISOs, catalog, images] = await Promise.all([
 				getTemplates(),
 				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
 				adminListVCenterISOs().catch((e) => {
 					isoLoadError = e instanceof ApiError ? `${e.status} ${e.message}` : String(e);
 					return { isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 };
 				}),
-				adminListGuestOSCatalog().catch(() => ({ options: guestOSFallback }))
+				adminListGuestOSCatalog().catch(() => ({ options: guestOSFallback })),
+				adminListImages().catch(() => [] as ImageUpload[])
 			]);
 			existingTemplates = tpls;
 			vcenterVMs = folder.vms ?? [];
 			mergedISOs = vcISOs.isos ?? [];
+			importedOVAs = images.filter(
+				(img) => img.kind === 'ova' && img.status === 'imported' && !!img.vcenter_vm_id
+			);
 			if (catalog.options && catalog.options.length > 0) {
 				guestOSCatalog = catalog.options;
 			}
@@ -162,9 +177,41 @@
 		}
 	});
 
+	// Folder VMs plus imported-OVA morefs that are not already in the folder
+	// list. Used only when source_type=ovf.
+	let ovfMorefOptions = $derived.by(() => {
+		const seen = new Set(vcenterVMs.map((vm) => vm.moref));
+		const extras = importedOVAs
+			.filter((img) => img.vcenter_vm_id && !seen.has(img.vcenter_vm_id))
+			.map((img) => ({
+				moref: img.vcenter_vm_id,
+				name: img.filename,
+				guest_full_name: 'imported OVA',
+				os_type: ''
+			}));
+		return [...vcenterVMs, ...extras];
+	});
+
+	function onSourceTypeChange() {
+		// Switching pickers invalidates the previous source_ref shape
+		// (template UUID vs moref vs ISO path).
+		req.source_ref = '';
+		if (!sourceTypeAllowsSkipGeneralize(req.source_type)) {
+			skipGeneralize = false;
+		}
+	}
+
 	function valid(): boolean {
 		if (!req.name.trim()) {
 			error = 'Name is required';
+			return false;
+		}
+		const sourceErr = validateTemplateDraftSource({
+			source_type: req.source_type,
+			skip_generalize: skipGeneralize
+		});
+		if (sourceErr) {
+			error = sourceErr;
 			return false;
 		}
 		if (!req.source_ref) {
@@ -210,7 +257,15 @@
 				req.unattend_config = undefined;
 			}
 
-			const tmpl = await adminCreateTemplateDraft(req);
+			// Attach skip_generalize only when true so unchecked clone/iso
+			// payloads stay unchanged. true is never stripped — if iso or
+			// clone_template somehow has the box on, the API 400 is surfaced.
+			const payload: CreateTemplateDraftRequest = {
+				...req,
+				...(skipGeneralize ? { skip_generalize: true } : {})
+			};
+
+			const tmpl = await adminCreateTemplateDraft(payload);
 			toastStore.success('Draft created', `${tmpl.name} is now in draft state.`);
 			await goto(`/admin/templates/${tmpl.id}/wizard`);
 		} catch (err) {
@@ -340,15 +395,17 @@
 
 		<label class="label">
 			<span class="text-sm">Source type *</span>
-			<select class="select" bind:value={req.source_type}>
+			<select class="select" bind:value={req.source_type} onchange={onSourceTypeChange}>
 				<option value="clone_template">Clone an existing Crucible template</option>
 				<option value="clone_vcenter">Clone an existing vCenter VM</option>
+				<option value="ovf">OVF/OVA</option>
 				<option value="iso">ISO install</option>
 			</select>
 			<span class="text-xs text-surface-500 mt-1 block">
 				Easiest is <strong>Clone an existing Crucible template</strong> — start
-				from something that already works. Pick <strong>ISO install</strong> only
-				if you're installing an OS from scratch.
+				from something that already works. Pick <strong>OVF/OVA</strong> for an
+				already-imported OVA (moref of the vCenter VM). Pick
+				<strong>ISO install</strong> only if you're installing an OS from scratch.
 			</span>
 		</label>
 
@@ -375,6 +432,34 @@
 						</option>
 					{/each}
 				</select>
+			</label>
+		{:else if req.source_type === 'ovf'}
+			<label class="label">
+				<span class="text-sm">Imported OVA (vCenter VM moref) *</span>
+				{#if ovfMorefOptions.length === 0}
+					<aside class="card preset-tonal-warning p-3 text-sm space-y-2">
+						<p class="font-semibold">⚠️ No imported OVAs found</p>
+						<p>
+							Import an OVA on the
+							<a href="/admin/images" class="anchor font-semibold">Images page</a>
+							first. Then pick its vCenter VM moref here — not the image-upload UUID.
+						</p>
+					</aside>
+				{:else}
+					<select class="select" bind:value={req.source_ref}>
+						<option value="">— pick an imported OVA VM —</option>
+						{#each ovfMorefOptions as vm (vm.moref)}
+							<option value={vm.moref}>
+								{vm.name} — {vm.guest_full_name || vm.os_type || vm.moref}
+							</option>
+						{/each}
+					</select>
+					<span class="text-xs text-surface-500 mt-1 block">
+						<code>source_ref</code> is the vCenter VM moref of an already-imported
+						OVA (same shape as clone from vCenter). Import via
+						<a href="/admin/images" class="anchor">Images / Import OVA</a> first.
+					</span>
+				{/if}
 			</label>
 		{:else if req.source_type === 'iso'}
 				<label class="label">
@@ -539,9 +624,32 @@
 				</div>
 
 				<aside class="card preset-tonal-surface p-3 text-sm text-surface-600 dark:text-surface-300">
-					💡 An imported OVA appears automatically in the "Clone an existing vCenter VM" picker —
-					no separate source type needed for OVAs.
+					💡 An imported OVA is authored with source type <strong>OVF/OVA</strong>
+					(or clone from vCenter). Import it on the
+					<a href="/admin/images" class="anchor">Images page</a> first, then pick
+					the vCenter VM moref — not an image-upload UUID.
 				</aside>
+		{/if}
+
+		{#if sourceTypeAllowsSkipGeneralize(req.source_type)}
+			<label class="label flex items-start gap-3">
+				<input
+					type="checkbox"
+					class="checkbox mt-1"
+					bind:checked={skipGeneralize}
+				/>
+				<span>
+					<span class="text-sm font-medium">
+						Image is already generalized — do not run sysprep/cloud-init clean
+					</span>
+					<span class="text-xs text-surface-500 mt-1 block">
+						Skips GuestOps generalize only (sysprep / cloud-init clean).
+						<strong>Verify still runs</strong>: publish still goes
+						<code>ready → verifying → active</code>. This does not skip verify
+						or publish.
+					</span>
+				</span>
+			</label>
 		{/if}
 	</section>
 
@@ -578,9 +686,15 @@
 	<section class="card p-6 space-y-4">
 		<h2 class="h4">Guest credentials</h2>
 		<p class="text-sm text-surface-500">
-			The login the wizard uses to clean the VM during Generalize. Students
-			will see their own <strong>randomly-generated</strong> password on the
-			pod page after launch — this is <strong>not</strong> that password.
+			{#if skipGeneralize && sourceTypeAllowsSkipGeneralize(req.source_type)}
+				Optional. Generalize will skip GuestOps, so these are not required for
+				that step. Students will still see their own
+				<strong>randomly-generated</strong> password on the pod page after launch.
+			{:else}
+				The login the wizard uses to clean the VM during Generalize. Students
+				will see their own <strong>randomly-generated</strong> password on the
+				pod page after launch — this is <strong>not</strong> that password.
+			{/if}
 		</p>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">

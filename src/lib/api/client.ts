@@ -10,6 +10,7 @@ import {
 	normalizeRun,
 	asArray
 } from './normalize';
+import { buildCreateTemplateDraftBody } from './templateDraft';
 import type {
 	Pod,
 	PodVM,
@@ -305,7 +306,7 @@ export function adminDeleteTemplate(id: string): Promise<void> {
 export interface CreateTemplateDraftRequest {
 	name: string;
 	os_type: 'linux' | 'windows';
-	source_type: 'clone_template' | 'clone_vcenter' | 'iso';
+	source_type: 'clone_template' | 'clone_vcenter' | 'iso' | 'ovf';
 	source_ref: string;
 	vcpus?: number;
 	ram_mb?: number;
@@ -314,6 +315,9 @@ export interface CreateTemplateDraftRequest {
 	icon_url?: string;
 	default_username?: string;
 	default_password?: string;
+	// skip_generalize skips GuestOps generalize only (not verify). Default
+	// false. Allowed on ovf and clone_vcenter; rejected on iso / clone_template.
+	skip_generalize?: boolean;
 	// ISO-only fields
 	guest_id?: string;
 	unattend_mode?: 'manual' | 'cloudinit_cidata' | 'debian_preseed' | 'windows_autounattend';
@@ -335,6 +339,7 @@ export interface WizardStateResponse {
 	vcenter_vm_id?: string;
 	source_type?: string;
 	source_ref?: string;
+	skip_generalize?: boolean;
 	staging_network?: string;
 	// Latest worker job for this template. When template_state === 'error'
 	// these tell the wizard which step failed (`template_provision` →
@@ -371,7 +376,7 @@ export interface WizardJobResponse {
 export function adminCreateTemplateDraft(req: CreateTemplateDraftRequest): Promise<Template> {
 	return apiFetch<Template>('/api/v1/admin/templates/draft', {
 		method: 'POST',
-		body: JSON.stringify(req)
+		body: JSON.stringify(buildCreateTemplateDraftBody(req))
 	});
 }
 
