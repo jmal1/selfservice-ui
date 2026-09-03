@@ -82,28 +82,36 @@ function installWmksMock(): void {
 			canvas.tabIndex = 1;
 			container?.appendChild(canvas);
 
+			const onKeyDown = vi.fn();
+			const onKeyUp = vi.fn();
+			const onKeyPress = vi.fn();
 			const keyboardManager: KeyboardManagerSpy = {
-				onKeyDown: vi.fn(),
-				onKeyUp: vi.fn(),
-				onKeyPress: vi.fn()
+				onKeyDown,
+				onKeyUp,
+				onKeyPress
 			};
 
 			const canvasOnlyKeydown = vi.fn();
 			canvas.addEventListener('keydown', canvasOnlyKeydown);
 
 			const sdkWidgetKeydown = vi.fn((event: Event) => {
-				keyboardManager.onKeyDown(toWidgetKeyEvent(event as KeyboardEvent));
+				onKeyDown(toWidgetKeyEvent(event as KeyboardEvent));
 			});
 			container?.addEventListener('keydown', sdkWidgetKeydown);
 			container?.addEventListener('keyup', (event) => {
-				keyboardManager.onKeyUp(toWidgetKeyEvent(event as KeyboardEvent));
+				onKeyUp(toWidgetKeyEvent(event as KeyboardEvent));
 			});
 
 			const handlers = new Map<string, (_event: unknown, data: any) => void>();
 			const instance: WmksInstance = {
 				connect: vi.fn(),
 				disconnect: vi.fn(),
-				destroy: vi.fn(() => canvas.remove()),
+				destroy: vi.fn(() => {
+					// Mirrors widgetProto.disconnectEvents: unbind keydown.wmks
+					// from this.element so a destroyed session cannot flush later.
+					container?.removeEventListener('keydown', sdkWidgetKeydown);
+					canvas.remove();
+				}),
 				sendCAD: vi.fn(),
 				updateScreen: vi.fn(),
 				sdkWidgetKeydown,
