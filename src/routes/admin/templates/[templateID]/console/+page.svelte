@@ -1,7 +1,6 @@
 <!--
   Template build-VM console page. Counterpart to the pod-VM console;
-  shares the <WMKSConsole> component for everything that matters,
-  including live-WMKS native keyboard delivery (src/lib/console/wmksKeyboard.ts).
+  shares the <WMKSConsole> component for everything that matters.
 
   Backed by:
     - GET /api/v1/admin/templates/{templateID}/console/ticket

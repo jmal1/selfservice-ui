@@ -6,12 +6,16 @@
 
   Owns: WMKS SDK loading, WebSocket connection lifecycle, the canvas,
   status badge, paste/text-input drawer, Ctrl+Alt+Del button, reconnect
-  button, error overlay, and keyboard delivery to the *live* WMKS object.
+  button, error overlay, and paste synthesis onto the live nwmks element.
 
-  Native keys are not left on a DOM layer. While connected they are
-  handed to wmks.wmksData._keyboardManager (KeyboardManager2 →
-  onKeyVScan). Disconnected keys are dropped, never queued — a deferred
-  queue is what flushed into the guest on navigate-away/remount.
+  Physical keys are not captured on window and are not forwarded by a
+  replacement KeyboardManager wrapper. Last-known-good send path
+  (0a2d9c80 / eeb3b843 #15): native keydown reaches #console-canvas
+  (nwmks this.element) and the SDK's keydown.wmks bind calls
+  _keyboardManager.onKeyDown (KeyboardManager2 → onKeyVScan). First-bad
+  6570e303 (#51) treated nested-canvas DOM focus as the send path; #59
+  then window-captured and preventDefault+stopPropagation-ate that bind.
+  Do not reintroduce either. No deferred key queue.
 
   Caller provides: the WebSocket URL, a window title, and an optional
   back link (href + label). Caller does NOT manage WMKS lifecycle —
@@ -25,14 +29,7 @@
 <script lang="ts">
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import {
-		deliverNativeKeyToLiveWmks,
-		getLiveWmksElement,
-		isConsolePasteChord,
-		isEditableFormControl,
-		toWmksKeyEvent,
-		type LiveWmks
-	} from '$lib/console/wmksKeyboard';
+	import { isConsolePasteChord, isEditableFormControl } from '$lib/console/wmksKeyboard';
 
 	type Props = {
 		wsUrl: string;
@@ -44,20 +41,19 @@
 	let { wsUrl, title, backHref, backLabel = '← Back' }: Props = $props();
 
 	let canvasContainer: HTMLDivElement;
-	let consoleRoot: HTMLDivElement;
-	// Persistent #console-canvas container (WMKS this.element). Used as a
-	// focus/fallback target. Native keys are delivered to the live WMKS
-	// keyboard manager, not merely dispatched at this node — a stale jQuery
-	// widget bound here is what swallowed keys until remount flushed them.
+	// Persistent #console-canvas container — nwmks this.element. The SDK
+	// binds keydown.wmks here (not on the nested canvas, not on window).
+	// Focusing this node is supporting so native keys can land on the bind;
+	// it is not itself the send path.
 	let consoleElement: HTMLDivElement;
-	let wmks: (LiveWmks & {
+	let wmks: {
 		connect: (url: string) => void;
 		disconnect: () => void;
 		destroy: () => void;
 		sendCAD: () => void;
 		updateScreen: () => void;
 		register: (event: string, handler: (_event: any, data: any) => void) => void;
-	}) | null = null;
+	} | null = null;
 	let WMKS: any = null;
 	let resizeObserver: ResizeObserver | null = null;
 	let status = $state<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
@@ -124,8 +120,7 @@
 	function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 	function focusConsole(): void {
-		const target = getLiveWmksElement(wmks, consoleElement);
-		target?.focus({ preventScroll: true });
+		consoleElement?.focus({ preventScroll: true });
 	}
 
 	function focusConsoleAfterConnect(): void {
@@ -160,19 +155,14 @@
 	}
 
 	function sendSyntheticKey(event: KeyboardEvent): void {
-		const km = wmks && status === 'connected' ? (wmks.wmksData?._keyboardManager ?? wmks._keyboardManager) : null;
-		if (km) {
-			const wrapped = toWmksKeyEvent(event);
-			if (event.type === 'keydown') km.onKeyDown?.(wrapped);
-			else if (event.type === 'keyup') km.onKeyUp?.(wrapped);
-			return;
-		}
-		const target = getLiveWmksElement(wmks, consoleElement);
-		target?.dispatchEvent(event);
+		// Paste/text-input must hit the same nwmks bind as physical keys:
+		// dispatch on this.element (#console-canvas), do not call
+		// _keyboardManager.onKeyDown behind the SDK's back.
+		consoleElement?.dispatchEvent(event);
 	}
 
 	async function typeTextToVM(text: string) {
-		if (status !== 'connected' || (!wmks && !consoleElement)) {
+		if (status !== 'connected' || !consoleElement) {
 			toastStore.error('Console canvas not found');
 			return;
 		}
@@ -331,24 +321,14 @@
 		}
 	}
 
-	function handleNativeKey(e: KeyboardEvent) {
+	function handlePageKeydown(e: KeyboardEvent) {
 		if (isEditableFormControl(e.target)) return;
-
-		if (isConsolePasteChord(e)) {
-			if (e.type === 'keydown') {
-				e.preventDefault();
-				e.stopPropagation();
-				handlePaste();
-			}
-			return;
-		}
-
-		deliverNativeKeyToLiveWmks({
-			wmks,
-			event: e,
-			connected: status === 'connected',
-			consoleRoot
-		});
+		if (!isConsolePasteChord(e)) return;
+		// Intercept only the paste chord. Regular keys must continue to
+		// #console-canvas so the SDK's keydown.wmks bind can see them.
+		e.preventDefault();
+		e.stopPropagation();
+		handlePaste();
 	}
 
 	onMount(async () => {
@@ -389,8 +369,6 @@
 			try { wmks.disconnect(); } catch {}
 			try { wmks.destroy(); } catch {}
 		}
-		// Drop the live pointer with no deferred key flush — navigate-away
-		// must not replay keys into a later session.
 		wmks = null;
 	});
 </script>
@@ -399,16 +377,10 @@
 	<title>{title}</title>
 </svelte:head>
 
-<svelte:window
-	onkeydowncapture={handleNativeKey}
-	onkeypresscapture={handleNativeKey}
-	onkeyupcapture={handleNativeKey}
-/>
-
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="fixed inset-0 flex flex-col overflow-hidden bg-black"
-	bind:this={consoleRoot}
+	onkeydowncapture={handlePageKeydown}
 >
 	<!-- Toolbar -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
