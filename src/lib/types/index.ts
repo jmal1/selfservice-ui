@@ -63,6 +63,7 @@ export type TemplateSourceType =
 	| 'clone_template'
 	| 'clone_vcenter'
 	| 'iso'
+	| 'ovf'
 	| '';
 
 export interface Template {
@@ -89,6 +90,10 @@ export interface Template {
 	template_state?: TemplateLifecycleState;
 	source_type?: TemplateSourceType;
 	source_ref?: string;
+	// skip_generalize=true skips GuestOps sysprep/cloud-init clean only.
+	// Verify still runs (ready → verifying → active). Allowed on ovf and
+	// clone_vcenter; rejected on iso and clone_template.
+	skip_generalize?: boolean;
 	staging_network?: string;
 	vcenter_vm_id?: string;
 	created_by?: string;

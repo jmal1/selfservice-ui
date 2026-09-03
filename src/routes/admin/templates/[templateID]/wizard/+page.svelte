@@ -173,6 +173,10 @@
 		resolvedCreds !== null && resolvedCreds.source !== 'none'
 	);
 
+	// skip_generalize=true skips GuestOps sysprep/cloud-init clean only.
+	// The API skip path does not require a GuestOps login. Verify still runs.
+	const skipGeneralize = $derived(wizard?.skip_generalize === true);
+
 	function applyConflictBody(body: unknown) {
 		if (
 			body &&
@@ -389,6 +393,14 @@
 					<dd>{wizard.source_type} → <code>{wizard.source_ref}</code></dd>
 				{/if}
 
+				{#if skipGeneralize}
+					<dt class="font-semibold">Skip generalize</dt>
+					<dd>
+						GuestOps generalize skipped (image already generalized).
+						Verify still runs — publish is still ready → verifying → active.
+					</dd>
+				{/if}
+
 				{#if wizard.staging_network}
 					<dt class="font-semibold">Staging network</dt>
 					<dd><code>{wizard.staging_network}</code></dd>
@@ -476,15 +488,35 @@
 					needed. SSH/RDP commands and the bootstrap credentials are
 					shown below so you can get back in if the OS locks you out.
 					When you're done, click
-					<b>Generalize</b> — Crucible will run the appropriate sysprep
-					/ cloud-init clean.
+					<b>Generalize</b>
+					{#if skipGeneralize}
+						— GuestOps sysprep/cloud-init clean will be skipped because this
+						draft is marked already generalized. Verify still runs after you
+						publish (ready → verifying → active). This is not a skip-verify shortcut.
+					{:else}
+						— Crucible will run the appropriate sysprep / cloud-init clean.
+					{/if}
 				</p>
 
 				{#if buildVMAccess}
 					<VMAccessPanel info={buildVMAccess} showPowerControls onPower={handlePower} />
 				{/if}
 
-				{#if credentialsResolved && !credsOverrideMode}
+				{#if skipGeneralize}
+					<p class="text-sm text-surface-600 dark:text-surface-300">
+						GuestOps login is not required: <code>skip_generalize</code> is set,
+						so generalize will not run sysprep/cloud-init clean. Verify still runs
+						on publish.
+					</p>
+					<button
+						class="btn btn-primary"
+						disabled={acting || !canGeneralize()}
+						onclick={() =>
+							act('Generalize', () => adminGeneralizeTemplate(templateID))}
+					>
+						{acting ? 'Working…' : 'Generalize (skip GuestOps clean)'}
+					</button>
+				{:else if credentialsResolved && !credsOverrideMode}
 					<!-- Credentials are resolved server-side; no input needed. -->
 					<p class="text-sm text-surface-600 dark:text-surface-300">
 						{#if resolvedCreds?.source === 'unattend_config'}
@@ -560,9 +592,16 @@
 			<section class="card p-6 space-y-3">
 				<h3 class="text-base font-semibold text-primary-500">Generalizing…</h3>
 				<p class="text-sm text-surface-600 dark:text-surface-300">
-					Crucible is running the OS-specific generalize script
-					(cloud-init clean on Linux, sysprep on Windows) and powering
-					the VM down. This usually takes 2–5 minutes.
+					{#if skipGeneralize}
+						Skipping GuestOps sysprep/cloud-init clean (this draft is marked
+						already generalized). The wizard still walks Draft → Provision →
+						Configure → Generalize → Publish; verify still runs after you
+						publish.
+					{:else}
+						Crucible is running the OS-specific generalize script
+						(cloud-init clean on Linux, sysprep on Windows) and powering
+						the VM down. This usually takes 2–5 minutes.
+					{/if}
 				</p>
 				{#if buildVMAccess}
 					<VMAccessPanel info={buildVMAccess} />

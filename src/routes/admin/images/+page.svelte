@@ -337,8 +337,8 @@
 		<p class="text-surface-600 dark:text-surface-300 text-sm">
 			Upload ISO or OVA images to MinIO; they are then imported into vCenter and available for
 			template creation. Imported ISOs appear in the template wizard's ISO source picker. Imported
-			OVAs appear automatically in the "Clone an existing vCenter VM" picker — no separate source
-			type needed.
+			OVAs appear as a vCenter VM moref under the wizard's <strong>OVF/OVA</strong> source type
+			(and in the clone-from-vCenter picker).
 		</p>
 	</header>
 
