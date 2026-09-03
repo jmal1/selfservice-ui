@@ -1,14 +1,12 @@
 <!--
   Pod-VM console page. Thin wrapper around <WMKSConsole>; the heavy
-  lifting (WMKS load, WebSocket lifecycle, paste handling, live-WMKS
-  keyboard delivery) lives in src/lib/components/WMKSConsole.svelte
-  and src/lib/console/wmksKeyboard.ts, and is shared with the
+  lifting (WMKS load, WebSocket lifecycle, paste handling) lives in
+  src/lib/components/WMKSConsole.svelte and is shared with the
   template build-VM console at /admin/templates/[templateID]/console.
 
-  This page does not bind keydown. Native keys are captured on
-  svelte:window while WMKSConsole is mounted and handed to the live
-  CoreWMKS keyboard manager — not queued on a DOM layer that flushes
-  on remount. See wmksKeyboard.ts.
+  This page does not bind keydown. Physical keys reach the live nwmks
+  widget the same way they did at 0a2d9c80 / eeb3b843: the SDK's
+  keydown.wmks bind on #console-canvas.
 
   This page is responsible for:
     1. Reading podId / vmId from the route.
