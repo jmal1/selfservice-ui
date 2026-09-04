@@ -31,6 +31,10 @@ type WmksInstance = {
 	canvasOnlyKeydown: ReturnType<typeof vi.fn>;
 	wmksData: {
 		_keyboardManager: KeyboardManagerSpy;
+		_vncDecoder: {
+			onKeyVScan: ReturnType<typeof vi.fn>;
+			onVMWKeyUnicode: ReturnType<typeof vi.fn>;
+		};
 		element: { 0?: HTMLElement };
 	};
 };
