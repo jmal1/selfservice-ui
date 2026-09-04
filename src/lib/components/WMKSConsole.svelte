@@ -316,7 +316,17 @@
 				debugDispose?.();
 				debugDispose = attachWmksKeyTrace({
 					wmksData: (instance as any).wmksData,
-					getSource: () => (pasteSynthesizing ? 'paste' : 'physical')
+					getSource: () => (pasteSynthesizing ? 'paste' : 'physical'),
+					// Flush A/B (operator): physical glyphs only after Paste.
+					// If scr=1 makes each letter appear without Paste, the miss
+					// is framebuffer refresh — not scancode/focus.
+					onPhysicalVScan: () => {
+						try {
+							instance.updateScreen();
+						} catch {
+							/* ignore */
+						}
+					}
 				});
 			}
 		} catch (e) {
