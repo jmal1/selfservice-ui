@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { isConsolePasteChord, isEditableFormControl } from './wmksKeyboard';
+import { describe, expect, it, vi } from 'vitest';
+import {
+	demoteNestedConsoleCanvases,
+	isConsolePasteChord,
+	isEditableFormControl,
+	observeNestedConsoleCanvases,
+	shouldReclaimConsoleFocus
+} from './wmksKeyboard';
 
 function keyEvent(overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
 	return {
@@ -41,5 +47,45 @@ describe('console keyboard helpers (not the send path)', () => {
 		button.remove();
 		input.remove();
 		textarea.remove();
+	});
+
+	it('demotes nested SDK canvases from tabindex=1 to -1', () => {
+		const root = document.createElement('div');
+		const canvas = document.createElement('canvas');
+		canvas.tabIndex = 1;
+		root.appendChild(canvas);
+		expect(demoteNestedConsoleCanvases(root)).toEqual([canvas]);
+		expect(canvas.tabIndex).toBe(-1);
+		expect(demoteNestedConsoleCanvases(root)).toEqual([]);
+	});
+
+	it('observeNestedConsoleCanvases demotes a canvas added after subscribe', async () => {
+		const root = document.createElement('div');
+		document.body.append(root);
+		const observer = observeNestedConsoleCanvases(root);
+		const late = document.createElement('canvas');
+		late.tabIndex = 1;
+		root.appendChild(late);
+		await vi.waitFor(() => expect(late.tabIndex).toBe(-1));
+		observer.disconnect();
+		root.remove();
+	});
+
+	it('reclaims from body or the nested canvas, never from editors or toolbar buttons', () => {
+		const consoleEl = document.createElement('div');
+		const canvas = document.createElement('canvas');
+		const input = document.createElement('input');
+		const button = document.createElement('button');
+		consoleEl.append(canvas, input, button);
+		document.body.append(consoleEl);
+
+		expect(shouldReclaimConsoleFocus(document.body, consoleEl)).toBe(true);
+		expect(shouldReclaimConsoleFocus(document.documentElement, consoleEl)).toBe(true);
+		expect(shouldReclaimConsoleFocus(canvas, consoleEl)).toBe(true);
+		expect(shouldReclaimConsoleFocus(consoleEl, consoleEl)).toBe(false);
+		expect(shouldReclaimConsoleFocus(input, consoleEl)).toBe(false);
+		expect(shouldReclaimConsoleFocus(button, consoleEl)).toBe(false);
+
+		consoleEl.remove();
 	});
 });

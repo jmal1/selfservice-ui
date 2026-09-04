@@ -17,6 +17,12 @@
   then window-captured and preventDefault+stopPropagation-ate that bind.
   Do not reintroduce either. No deferred key queue.
 
+  Approach 3: paste already dispatchEvents on #console-canvas, so the bind
+  always runs. Physical keys only reach that same step when focus is on
+  #console-canvas or a descendant. Re-assert nested-canvas tabindex=-1 on
+  CONNECTED + MutationObserver, and reclaim container focus, without
+  window-capturing keys. ?wmksDebug=1 records the path (off by default).
+
   Caller provides: the WebSocket URL, a window title, and an optional
   back link (href + label). Caller does NOT manage WMKS lifecycle —
   reactivity on wsUrl will reconnect automatically.
@@ -29,7 +35,14 @@
 <script lang="ts">
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import { isConsolePasteChord, isEditableFormControl } from '$lib/console/wmksKeyboard';
+	import {
+		demoteNestedConsoleCanvases,
+		isConsolePasteChord,
+		isEditableFormControl,
+		observeNestedConsoleCanvases,
+		shouldReclaimConsoleFocus
+	} from '$lib/console/wmksKeyboard';
+	import { attachWmksKeyTrace, isWmksDebugEnabled } from '$lib/console/wmksKeyTrace';
 
 	type Props = {
 		wsUrl: string;
@@ -63,6 +76,9 @@
 	let textInput = $state('');
 	let sending = $state(false);
 	let destroyed = false;
+	let canvasObserver: MutationObserver | null = null;
+	let debugDispose: (() => void) | null = null;
+	let pasteSynthesizing = false;
 
 	// US keyboard layout: char → [keyCode, code, needsShift]
 	const KEY_MAP: Record<string, [number, string, boolean]> = {
@@ -125,6 +141,7 @@
 
 	function focusConsoleAfterConnect(): void {
 		if (isEditableFormControl(document.activeElement)) return;
+		demoteNestedConsoleCanvases(consoleElement);
 		focusConsole();
 	}
 
@@ -133,6 +150,31 @@
 			if (isEditableFormControl(document.activeElement)) return;
 			focusConsole();
 		});
+	}
+
+	function startCanvasGuard(): void {
+		canvasObserver?.disconnect();
+		if (!consoleElement) return;
+		canvasObserver = observeNestedConsoleCanvases(consoleElement, () => {
+			if (shouldReclaimConsoleFocus(document.activeElement, consoleElement)) {
+				focusConsoleAfterConnect();
+			}
+		});
+	}
+
+	function handleConsoleFocusIn(event: FocusEvent): void {
+		const target = event.target;
+		if (!(target instanceof HTMLCanvasElement) || !consoleElement?.contains(target)) return;
+		demoteNestedConsoleCanvases(consoleElement);
+		if (isEditableFormControl(document.activeElement)) return;
+		focusConsole();
+	}
+
+	function handleWindowFocus(): void {
+		if (status !== 'connected') return;
+		if (shouldReclaimConsoleFocus(document.activeElement, consoleElement)) {
+			focusConsoleAfterConnect();
+		}
 	}
 
 	function synthesizeKey(type: 'keydown' | 'keyup', init: KeyboardEventInit & { keyCode?: number }): KeyboardEvent {
@@ -158,7 +200,12 @@
 		// Paste/text-input must hit the same nwmks bind as physical keys:
 		// dispatch on this.element (#console-canvas), do not call
 		// _keyboardManager.onKeyDown behind the SDK's back.
-		consoleElement?.dispatchEvent(event);
+		pasteSynthesizing = true;
+		try {
+			consoleElement?.dispatchEvent(event);
+		} finally {
+			pasteSynthesizing = false;
+		}
 	}
 
 	async function typeTextToVM(text: string) {
@@ -235,7 +282,11 @@
 					case WMKS.CONST.ConnectionState.CONNECTED:
 						status = 'connected';
 						try { instance.updateScreen(); } catch {}
+						// ui#61 set tabindex=-1 right after createWMKS; CONNECTED
+						// is when the framebuffer is live and may add/replace canvas.
+						demoteNestedConsoleCanvases(consoleElement);
 						queueMicrotask(focusConsoleAfterConnect);
+						requestAnimationFrame(focusConsoleAfterConnect);
 						break;
 					case WMKS.CONST.ConnectionState.DISCONNECTED:
 						status = 'disconnected';
@@ -257,10 +308,17 @@
 			});
 			resizeObserver.observe(canvasContainer);
 
-			// The SDK creates the nested framebuffer canvas with tabindex=1,
-			// which would otherwise steal focus from the live widget element.
-			const nested = consoleElement?.querySelector('canvas');
-			if (nested instanceof HTMLElement) nested.tabIndex = -1;
+			// SDK _create appends mainCanvas with tabindex=1. Also watch for a
+			// canvas that appears later (CONNECTED / resolution change).
+			startCanvasGuard();
+
+			if (isWmksDebugEnabled()) {
+				debugDispose?.();
+				debugDispose = attachWmksKeyTrace({
+					wmksData: (instance as any).wmksData,
+					getSource: () => (pasteSynthesizing ? 'paste' : 'physical')
+				});
+			}
 		} catch (e) {
 			status = 'error';
 			errorMessage = `Failed to initialize console: ${e}`;
@@ -278,6 +336,10 @@
 			resizeObserver.disconnect();
 			resizeObserver = null;
 		}
+		canvasObserver?.disconnect();
+		canvasObserver = null;
+		debugDispose?.();
+		debugDispose = null;
 		if (wmks) {
 			try { wmks.disconnect(); } catch {}
 			try { wmks.destroy(); } catch {}
@@ -355,6 +417,7 @@
 			}
 
 			if (destroyed) return;
+			window.addEventListener('focus', handleWindowFocus);
 			connect();
 		} catch (e) {
 			status = 'error';
@@ -364,6 +427,11 @@
 
 	onDestroy(() => {
 		destroyed = true;
+		window.removeEventListener('focus', handleWindowFocus);
+		canvasObserver?.disconnect();
+		canvasObserver = null;
+		debugDispose?.();
+		debugDispose = null;
 		if (resizeObserver) resizeObserver.disconnect();
 		if (wmks) {
 			try { wmks.disconnect(); } catch {}
@@ -381,6 +449,7 @@
 <div
 	class="fixed inset-0 flex flex-col overflow-hidden bg-black"
 	onkeydowncapture={handlePageKeydown}
+	onfocusincapture={handleConsoleFocusIn}
 >
 	<!-- Toolbar -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->

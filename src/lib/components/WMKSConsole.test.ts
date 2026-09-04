@@ -62,7 +62,7 @@ function toWidgetKeyEvent(event: KeyboardEvent) {
 // Acceptance is: the widget bind ran AND it invoked _keyboardManager.onKeyDown.
 // A canvas-only listener, a window capture, or calling onKeyDown without the
 // bind having seen the event must fail these tests.
-function installWmksMock(): void {
+function installWmksMock(options: { deferCanvas?: boolean } = {}): void {
 	(window as any).WMKS = {
 		CONST: {
 			Position: { CENTER: 'center' },
@@ -80,7 +80,7 @@ function installWmksMock(): void {
 			const container = document.getElementById(containerId);
 			const canvas = document.createElement('canvas');
 			canvas.tabIndex = 1;
-			container?.appendChild(canvas);
+			if (!options.deferCanvas) container?.appendChild(canvas);
 
 			const onKeyDown = vi.fn();
 			const onKeyUp = vi.fn();
@@ -89,6 +89,10 @@ function installWmksMock(): void {
 				onKeyDown,
 				onKeyUp,
 				onKeyPress
+			};
+			const vncDecoder = {
+				onKeyVScan: vi.fn(),
+				onVMWKeyUnicode: vi.fn()
 			};
 
 			const canvasOnlyKeydown = vi.fn();
@@ -118,9 +122,13 @@ function installWmksMock(): void {
 				canvasOnlyKeydown,
 				wmksData: {
 					_keyboardManager: keyboardManager,
+					_vncDecoder: vncDecoder,
 					element: { 0: container ?? undefined }
 				},
 				emitConnectionState: (state) => {
+					if (state === 'connected' && options.deferCanvas && !canvas.isConnected) {
+						container?.appendChild(canvas);
+					}
 					handlers.get('connection-state-change')?.({}, { state });
 				}
 			};
@@ -345,6 +353,39 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 });
 
 describe('WMKSConsole keyboard focus (supporting — not acceptance)', () => {
+	it('demotes a nested canvas that appears after CONNECTED (MutationObserver / late SDK canvas)', async () => {
+		const { container } = await renderConnectedConsole();
+		const late = document.createElement('canvas');
+		late.id = 'lateCanvas';
+		late.tabIndex = 1;
+		container.appendChild(late);
+		await waitFor(() => expect(late.tabIndex).toBe(-1));
+	});
+
+	it('demotes nested canvas tabindex after CONNECTED even when createWMKS had no canvas yet', async () => {
+		delete (window as any).WMKS;
+		installWmksMock({ deferCanvas: true });
+		const { container } = await renderConnectedConsole();
+		const nestedCanvas = container.querySelector('canvas');
+		expect(nestedCanvas).not.toBeNull();
+		await waitFor(() => expect(nestedCanvas?.tabIndex).toBe(-1));
+		await waitFor(() => expect(document.activeElement).toBe(container));
+	});
+
+	it('reclaims #console-canvas focus when the nested canvas becomes activeElement', async () => {
+		const { container } = await renderConnectedConsole();
+		const nestedCanvas = container.querySelector('canvas') as HTMLCanvasElement;
+		expect(nestedCanvas).not.toBeNull();
+		nestedCanvas.focus();
+		await waitFor(() => expect(document.activeElement).toBe(container));
+		expect(nestedCanvas.tabIndex).toBe(-1);
+	});
+
+	it('does not mount the wmksDebug HUD unless ?wmksDebug=1', async () => {
+		await renderConnectedConsole();
+		expect(document.getElementById('wmks-debug-hud')).toBeNull();
+	});
+
 	it('makes the #console-canvas container focusable after CONNECTED', async () => {
 		const { container } = await renderConnectedConsole();
 
