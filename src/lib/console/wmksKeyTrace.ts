@@ -3,6 +3,11 @@
  *
  * Observes only: does not preventDefault / stopPropagation, does not call
  * `_keyboardManager.onKeyDown`, and is not a send path.
+ *
+ * After ui#62: operator Edge showed physical keys reach onKeyVScan (vscan=1)
+ * but Ubuntu guest showed no glyph while Paste + Windows physical worked.
+ * This build records keyCode/which and the scancode args into onKeyVScan so
+ * we can compare physical vs paste on that client.
  */
 
 export const WMKS_KEY_TRACE_LIMIT = 50;
@@ -19,8 +24,12 @@ export type WmksKeyTraceEl = {
 export type WmksKeyTraceRecord = {
 	t: number;
 	source: 'physical' | 'paste';
+	type: 'keydown' | 'keyup';
 	key: string;
 	code: string;
+	keyCode: number;
+	which: number;
+	repeat: boolean;
 	active: WmksKeyTraceEl;
 	target: WmksKeyTraceEl;
 	currentTarget: WmksKeyTraceEl;
@@ -29,6 +38,12 @@ export type WmksKeyTraceRecord = {
 	keyboardManager: KeyboardManagerKind;
 	onKeyVScan: boolean;
 	onVMWKeyUnicode: boolean;
+	/** First arg to `_vncDecoder.onKeyVScan` when observed (PC scancode). */
+	vscanKey: number | null;
+	/** Second arg to `_vncDecoder.onKeyVScan` when observed (keydown=true). */
+	vscanDown: boolean | null;
+	/** First arg to `_vncDecoder.onVMWKeyUnicode` when observed. */
+	unicodeKey: number | null;
 };
 
 type WmksDataLike = {
@@ -79,20 +94,32 @@ export function describeKeyboardManager(km: unknown): KeyboardManagerKind {
 	return 'unknown';
 }
 
+function numArg(arg: unknown): number | null {
+	return typeof arg === 'number' && Number.isFinite(arg) ? arg : null;
+}
+
 export function formatWmksKeyTraceRecord(rec: WmksKeyTraceRecord): string {
 	const active = `${rec.active.tag}${rec.active.id ? '#' + rec.active.id : ''}`;
 	const target = `${rec.target.tag}${rec.target.id ? '#' + rec.target.id : ''}`;
-	return [
+	const parts = [
 		rec.source,
+		rec.type,
 		`${rec.key}/${rec.code}`,
+		`kc=${rec.keyCode}`,
+		`which=${rec.which}`,
+		rec.repeat ? 'repeat' : null,
 		`active=${active}`,
 		`target=${target}`,
 		`wmks=${rec.keydownWmks ? 1 : 0}`,
 		`onKeyDown=${rec.onKeyDown ? 1 : 0}`,
 		rec.keyboardManager,
 		`vscan=${rec.onKeyVScan ? 1 : 0}`,
-		`unicode=${rec.onVMWKeyUnicode ? 1 : 0}`
-	].join(' ');
+		rec.vscanKey !== null ? `scan=${rec.vscanKey}` : null,
+		rec.vscanDown !== null ? `down=${rec.vscanDown ? 1 : 0}` : null,
+		`unicode=${rec.onVMWKeyUnicode ? 1 : 0}`,
+		rec.unicodeKey !== null ? `uch=${rec.unicodeKey}` : null
+	];
+	return parts.filter((p) => p != null && p !== '').join(' ');
 }
 
 function pushRecord(rec: WmksKeyTraceRecord): void {
@@ -121,8 +148,8 @@ export function renderWmksDebugHud(): void {
 			left: '8px',
 			bottom: '8px',
 			zIndex: '99999',
-			maxWidth: '56rem',
-			maxHeight: '12rem',
+			maxWidth: '72rem',
+			maxHeight: '14rem',
 			overflow: 'auto',
 			margin: '0',
 			padding: '6px 8px',
@@ -136,7 +163,7 @@ export function renderWmksDebugHud(): void {
 		} as CSSStyleDeclaration);
 		document.body.appendChild(hud);
 	}
-	const lines = ring.slice(-8).map(formatWmksKeyTraceRecord);
+	const lines = ring.slice(-10).map(formatWmksKeyTraceRecord);
 	hud.textContent = [`wmksDebug last ${ring.length}/${WMKS_KEY_TRACE_LIMIT}`, ...lines].join('\n');
 }
 
@@ -179,12 +206,17 @@ export function attachWmksKeyTrace(opts: {
 	const managerKind = describeKeyboardManager(km);
 
 	const onCapture = (event: Event) => {
-		if (!(event instanceof KeyboardEvent) || event.type !== 'keydown') return;
+		if (!(event instanceof KeyboardEvent)) return;
+		if (event.type !== 'keydown' && event.type !== 'keyup') return;
 		const rec: WmksKeyTraceRecord = {
 			t: Date.now(),
 			source: opts.getSource(),
+			type: event.type,
 			key: event.key,
 			code: event.code,
+			keyCode: event.keyCode,
+			which: event.which,
+			repeat: event.repeat,
 			active: describeEl(document.activeElement),
 			target: describeEl(event.target),
 			currentTarget: describeEl(event.currentTarget),
@@ -192,7 +224,10 @@ export function attachWmksKeyTrace(opts: {
 			onKeyDown: false,
 			keyboardManager: managerKind,
 			onKeyVScan: false,
-			onVMWKeyUnicode: false
+			onVMWKeyUnicode: false,
+			vscanKey: null,
+			vscanDown: null,
+			unicodeKey: null
 		};
 		inflight.set(event, rec);
 		lastRec = rec;
@@ -210,20 +245,29 @@ export function attachWmksKeyTrace(opts: {
 		}
 		renderWmksDebugHud();
 	});
-	wrapMethod(decoder as Record<string, unknown> | undefined, 'onKeyVScan', () => {
-		if (lastRec) lastRec.onKeyVScan = true;
+	wrapMethod(decoder as Record<string, unknown> | undefined, 'onKeyVScan', (keyArg, downArg) => {
+		const rec = lastRec;
+		if (!rec) return;
+		rec.onKeyVScan = true;
+		rec.vscanKey = numArg(keyArg);
+		rec.vscanDown = typeof downArg === 'boolean' ? downArg : null;
 		renderWmksDebugHud();
 	});
-	wrapMethod(decoder as Record<string, unknown> | undefined, 'onVMWKeyUnicode', () => {
-		if (lastRec) lastRec.onVMWKeyUnicode = true;
+	wrapMethod(decoder as Record<string, unknown> | undefined, 'onVMWKeyUnicode', (keyArg) => {
+		const rec = lastRec;
+		if (!rec) return;
+		rec.onVMWKeyUnicode = true;
+		rec.unicodeKey = numArg(keyArg);
 		renderWmksDebugHud();
 	});
 
 	// Observe only — never preventDefault / stopPropagation (#59).
 	document.addEventListener('keydown', onCapture, true);
+	document.addEventListener('keyup', onCapture, true);
 
 	return () => {
 		document.removeEventListener('keydown', onCapture, true);
+		document.removeEventListener('keyup', onCapture, true);
 		lastRec = null;
 		removeWmksDebugHud();
 	};

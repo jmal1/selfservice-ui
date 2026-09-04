@@ -32,8 +32,8 @@ describe('wmks key trace (debug only — not the send path)', () => {
 		expect(describeKeyboardManager({})).toBe('unknown');
 	});
 
-	it('records physical vs paste keydown and whether the live bind / vScan ran', () => {
-		const native = new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', bubbles: true });
+	it('records keyCode/which and onKeyVScan scancode args for physical vs paste', () => {
+		const native = new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', keyCode: 65, bubbles: true });
 		const onKeyDown = vi.fn();
 		const onKeyVScan = vi.fn();
 		const onVMWKeyUnicode = vi.fn();
@@ -50,7 +50,7 @@ describe('wmks key trace (debug only — not the send path)', () => {
 		wmksData._vncDecoder.onKeyVScan(30, true);
 
 		source = 'paste';
-		const paste = new KeyboardEvent('keydown', { key: 'H', code: 'KeyH', bubbles: true });
+		const paste = new KeyboardEvent('keydown', { key: 'H', code: 'KeyH', keyCode: 72, bubbles: true });
 		document.body.dispatchEvent(paste);
 		wmksData._keyboardManager.onKeyDown({ originalEvent: paste, currentTarget: document.body });
 		wmksData._vncDecoder.onKeyVScan(35, true);
@@ -59,27 +59,49 @@ describe('wmks key trace (debug only — not the send path)', () => {
 		expect(records).toHaveLength(2);
 		expect(records[0]).toMatchObject({
 			source: 'physical',
+			type: 'keydown',
 			key: 'a',
 			code: 'KeyA',
+			keyCode: 65,
 			keydownWmks: true,
 			onKeyDown: true,
 			keyboardManager: 'KeyboardManager2',
 			onKeyVScan: true,
+			vscanKey: 30,
+			vscanDown: true,
 			onVMWKeyUnicode: false
 		});
 		expect(records[1]).toMatchObject({
 			source: 'paste',
 			key: 'H',
 			code: 'KeyH',
+			keyCode: 72,
 			keydownWmks: true,
 			onKeyDown: true,
-			onKeyVScan: true
+			onKeyVScan: true,
+			vscanKey: 35,
+			vscanDown: true
 		});
-		expect(formatWmksKeyTraceRecord(records[0])).toContain('physical');
+		const formatted = formatWmksKeyTraceRecord(records[0]);
+		expect(formatted).toContain('physical');
+		expect(formatted).toContain('kc=65');
+		expect(formatted).toContain('scan=30');
+		expect(formatted).toContain('down=1');
 		expect(onKeyDown).toHaveBeenCalled();
 		expect(onKeyVScan).toHaveBeenCalled();
 		expect(onVMWKeyUnicode).not.toHaveBeenCalled();
 
+		dispose();
+	});
+
+	it('records keyup without treating it as the send path', () => {
+		const wmksData = {
+			_keyboardManager: { onKeyDown: vi.fn(), sendVScanKey: () => {} },
+			_vncDecoder: { onKeyVScan: vi.fn(), onVMWKeyUnicode: vi.fn() }
+		};
+		const dispose = attachWmksKeyTrace({ wmksData, getSource: () => 'physical' });
+		document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'f', code: 'KeyF', keyCode: 70, bubbles: true }));
+		expect(getWmksKeyTrace()[0]).toMatchObject({ type: 'keyup', key: 'f', code: 'KeyF', keyCode: 70 });
 		dispose();
 	});
 
