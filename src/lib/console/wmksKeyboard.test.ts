@@ -22,11 +22,14 @@ function keyEvent(overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
 }
 
 describe('console keyboard helpers (not the send path)', () => {
-	it('identifies the Ctrl+Shift+V paste chord without treating it as a guest key', () => {
+	it('identifies Ctrl+V / Ctrl+Shift+V paste chords', () => {
 		expect(
 			isConsolePasteChord(
 				keyEvent({ key: 'V', code: 'KeyV', ctrlKey: true, shiftKey: true })
 			)
+		).toBe(true);
+		expect(
+			isConsolePasteChord(keyEvent({ key: 'v', code: 'KeyV', ctrlKey: true }))
 		).toBe(true);
 		expect(
 			isConsolePasteChord(
@@ -34,6 +37,9 @@ describe('console keyboard helpers (not the send path)', () => {
 			)
 		).toBe(true);
 		expect(isConsolePasteChord(keyEvent())).toBe(false);
+		expect(
+			isConsolePasteChord(keyEvent({ key: 'v', code: 'KeyV', altKey: true, ctrlKey: true }))
+		).toBe(false);
 	});
 
 	it('treats only real editors as form controls — toolbar buttons must not eat guest keys', () => {

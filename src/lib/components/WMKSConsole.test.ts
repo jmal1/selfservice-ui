@@ -218,14 +218,15 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
 	});
 
-	it('lets a nested-canvas keydown bubble into the same SDK bind (LKG path)', async () => {
+	it('routes nested-canvas printable keydown via synth (does not rely on native bubble)', async () => {
 		const { container, instance } = await renderConnectedConsole();
 		const nestedCanvas = container.querySelector('canvas');
 		expect(nestedCanvas).not.toBeNull();
 
 		await fireEvent.keyDown(nestedCanvas!, { key: 'b', code: 'KeyB' });
 
-		expect(instance.canvasOnlyKeydown).toHaveBeenCalledTimes(1);
+		// Printable stolen in capture before the nested canvas listener.
+		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
 		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({ key: 'b', code: 'KeyB' });
@@ -338,21 +339,39 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		expect(liveKm().onKeyDown).not.toHaveBeenCalled();
 	});
 
-	it('preserves the Ctrl+Shift+V console shortcut without sending V through the bind', async () => {
+	it('preserves the Ctrl+V console shortcut without sending V through the bind', async () => {
 		const { container, instance } = await renderConnectedConsole();
 		vi.mocked(navigator.clipboard.readText).mockResolvedValueOnce('');
 
 		const eventWasNotCancelled = await fireEvent.keyDown(container, {
 			key: 'V',
 			code: 'KeyV',
-			ctrlKey: true,
-			shiftKey: true
+			ctrlKey: true
 		});
 
 		expect(eventWasNotCancelled).toBe(false);
 		expect(navigator.clipboard.readText).toHaveBeenCalledTimes(1);
 		expect(instance.sdkWidgetKeydown).not.toHaveBeenCalled();
 		expect(liveKm().onKeyDown).not.toHaveBeenCalled();
+	});
+
+	it('routes printable physical keys through paste synthesis (not native VScan alone)', async () => {
+		const { container, instance } = await renderConnectedConsole();
+
+		const eventWasNotCancelled = await fireEvent.keyDown(container, {
+			key: 'f',
+			code: 'KeyF',
+			keyCode: 70
+		});
+
+		expect(eventWasNotCancelled).toBe(false);
+		// Native path stolen; synth dispatchEvent hits the same nwmks bind.
+		expect(instance.sdkWidgetKeydown).toHaveBeenCalled();
+		expect(liveKm().onKeyDown).toHaveBeenCalled();
+		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
+			key: 'f',
+			code: 'KeyF'
+		});
 	});
 });
 
