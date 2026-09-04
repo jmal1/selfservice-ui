@@ -22,11 +22,11 @@ export function isEditableFormControl(target: EventTarget | null): boolean {
 	return target.closest(EDITABLE_SELECTOR) !== null;
 }
 
-/** True for the console paste chord (Ctrl+Shift+V / Cmd+Shift+V). */
+/** True for the console paste chord (Ctrl+V / Cmd+V, Shift optional). */
 export function isConsolePasteChord(event: KeyboardEvent): boolean {
 	return (
 		(event.ctrlKey || event.metaKey) &&
-		event.shiftKey &&
+		!event.altKey &&
 		(event.key === 'V' || event.key === 'v')
 	);
 }
