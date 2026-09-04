@@ -44,6 +44,8 @@ export type WmksKeyTraceRecord = {
 	vscanDown: boolean | null;
 	/** First arg to `_vncDecoder.onVMWKeyUnicode` when observed. */
 	unicodeKey: number | null;
+	/** Debug-only: `updateScreen()` ran after this physical key (flush A/B). */
+	screenRefresh: boolean;
 };
 
 type WmksDataLike = {
@@ -117,7 +119,8 @@ export function formatWmksKeyTraceRecord(rec: WmksKeyTraceRecord): string {
 		rec.vscanKey !== null ? `scan=${rec.vscanKey}` : null,
 		rec.vscanDown !== null ? `down=${rec.vscanDown ? 1 : 0}` : null,
 		`unicode=${rec.onVMWKeyUnicode ? 1 : 0}`,
-		rec.unicodeKey !== null ? `uch=${rec.unicodeKey}` : null
+		rec.unicodeKey !== null ? `uch=${rec.unicodeKey}` : null,
+		rec.screenRefresh ? 'scr=1' : null
 	];
 	return parts.filter((p) => p != null && p !== '').join(' ');
 }
@@ -195,6 +198,13 @@ function nativeFromKeyArg(arg: unknown): Event | null {
 export function attachWmksKeyTrace(opts: {
 	wmksData: WmksDataLike | null | undefined;
 	getSource: () => 'physical' | 'paste';
+	/**
+	 * Optional debug probe: after a physical key reaches onKeyVScan, ask the
+	 * SDK to refresh the framebuffer. Operator reported physical glyphs only
+	 * appear after Paste (click does not flush) — this A/B tests display lag
+	 * vs a true deferred send. Observe-only aside from updateScreen.
+	 */
+	onPhysicalVScan?: (rec: WmksKeyTraceRecord) => void;
 }): () => void {
 	resetWmksKeyTrace();
 	renderWmksDebugHud();
@@ -227,7 +237,8 @@ export function attachWmksKeyTrace(opts: {
 			onVMWKeyUnicode: false,
 			vscanKey: null,
 			vscanDown: null,
-			unicodeKey: null
+			unicodeKey: null,
+			screenRefresh: false
 		};
 		inflight.set(event, rec);
 		lastRec = rec;
@@ -251,6 +262,20 @@ export function attachWmksKeyTrace(opts: {
 		rec.onKeyVScan = true;
 		rec.vscanKey = numArg(keyArg);
 		rec.vscanDown = typeof downArg === 'boolean' ? downArg : null;
+		// Flush A/B: only after physical keyup (complete press) so we do not
+		// refresh twice per key. Paste already causes enough screen damage.
+		if (
+			rec.source === 'physical' &&
+			rec.type === 'keyup' &&
+			typeof opts.onPhysicalVScan === 'function'
+		) {
+			try {
+				opts.onPhysicalVScan(rec);
+				rec.screenRefresh = true;
+			} catch {
+				/* probe must never break the send path */
+			}
+		}
 		renderWmksDebugHud();
 	});
 	wrapMethod(decoder as Record<string, unknown> | undefined, 'onVMWKeyUnicode', (keyArg) => {

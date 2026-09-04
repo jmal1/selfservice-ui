@@ -69,7 +69,8 @@ describe('wmks key trace (debug only — not the send path)', () => {
 			onKeyVScan: true,
 			vscanKey: 30,
 			vscanDown: true,
-			onVMWKeyUnicode: false
+			onVMWKeyUnicode: false,
+			screenRefresh: false
 		});
 		expect(records[1]).toMatchObject({
 			source: 'paste',
@@ -102,6 +103,26 @@ describe('wmks key trace (debug only — not the send path)', () => {
 		const dispose = attachWmksKeyTrace({ wmksData, getSource: () => 'physical' });
 		document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'f', code: 'KeyF', keyCode: 70, bubbles: true }));
 		expect(getWmksKeyTrace()[0]).toMatchObject({ type: 'keyup', key: 'f', code: 'KeyF', keyCode: 70 });
+		dispose();
+	});
+
+	it('calls onPhysicalVScan after physical keyup reaches onKeyVScan (flush A/B)', () => {
+		const onPhysicalVScan = vi.fn();
+		const onKeyVScan = vi.fn();
+		const wmksData = {
+			_keyboardManager: { onKeyDown: vi.fn(), sendVScanKey: () => {} },
+			_vncDecoder: { onKeyVScan, onVMWKeyUnicode: vi.fn() }
+		};
+		const dispose = attachWmksKeyTrace({
+			wmksData,
+			getSource: () => 'physical',
+			onPhysicalVScan
+		});
+		document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'f', code: 'KeyF', keyCode: 70, bubbles: true }));
+		wmksData._vncDecoder.onKeyVScan(33, false);
+		expect(onPhysicalVScan).toHaveBeenCalledTimes(1);
+		expect(getWmksKeyTrace()[0]).toMatchObject({ screenRefresh: true, vscanKey: 33, vscanDown: false });
+		expect(formatWmksKeyTraceRecord(getWmksKeyTrace()[0])).toContain('scr=1');
 		dispose();
 	});
 
