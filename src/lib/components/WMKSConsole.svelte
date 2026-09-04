@@ -23,6 +23,11 @@
   CONNECTED + MutationObserver, and reclaim container focus, without
   window-capturing keys. ?wmksDebug=1 records the path (off by default).
 
+  Operator Edge (Helm 210): physical onKeyVScan + updateScreen (scr=1) still
+  shows no Ubuntu glyph until Paste. Debug probe also synth-echoes the same
+  printable char after physical keyup — count glyphs (1 vs 2) to see if
+  physical VScan actually transmits.
+
   Caller provides: the WebSocket URL, a window title, and an optional
   back link (href + label). Caller does NOT manage WMKS lifecycle —
   reactivity on wsUrl will reconnect automatically.
@@ -317,15 +322,37 @@
 				debugDispose = attachWmksKeyTrace({
 					wmksData: (instance as any).wmksData,
 					getSource: () => (pasteSynthesizing ? 'paste' : 'physical'),
-					// Flush A/B (operator): physical glyphs only after Paste.
-					// If scr=1 makes each letter appear without Paste, the miss
-					// is framebuffer refresh — not scancode/focus.
-					onPhysicalVScan: () => {
+					// Flush A/B failed: scr=1 did not show glyphs. Next A/B —
+					// after each physical printable keyup, also run the paste
+					// synthesizer once for the same char.
+					//   1 glyph → only synth reaches guest (physical VScan TX dead)
+					//   2 glyphs → physical was already reaching guest
+					onPhysicalVScan: (rec) => {
 						try {
 							instance.updateScreen();
 						} catch {
 							/* ignore */
 						}
+						if (rec.type !== 'keyup' || rec.key.length !== 1) return;
+						const mapping = KEY_MAP[rec.key];
+						if (!mapping) return;
+						const [keyCode, code, needsShift] = mapping;
+						sendSyntheticKey(
+							synthesizeKey('keydown', {
+								code,
+								key: rec.key,
+								keyCode,
+								shiftKey: needsShift
+							})
+						);
+						sendSyntheticKey(
+							synthesizeKey('keyup', {
+								code,
+								key: rec.key,
+								keyCode,
+								shiftKey: needsShift
+							})
+						);
 					}
 				});
 			}
