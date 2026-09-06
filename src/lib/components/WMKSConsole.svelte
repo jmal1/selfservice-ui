@@ -8,14 +8,14 @@
   status badge, paste/text-input drawer, Ctrl+Alt+Del button, reconnect
   button, error overlay, and paste synthesis onto the live nwmks element.
 
-  Physical printable keys: operator Edge proved native KeyboardManager2
-  onKeyVScan runs with correct scancodes but Ubuntu glyphs only appear
-  after a synthetic/paste keyboard event (synth-echo → 2 glyphs at once).
-  Printable KEY_MAP characters are therefore intercepted and sent only
-  via the paste synthesizer (same dispatchEvent on #console-canvas).
-  Non-printables (arrows, CAD modifiers, etc.) still use the live nwmks
-  bind. Do not reintroduce window-wide key capture (#59) or a deferred
-  queue. ?wmksDebug=1 records the path (off by default).
+  Physical keys (letters, Enter, Backspace, arrows, modifiers): one send
+  path only — the HTML5 WMKS SDK binds keydown.wmks on #console-canvas
+  (this.element) → KeyboardManager2 → onKeyVScan. Keep focus on that
+  container; demote the nested SDK canvas (tabindex=1). Page capture is
+  paste-chord only. Do not preventDefault normal keys (#59/#66 dual-path),
+  call _keyboardManager behind the SDK's back, or queue disconnected keys.
+  Paste/text-input dispatchEvent on #console-canvas (same bind).
+  ?wmksDebug=1 is observe-only (off by default).
 
   Caller provides: the WebSocket URL, a window title, and an optional
   back link (href + label). Caller does NOT manage WMKS lifecycle —
@@ -377,76 +377,15 @@
 		}
 	}
 
-	function sendPrintableViaSynth(key: string): void {
-		const mapping = KEY_MAP[key];
-		if (!mapping) return;
-		const [keyCode, code, needsShift] = mapping;
-		if (needsShift) {
-			sendSyntheticKey(
-				synthesizeKey('keydown', {
-					code: 'ShiftLeft',
-					key: 'Shift',
-					keyCode: 16,
-					shiftKey: true
-				})
-			);
-		}
-		sendSyntheticKey(
-			synthesizeKey('keydown', {
-				code,
-				key,
-				keyCode,
-				shiftKey: needsShift
-			})
-		);
-		sendSyntheticKey(
-			synthesizeKey('keyup', {
-				code,
-				key,
-				keyCode,
-				shiftKey: needsShift
-			})
-		);
-		if (needsShift) {
-			sendSyntheticKey(
-				synthesizeKey('keyup', {
-					code: 'ShiftLeft',
-					key: 'Shift',
-					keyCode: 16,
-					shiftKey: false
-				})
-			);
-		}
-	}
-
 	function handlePageKeydown(e: KeyboardEvent) {
 		if (isEditableFormControl(e.target)) return;
 		if (pasteSynthesizing) return;
-		if (isConsolePasteChord(e)) {
-			// Intercept paste chord — do not forward Ctrl+V into the guest.
-			e.preventDefault();
-			e.stopPropagation();
-			handlePaste();
-			return;
-		}
-		// Native physical VScan only becomes guest-visible after a synthetic
-		// keyboard event (operator Edge: synth-echo → 2 glyphs). Send
-		// printable KEY_MAP keys via the paste synthesizer only.
-		if (e.ctrlKey || e.altKey || e.metaKey) return;
-		if (e.key.length !== 1 || !KEY_MAP[e.key]) return;
+		if (!isConsolePasteChord(e)) return;
+		// Paste chord only — never preventDefault/stopPropagation normal keys
+		// (that starves keydown.wmks; #59/#66 dual-path regression).
 		e.preventDefault();
 		e.stopPropagation();
-		sendPrintableViaSynth(e.key);
-	}
-
-	function handlePageKeyup(e: KeyboardEvent) {
-		if (isEditableFormControl(e.target)) return;
-		if (pasteSynthesizing) return;
-		if (e.ctrlKey || e.altKey || e.metaKey) return;
-		if (e.key.length !== 1 || !KEY_MAP[e.key]) return;
-		// Swallow keyup for printables we already synthesized on keydown.
-		e.preventDefault();
-		e.stopPropagation();
+		handlePaste();
 	}
 
 	onMount(async () => {
@@ -505,7 +444,6 @@
 <div
 	class="fixed inset-0 flex flex-col overflow-hidden bg-black"
 	onkeydowncapture={handlePageKeydown}
-	onkeyupcapture={handlePageKeyup}
 	onfocusincapture={handleConsoleFocusIn}
 >
 	<!-- Toolbar -->
