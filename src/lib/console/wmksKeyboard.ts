@@ -1,20 +1,39 @@
 /**
- * Small console-keyboard helpers. Physical keys are NOT delivered here.
+ * Console keyboard helpers.
  *
- * Last-known-good send path (0a2d9c80 / eeb3b843 #15): the HTML5 WMKS SDK
- * (static/wmks/wmks.js) binds `keydown.wmks` on `this.element` (#console-canvas)
- * and that handler calls `_keyboardManager.onKeyDown` (KeyboardManager2 →
- * onKeyVScan). A window capture that preventDefault+stopPropagation-eats the
- * event (#59) starves that bind. Do not reintroduce a replacement send path.
+ * Paste and physical-key synthesis both `dispatchEvent` on `#console-canvas`
+ * so the SDK `keydown.wmks` bind → KeyboardManager2 → onKeyVScan runs.
  *
- * Paste already `dispatchEvent`s on #console-canvas, so the bind always sees
- * it. Physical keys only reach that same bind when focus is on #console-canvas
- * or a descendant. Helpers below keep the nested SDK canvas (tabindex=1)
- * from becoming the focused node and say when we should reclaim container
- * focus — they do not send keys.
+ * Operator Edge on Ubuntu (Helm 216 / ui#67): native KM2 delivers unshifted
+ * lowercase immediately, but Shift/uppercase, Enter, and Backspace stay
+ * invisible until a lowercase key "flushes" them. The paste synthesizer path
+ * is guest-visible for those keys — map them here and send only via synth
+ * (preventDefault the physical event so native does not also fire).
+ *
+ * Do not call `_keyboardManager.onKeyDown` behind the SDK (#59). Do not queue
+ * disconnected keys. Focus helpers below keep the nested SDK canvas from
+ * stealing focus; they are not a send path.
  */
 
 const EDITABLE_SELECTOR = 'input, textarea, select';
+
+/** key → [keyCode, code, needsShift] for physical keys not covered by char KEY_MAP. */
+export const CONSOLE_SPECIAL_KEYS: Record<string, [number, string, boolean]> = {
+	Enter: [13, 'Enter', false],
+	Backspace: [8, 'Backspace', false],
+	Tab: [9, 'Tab', false],
+	Escape: [27, 'Escape', false],
+	Delete: [46, 'Delete', false],
+	ArrowLeft: [37, 'ArrowLeft', false],
+	ArrowUp: [38, 'ArrowUp', false],
+	ArrowRight: [39, 'ArrowRight', false],
+	ArrowDown: [40, 'ArrowDown', false],
+	Home: [36, 'Home', false],
+	End: [35, 'End', false],
+	PageUp: [33, 'PageUp', false],
+	PageDown: [34, 'PageDown', false],
+	Insert: [45, 'Insert', false]
+};
 
 export function isEditableFormControl(target: EventTarget | null): boolean {
 	if (!(target instanceof HTMLElement)) return false;
@@ -29,6 +48,23 @@ export function isConsolePasteChord(event: KeyboardEvent): boolean {
 		!event.altKey &&
 		(event.key === 'V' || event.key === 'v')
 	);
+}
+
+/**
+ * Resolve a physical key to a synth mapping when we must bypass native KM2.
+ * `printableKeyMap` is the component US KEY_MAP (char → keyCode/code/shift).
+ */
+export function resolveConsoleSynthMapping(
+	event: KeyboardEvent,
+	printableKeyMap: Record<string, [number, string, boolean]>
+): [number, string, boolean] | null {
+	if (event.ctrlKey || event.altKey || event.metaKey) return null;
+	const special = CONSOLE_SPECIAL_KEYS[event.key];
+	if (special) return special;
+	if (event.key.length === 1 && printableKeyMap[event.key]) {
+		return printableKeyMap[event.key];
+	}
+	return null;
 }
 
 /** Force every nested framebuffer canvas to tabindex=-1 (SDK default is 1). */

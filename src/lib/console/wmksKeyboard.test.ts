@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+	CONSOLE_SPECIAL_KEYS,
 	demoteNestedConsoleCanvases,
 	isConsolePasteChord,
 	isEditableFormControl,
 	observeNestedConsoleCanvases,
+	resolveConsoleSynthMapping,
 	shouldReclaimConsoleFocus
 } from './wmksKeyboard';
 
@@ -20,6 +22,12 @@ function keyEvent(overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
 		...overrides
 	} as KeyboardEvent;
 }
+
+const SAMPLE_KEY_MAP: Record<string, [number, string, boolean]> = {
+	a: [65, 'KeyA', false],
+	A: [65, 'KeyA', true],
+	' ': [32, 'Space', false]
+};
 
 describe('console keyboard helpers (not the send path)', () => {
 	it('identifies Ctrl+V / Ctrl+Shift+V paste chords', () => {
@@ -40,6 +48,25 @@ describe('console keyboard helpers (not the send path)', () => {
 		expect(
 			isConsolePasteChord(keyEvent({ key: 'v', code: 'KeyV', altKey: true, ctrlKey: true }))
 		).toBe(false);
+	});
+
+	it('maps Enter/Backspace and shifted printables for synth (Ubuntu KM2 flush gap)', () => {
+		expect(resolveConsoleSynthMapping(keyEvent({ key: 'Enter', code: 'Enter' }), SAMPLE_KEY_MAP)).toEqual(
+			CONSOLE_SPECIAL_KEYS.Enter
+		);
+		expect(
+			resolveConsoleSynthMapping(keyEvent({ key: 'Backspace', code: 'Backspace' }), SAMPLE_KEY_MAP)
+		).toEqual(CONSOLE_SPECIAL_KEYS.Backspace);
+		expect(resolveConsoleSynthMapping(keyEvent({ key: 'A', code: 'KeyA', shiftKey: true }), SAMPLE_KEY_MAP)).toEqual(
+			SAMPLE_KEY_MAP.A
+		);
+		expect(resolveConsoleSynthMapping(keyEvent({ key: 'a', code: 'KeyA' }), SAMPLE_KEY_MAP)).toEqual(
+			SAMPLE_KEY_MAP.a
+		);
+		expect(
+			resolveConsoleSynthMapping(keyEvent({ key: 'a', code: 'KeyA', ctrlKey: true }), SAMPLE_KEY_MAP)
+		).toBeNull();
+		expect(resolveConsoleSynthMapping(keyEvent({ key: 'Shift', code: 'ShiftLeft' }), SAMPLE_KEY_MAP)).toBeNull();
 	});
 
 	it('treats only real editors as form controls — toolbar buttons must not eat guest keys', () => {

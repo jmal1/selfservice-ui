@@ -218,43 +218,34 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
 	});
 
-	it('delivers physical Enter and Backspace through the same SDK bind (not paste synth)', async () => {
+	it('synths Enter, Backspace, and uppercase through the SDK bind (not native-only)', async () => {
 		const { container, instance } = await renderConnectedConsole();
 
-		const enterNotCancelled = await fireEvent.keyDown(container, {
-			key: 'Enter',
-			code: 'Enter',
-			keyCode: 13
-		});
-		expect(enterNotCancelled).toBe(true);
-		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
-		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
-			key: 'Enter',
-			code: 'Enter'
-		});
-
-		const backspaceNotCancelled = await fireEvent.keyDown(container, {
-			key: 'Backspace',
-			code: 'Backspace',
-			keyCode: 8
-		});
-		expect(backspaceNotCancelled).toBe(true);
-		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(2);
-		expect(liveKm().onKeyDown.mock.calls[1][0]).toMatchObject({
-			key: 'Backspace',
-			code: 'Backspace'
-		});
+		for (const init of [
+			{ key: 'Enter', code: 'Enter', keyCode: 13 },
+			{ key: 'Backspace', code: 'Backspace', keyCode: 8 },
+			{ key: 'A', code: 'KeyA', keyCode: 65, shiftKey: true }
+		]) {
+			instance.sdkWidgetKeydown.mockClear();
+			liveKm().onKeyDown.mockClear();
+			const cancelled = !(await fireEvent.keyDown(container, init));
+			expect(cancelled).toBe(true);
+			expect(instance.sdkWidgetKeydown).toHaveBeenCalled();
+			expect(liveKm().onKeyDown).toHaveBeenCalled();
+			const keys = liveKm().onKeyDown.mock.calls.map((call) => call[0].key);
+			expect(keys).toContain(init.key === 'A' ? 'A' : init.key);
+		}
 	});
 
-	it('bubbles nested-canvas keydown to the widget bind without capture-stealing', async () => {
+	it('bubbles nested-canvas keydown into synth → widget bind for printables', async () => {
 		const { container, instance } = await renderConnectedConsole();
 		const nestedCanvas = container.querySelector('canvas');
 		expect(nestedCanvas).not.toBeNull();
 
-		const notCancelled = await fireEvent.keyDown(nestedCanvas!, { key: 'b', code: 'KeyB' });
+		const cancelled = !(await fireEvent.keyDown(nestedCanvas!, { key: 'b', code: 'KeyB' }));
 
-		expect(notCancelled).toBe(true);
-		// Target-phase canvas listener may see the event; acceptance is the bind.
+		expect(cancelled).toBe(true);
+		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
 		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({ key: 'b', code: 'KeyB' });
@@ -289,27 +280,6 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		await fireEvent.keyDown(container, { key: 'z', code: 'KeyZ' });
 		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
-	});
-
-	it('does not preventDefault normal physical keys (sabotage #66 printable dual-path)', async () => {
-		const { container, instance } = await renderConnectedConsole();
-
-		for (const init of [
-			{ key: 'a', code: 'KeyA', keyCode: 65 },
-			{ key: 'Enter', code: 'Enter', keyCode: 13 },
-			{ key: 'Backspace', code: 'Backspace', keyCode: 8 }
-		]) {
-			instance.sdkWidgetKeydown.mockClear();
-			liveKm().onKeyDown.mockClear();
-			const notCancelled = await fireEvent.keyDown(container, init);
-			expect(notCancelled).toBe(true);
-			expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
-			expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
-			expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
-				key: init.key,
-				code: init.code
-			});
-		}
 	});
 
 	it('does not hold disconnected keys and does not flush them on reconnect', async () => {
