@@ -218,15 +218,43 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
 	});
 
-	it('routes nested-canvas printable keydown via synth (does not rely on native bubble)', async () => {
+	it('delivers physical Enter and Backspace through the same SDK bind (not paste synth)', async () => {
+		const { container, instance } = await renderConnectedConsole();
+
+		const enterNotCancelled = await fireEvent.keyDown(container, {
+			key: 'Enter',
+			code: 'Enter',
+			keyCode: 13
+		});
+		expect(enterNotCancelled).toBe(true);
+		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
+		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
+			key: 'Enter',
+			code: 'Enter'
+		});
+
+		const backspaceNotCancelled = await fireEvent.keyDown(container, {
+			key: 'Backspace',
+			code: 'Backspace',
+			keyCode: 8
+		});
+		expect(backspaceNotCancelled).toBe(true);
+		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(2);
+		expect(liveKm().onKeyDown.mock.calls[1][0]).toMatchObject({
+			key: 'Backspace',
+			code: 'Backspace'
+		});
+	});
+
+	it('bubbles nested-canvas keydown to the widget bind without capture-stealing', async () => {
 		const { container, instance } = await renderConnectedConsole();
 		const nestedCanvas = container.querySelector('canvas');
 		expect(nestedCanvas).not.toBeNull();
 
-		await fireEvent.keyDown(nestedCanvas!, { key: 'b', code: 'KeyB' });
+		const notCancelled = await fireEvent.keyDown(nestedCanvas!, { key: 'b', code: 'KeyB' });
 
-		// Printable stolen in capture before the nested canvas listener.
-		expect(instance.canvasOnlyKeydown).not.toHaveBeenCalled();
+		expect(notCancelled).toBe(true);
+		// Target-phase canvas listener may see the event; acceptance is the bind.
 		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({ key: 'b', code: 'KeyB' });
@@ -261,6 +289,27 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		await fireEvent.keyDown(container, { key: 'z', code: 'KeyZ' });
 		expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
 		expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not preventDefault normal physical keys (sabotage #66 printable dual-path)', async () => {
+		const { container, instance } = await renderConnectedConsole();
+
+		for (const init of [
+			{ key: 'a', code: 'KeyA', keyCode: 65 },
+			{ key: 'Enter', code: 'Enter', keyCode: 13 },
+			{ key: 'Backspace', code: 'Backspace', keyCode: 8 }
+		]) {
+			instance.sdkWidgetKeydown.mockClear();
+			liveKm().onKeyDown.mockClear();
+			const notCancelled = await fireEvent.keyDown(container, init);
+			expect(notCancelled).toBe(true);
+			expect(instance.sdkWidgetKeydown).toHaveBeenCalledTimes(1);
+			expect(liveKm().onKeyDown).toHaveBeenCalledTimes(1);
+			expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
+				key: init.key,
+				code: init.code
+			});
+		}
 	});
 
 	it('does not hold disconnected keys and does not flush them on reconnect', async () => {
@@ -353,25 +402,6 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		expect(navigator.clipboard.readText).toHaveBeenCalledTimes(1);
 		expect(instance.sdkWidgetKeydown).not.toHaveBeenCalled();
 		expect(liveKm().onKeyDown).not.toHaveBeenCalled();
-	});
-
-	it('routes printable physical keys through paste synthesis (not native VScan alone)', async () => {
-		const { container, instance } = await renderConnectedConsole();
-
-		const eventWasNotCancelled = await fireEvent.keyDown(container, {
-			key: 'f',
-			code: 'KeyF',
-			keyCode: 70
-		});
-
-		expect(eventWasNotCancelled).toBe(false);
-		// Native path stolen; synth dispatchEvent hits the same nwmks bind.
-		expect(instance.sdkWidgetKeydown).toHaveBeenCalled();
-		expect(liveKm().onKeyDown).toHaveBeenCalled();
-		expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
-			key: 'f',
-			code: 'KeyF'
-		});
 	});
 });
 
