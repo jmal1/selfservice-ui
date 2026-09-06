@@ -8,13 +8,13 @@
   status badge, paste/text-input drawer, Ctrl+Alt+Del button, reconnect
   button, error overlay, and paste synthesis onto the live nwmks element.
 
-  Physical keys (letters, Enter, Backspace, arrows, modifiers): one send
-  path only — the HTML5 WMKS SDK binds keydown.wmks on #console-canvas
-  (this.element) → KeyboardManager2 → onKeyVScan. Keep focus on that
-  container; demote the nested SDK canvas (tabindex=1). Page capture is
-  paste-chord only. Do not preventDefault normal keys (#59/#66 dual-path),
-  call _keyboardManager behind the SDK's back, or queue disconnected keys.
-  Paste/text-input dispatchEvent on #console-canvas (same bind).
+  Guest-visible keys on Ubuntu: operator Edge showed native KeyboardManager2
+  only flushes unshifted lowercase immediately; uppercase/Enter/Backspace
+  stay buffered until a lowercase arrives. Those keys (and all KEY_MAP
+  printables) are therefore sent only via the paste synthesizer —
+  dispatchEvent on #console-canvas so keydown.wmks still runs. Keep focus
+  on the container; demote nested canvas tabindex. Do not call
+  _keyboardManager behind the SDK (#59) or queue disconnected keys.
   ?wmksDebug=1 is observe-only (off by default).
 
   Caller provides: the WebSocket URL, a window title, and an optional
@@ -34,6 +34,7 @@
 		isConsolePasteChord,
 		isEditableFormControl,
 		observeNestedConsoleCanvases,
+		resolveConsoleSynthMapping,
 		shouldReclaimConsoleFocus
 	} from '$lib/console/wmksKeyboard';
 	import { attachWmksKeyTrace, isWmksDebugEnabled } from '$lib/console/wmksKeyTrace';
@@ -377,15 +378,71 @@
 		}
 	}
 
+	function sendKeyViaSynth(key: string, mapping: [number, string, boolean]): void {
+		const [keyCode, code, needsShift] = mapping;
+		if (needsShift) {
+			sendSyntheticKey(
+				synthesizeKey('keydown', {
+					code: 'ShiftLeft',
+					key: 'Shift',
+					keyCode: 16,
+					shiftKey: true
+				})
+			);
+		}
+		sendSyntheticKey(
+			synthesizeKey('keydown', {
+				code,
+				key,
+				keyCode,
+				shiftKey: needsShift
+			})
+		);
+		sendSyntheticKey(
+			synthesizeKey('keyup', {
+				code,
+				key,
+				keyCode,
+				shiftKey: needsShift
+			})
+		);
+		if (needsShift) {
+			sendSyntheticKey(
+				synthesizeKey('keyup', {
+					code: 'ShiftLeft',
+					key: 'Shift',
+					keyCode: 16,
+					shiftKey: false
+				})
+			);
+		}
+	}
+
 	function handlePageKeydown(e: KeyboardEvent) {
 		if (isEditableFormControl(e.target)) return;
 		if (pasteSynthesizing) return;
-		if (!isConsolePasteChord(e)) return;
-		// Paste chord only — never preventDefault/stopPropagation normal keys
-		// (that starves keydown.wmks; #59/#66 dual-path regression).
+		if (isConsolePasteChord(e)) {
+			e.preventDefault();
+			e.stopPropagation();
+			handlePaste();
+			return;
+		}
+		// Ubuntu: native KM2 buffers Shift/Enter/Backspace until lowercase.
+		// Synth through the same #console-canvas bind paste already uses.
+		const mapping = resolveConsoleSynthMapping(e, KEY_MAP);
+		if (!mapping) return;
 		e.preventDefault();
 		e.stopPropagation();
-		handlePaste();
+		sendKeyViaSynth(e.key, mapping);
+	}
+
+	function handlePageKeyup(e: KeyboardEvent) {
+		if (isEditableFormControl(e.target)) return;
+		if (pasteSynthesizing) return;
+		if (!resolveConsoleSynthMapping(e, KEY_MAP)) return;
+		// Swallow keyup for keys we already fully synthesized on keydown.
+		e.preventDefault();
+		e.stopPropagation();
 	}
 
 	onMount(async () => {
@@ -444,6 +501,7 @@
 <div
 	class="fixed inset-0 flex flex-col overflow-hidden bg-black"
 	onkeydowncapture={handlePageKeydown}
+	onkeyupcapture={handlePageKeyup}
 	onfocusincapture={handleConsoleFocusIn}
 >
 	<!-- Toolbar -->
