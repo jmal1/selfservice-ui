@@ -10,6 +10,9 @@
  * is guest-visible for those keys — map them here and send only via synth
  * (preventDefault the physical event so native does not also fire).
  *
+ * Right Shift still hit the native flush gap after ui#68 (Left Shift OK).
+ * Synth ShiftLeft/ShiftRight on the physical modifier events too.
+ *
  * Do not call `_keyboardManager.onKeyDown` behind the SDK (#59). Do not queue
  * disconnected keys. Focus helpers below keep the nested SDK canvas from
  * stealing focus; they are not a send path.
@@ -35,6 +38,16 @@ export const CONSOLE_SPECIAL_KEYS: Record<string, [number, string, boolean]> = {
 	Insert: [45, 'Insert', false]
 };
 
+/** Physical Shift → KeyboardEvent.code for synth (native Right Shift flushes on Ubuntu). */
+export function resolveConsoleShiftCode(event: KeyboardEvent): 'ShiftLeft' | 'ShiftRight' | null {
+	if (event.key !== 'Shift') return null;
+	if (event.code === 'ShiftRight') return 'ShiftRight';
+	if (event.code === 'ShiftLeft') return 'ShiftLeft';
+	// DOM_KEY_LOCATION_RIGHT === 2
+	if (event.location === 2) return 'ShiftRight';
+	return 'ShiftLeft';
+}
+
 export function isEditableFormControl(target: EventTarget | null): boolean {
 	if (!(target instanceof HTMLElement)) return false;
 	if (target.isContentEditable) return true;
@@ -53,12 +66,14 @@ export function isConsolePasteChord(event: KeyboardEvent): boolean {
 /**
  * Resolve a physical key to a synth mapping when we must bypass native KM2.
  * `printableKeyMap` is the component US KEY_MAP (char → keyCode/code/shift).
+ * Shift modifiers are handled separately via `resolveConsoleShiftCode`.
  */
 export function resolveConsoleSynthMapping(
 	event: KeyboardEvent,
 	printableKeyMap: Record<string, [number, string, boolean]>
 ): [number, string, boolean] | null {
 	if (event.ctrlKey || event.altKey || event.metaKey) return null;
+	if (event.key === 'Shift') return null;
 	const special = CONSOLE_SPECIAL_KEYS[event.key];
 	if (special) return special;
 	if (event.key.length === 1 && printableKeyMap[event.key]) {

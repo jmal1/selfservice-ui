@@ -12,8 +12,9 @@
   only flushes unshifted lowercase immediately; uppercase/Enter/Backspace
   stay buffered until a lowercase arrives. Those keys (and all KEY_MAP
   printables) are therefore sent only via the paste synthesizer —
-  dispatchEvent on #console-canvas so keydown.wmks still runs. Keep focus
-  on the container; demote nested canvas tabindex. Do not call
+  dispatchEvent on #console-canvas so keydown.wmks still runs. Right Shift
+  hit the same flush gap after ui#68 — synthesize ShiftLeft/ShiftRight too.
+  Keep focus on the container; demote nested canvas tabindex. Do not call
   _keyboardManager behind the SDK (#59) or queue disconnected keys.
   ?wmksDebug=1 is observe-only (off by default).
 
@@ -34,6 +35,7 @@
 		isConsolePasteChord,
 		isEditableFormControl,
 		observeNestedConsoleCanvases,
+		resolveConsoleShiftCode,
 		resolveConsoleSynthMapping,
 		shouldReclaimConsoleFocus
 	} from '$lib/console/wmksKeyboard';
@@ -378,9 +380,16 @@
 		}
 	}
 
-	function sendKeyViaSynth(key: string, mapping: [number, string, boolean]): void {
+	function sendKeyViaSynth(
+		key: string,
+		mapping: [number, string, boolean],
+		opts: { shiftAlreadyHeld?: boolean } = {}
+	): void {
 		const [keyCode, code, needsShift] = mapping;
-		if (needsShift) {
+		// Physical Shift is synthesized separately; do not inject a second ShiftLeft
+		// wrap when the operator is already holding Shift (Left or Right).
+		const wrapShift = needsShift && !opts.shiftAlreadyHeld;
+		if (wrapShift) {
 			sendSyntheticKey(
 				synthesizeKey('keydown', {
 					code: 'ShiftLeft',
@@ -395,7 +404,7 @@
 				code,
 				key,
 				keyCode,
-				shiftKey: needsShift
+				shiftKey: needsShift || !!opts.shiftAlreadyHeld
 			})
 		);
 		sendSyntheticKey(
@@ -403,10 +412,10 @@
 				code,
 				key,
 				keyCode,
-				shiftKey: needsShift
+				shiftKey: needsShift || !!opts.shiftAlreadyHeld
 			})
 		);
-		if (needsShift) {
+		if (wrapShift) {
 			sendSyntheticKey(
 				synthesizeKey('keyup', {
 					code: 'ShiftLeft',
@@ -418,6 +427,17 @@
 		}
 	}
 
+	function sendShiftViaSynth(type: 'keydown' | 'keyup', code: 'ShiftLeft' | 'ShiftRight'): void {
+		sendSyntheticKey(
+			synthesizeKey(type, {
+				code,
+				key: 'Shift',
+				keyCode: 16,
+				shiftKey: type === 'keydown'
+			})
+		);
+	}
+
 	function handlePageKeydown(e: KeyboardEvent) {
 		if (isEditableFormControl(e.target)) return;
 		if (pasteSynthesizing) return;
@@ -427,18 +447,32 @@
 			handlePaste();
 			return;
 		}
+		const shiftCode = resolveConsoleShiftCode(e);
+		if (shiftCode) {
+			e.preventDefault();
+			e.stopPropagation();
+			sendShiftViaSynth('keydown', shiftCode);
+			return;
+		}
 		// Ubuntu: native KM2 buffers Shift/Enter/Backspace until lowercase.
 		// Synth through the same #console-canvas bind paste already uses.
 		const mapping = resolveConsoleSynthMapping(e, KEY_MAP);
 		if (!mapping) return;
 		e.preventDefault();
 		e.stopPropagation();
-		sendKeyViaSynth(e.key, mapping);
+		sendKeyViaSynth(e.key, mapping, { shiftAlreadyHeld: e.shiftKey });
 	}
 
 	function handlePageKeyup(e: KeyboardEvent) {
 		if (isEditableFormControl(e.target)) return;
 		if (pasteSynthesizing) return;
+		const shiftCode = resolveConsoleShiftCode(e);
+		if (shiftCode) {
+			e.preventDefault();
+			e.stopPropagation();
+			sendShiftViaSynth('keyup', shiftCode);
+			return;
+		}
 		if (!resolveConsoleSynthMapping(e, KEY_MAP)) return;
 		// Swallow keyup for keys we already fully synthesized on keydown.
 		e.preventDefault();

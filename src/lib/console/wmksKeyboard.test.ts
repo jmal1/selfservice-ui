@@ -5,6 +5,7 @@ import {
 	isConsolePasteChord,
 	isEditableFormControl,
 	observeNestedConsoleCanvases,
+	resolveConsoleShiftCode,
 	resolveConsoleSynthMapping,
 	shouldReclaimConsoleFocus
 } from './wmksKeyboard';
@@ -15,6 +16,7 @@ function keyEvent(overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
 		key: 'a',
 		code: 'KeyA',
 		keyCode: 65,
+		location: 0,
 		shiftKey: false,
 		ctrlKey: false,
 		altKey: false,
@@ -67,6 +69,18 @@ describe('console keyboard helpers (not the send path)', () => {
 			resolveConsoleSynthMapping(keyEvent({ key: 'a', code: 'KeyA', ctrlKey: true }), SAMPLE_KEY_MAP)
 		).toBeNull();
 		expect(resolveConsoleSynthMapping(keyEvent({ key: 'Shift', code: 'ShiftLeft' }), SAMPLE_KEY_MAP)).toBeNull();
+		expect(resolveConsoleSynthMapping(keyEvent({ key: 'Shift', code: 'ShiftRight' }), SAMPLE_KEY_MAP)).toBeNull();
+	});
+
+	it('maps Left/Right Shift codes for modifier synth (Ubuntu Right Shift flush gap)', () => {
+		expect(resolveConsoleShiftCode(keyEvent({ key: 'Shift', code: 'ShiftLeft', location: 1 }))).toBe(
+			'ShiftLeft'
+		);
+		expect(resolveConsoleShiftCode(keyEvent({ key: 'Shift', code: 'ShiftRight', location: 2 }))).toBe(
+			'ShiftRight'
+		);
+		expect(resolveConsoleShiftCode(keyEvent({ key: 'Shift', code: '', location: 2 }))).toBe('ShiftRight');
+		expect(resolveConsoleShiftCode(keyEvent({ key: 'a', code: 'KeyA' }))).toBeNull();
 	});
 
 	it('treats only real editors as form controls — toolbar buttons must not eat guest keys', () => {
