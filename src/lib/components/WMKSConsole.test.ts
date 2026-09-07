@@ -237,6 +237,41 @@ describe('WMKSConsole live nwmks keyboard send path', () => {
 		}
 	});
 
+	it('synths Right Shift (and Left) through the SDK bind — native Right Shift flushes on Ubuntu', async () => {
+		const { container, instance } = await renderConnectedConsole();
+
+		for (const code of ['ShiftRight', 'ShiftLeft'] as const) {
+			instance.sdkWidgetKeydown.mockClear();
+			liveKm().onKeyDown.mockClear();
+			const cancelled = !(await fireEvent.keyDown(container, {
+				key: 'Shift',
+				code,
+				keyCode: 16,
+				location: code === 'ShiftRight' ? 2 : 1
+			}));
+			expect(cancelled).toBe(true);
+			expect(instance.sdkWidgetKeydown).toHaveBeenCalled();
+			expect(liveKm().onKeyDown).toHaveBeenCalled();
+			expect(liveKm().onKeyDown.mock.calls[0][0]).toMatchObject({
+				key: 'Shift',
+				code
+			});
+		}
+
+		// Shift already held: uppercase must not inject a second ShiftLeft wrap.
+		instance.sdkWidgetKeydown.mockClear();
+		liveKm().onKeyDown.mockClear();
+		await fireEvent.keyDown(container, {
+			key: 'A',
+			code: 'KeyA',
+			keyCode: 65,
+			shiftKey: true
+		});
+		const keys = liveKm().onKeyDown.mock.calls.map((call) => call[0].key);
+		expect(keys.filter((k) => k === 'Shift').length).toBeLessThanOrEqual(1);
+		expect(keys).toContain('A');
+	});
+
 	it('bubbles nested-canvas keydown into synth → widget bind for printables', async () => {
 		const { container, instance } = await renderConnectedConsole();
 		const nestedCanvas = container.querySelector('canvas');
