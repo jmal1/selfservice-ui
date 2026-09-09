@@ -97,6 +97,7 @@ export interface Template {
 	staging_network?: string;
 	vcenter_vm_id?: string;
 	created_by?: string;
+	creator?: User;
 	created_at?: string;
 	updated_at?: string;
 	// Pinning fields (migration 000030). Instructors can pin templates
@@ -314,6 +315,8 @@ export interface Workflow {
 	visible_to_students: boolean;
 	created_by: string;
 	approved_by?: string;
+	creator?: User;
+	approver?: User;
 	is_active: boolean;
 	created_at: string;
 	updated_at: string;

@@ -19,6 +19,7 @@
 	import MarkdownField from '$lib/components/MarkdownField.svelte';
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { formatAttribution } from '$lib/utils/run';
 
 	let templates = $state<Template[]>([]);
 	let loading = $state(true);
@@ -443,6 +444,7 @@
 						>
 							<th scope="col" class="px-5 py-3">Name</th>
 							<th scope="col" class="px-5 py-3">State</th>
+							<th scope="col" class="px-5 py-3">Created by</th>
 							<th scope="col" class="px-5 py-3">vCenter Template</th>
 							<th scope="col" class="px-5 py-3">OS</th>
 							<th scope="col" class="px-5 py-3">Defaults (CPU/RAM/Disk)</th>
@@ -455,14 +457,14 @@
 						{#if loading}
 							{#each Array(4) as _}
 								<tr class="border-b border-surface-200 dark:border-surface-800">
-									{#each Array(8) as _cell}
+									{#each Array(9) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
 								</tr>
 							{/each}
 						{:else if templates.length === 0}
 							<tr>
-								<td colspan="8" class="px-5 py-12 text-center text-surface-500"
+								<td colspan="9" class="px-5 py-12 text-center text-surface-500"
 									>No templates found.</td
 								>
 							</tr>
@@ -476,6 +478,9 @@
 										</td>
 										<td class="px-5 py-3 text-xs text-surface-500">
 											{t.template_state ?? '—'}
+										</td>
+										<td class="px-5 py-3 text-sm text-surface-600 dark:text-surface-400">
+											{t.creator ? formatAttribution(t.creator.display_name, t.creator.username) : '—'}
 										</td>
 										<td class="px-5 py-3">
 											<input
@@ -596,7 +601,7 @@
 								{:else if deletingId === t.id}
 									<!-- Delete confirmation row -->
 									<tr class="border-b border-error-500/20 bg-error-500/5">
-										<td colspan="8" class="px-5 py-3">
+										<td colspan="9" class="px-5 py-3">
 											<div class="flex items-center justify-between">
 												<span class="text-sm text-surface-900 dark:text-surface-100">
 													Delete <strong>{t.name}</strong>? This cannot be undone.
@@ -636,6 +641,9 @@
 											<span class="rounded-full px-2 py-0.5 text-xs font-medium {stateBadgeClass(t.template_state)}">
 												{t.template_state ?? 'unknown'}
 											</span>
+										</td>
+										<td class="px-5 py-3 text-sm text-surface-600 dark:text-surface-400">
+											{t.creator ? formatAttribution(t.creator.display_name, t.creator.username) : '—'}
 										</td>
 										<td class="px-5 py-3 font-mono text-xs text-surface-600 dark:text-surface-400"
 											>{t.vcenter_template}</td
@@ -705,7 +713,7 @@
 									</tr>
 									{#if playlistEditingTemplateId === t.id}
 										<tr class="border-b border-primary-500/20 bg-primary-500/5">
-											<td colspan="8" class="px-5 py-4">
+											<td colspan="9" class="px-5 py-4">
 												<div class="space-y-3">
 													<p class="text-sm font-semibold">Assign Playlists to {t.name}</p>
 													{#if playlists.length === 0}

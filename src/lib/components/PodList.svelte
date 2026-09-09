@@ -3,6 +3,7 @@
 	import { deletePod, extendPod, startVM, stopVM, restartVM, deleteVM } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { formatAttribution } from '$lib/utils/run';
 	import StatusBadge from './StatusBadge.svelte';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
 
@@ -180,7 +181,7 @@
 					</div>
 					<div class="mt-2 flex flex-wrap items-center gap-2 pl-6 text-xs text-surface-500">
 						{#if showOwner}
-							<span>{pod.owner?.display_name ?? pod.owner_id}</span>
+							<span>{formatAttribution(pod.owner?.display_name, pod.owner?.username)}</span>
 							<span>·</span>
 						{/if}
 						<span>{(pod.vms ?? []).length} VM{(pod.vms ?? []).length !== 1 ? 's' : ''}</span>
@@ -268,7 +269,7 @@
 					<span class="font-medium text-surface-900 dark:text-surface-100">{pod.name}</span>
 				</div>
 				{#if showOwner}
-					<span class="text-sm text-surface-600 dark:text-surface-400">{pod.owner?.display_name ?? pod.owner_id}</span>
+					<span class="text-sm text-surface-600 dark:text-surface-400">{formatAttribution(pod.owner?.display_name, pod.owner?.username)}</span>
 				{/if}
 				<div class="flex items-center gap-1.5 flex-wrap">
 					<StatusBadge status={pod.status} />

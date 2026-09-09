@@ -18,6 +18,7 @@
 	import ContextBadge from '$lib/components/ContextBadge.svelte';
 	import ScriptEditor from '$lib/components/ScriptEditor.svelte';
 	import { formatRunActionCall } from '$lib/workflows/actionInvocation';
+	import { formatAttribution } from '$lib/utils/run';
 	import type { Workflow, Action } from '$lib/types';
 
 	// ── List mode state ──
@@ -431,6 +432,8 @@
 							<th>Category</th>
 							<th>Mode</th>
 							<th>Status</th>
+							<th>Created by</th>
+							<th>Approved by</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -454,6 +457,22 @@
 									</span>
 								</td>
 								<td><StatusBadge status={wf.status} /></td>
+								<td>
+									<span
+										class="text-sm {wf.status === 'pending_review'
+											? 'font-semibold text-surface-900 dark:text-surface-100'
+											: 'text-surface-600 dark:text-surface-400'}"
+									>
+										{wf.creator
+											? formatAttribution(wf.creator.display_name, wf.creator.username)
+											: '—'}
+									</span>
+								</td>
+								<td class="text-sm text-surface-600 dark:text-surface-400">
+									{wf.approver
+										? formatAttribution(wf.approver.display_name, wf.approver.username)
+										: '—'}
+								</td>
 								<td>
 									<div class="flex gap-2">
 										<button class="btn btn-sm btn-secondary" onclick={(e) => { e.stopPropagation(); toggleDetail(wf.id); }}>
@@ -483,7 +502,7 @@
 							</tr>
 							{#if expandedWfId === wf.id}
 								<tr>
-									<td colspan="5" class="!p-0">
+									<td colspan="7" class="!p-0">
 										<div class="border-t border-surface-200 p-5 dark:border-surface-700">
 											{#if loadingDetail}
 												<LoadingSkeleton />
@@ -497,6 +516,9 @@
 																<p class="text-sm">{expandedWf.description}</p>
 															</div>
 														{/if}
+														<p class="text-xs text-surface-500">
+															Embedded actions inherit this workflow's author for review attribution.
+														</p>
 														<div>
 															<p class="mb-1 text-xs font-semibold uppercase text-surface-500">Timeout</p>
 															<p class="text-sm">{expandedWf.timeout_seconds}s</p>

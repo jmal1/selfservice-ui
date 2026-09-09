@@ -17,6 +17,14 @@ export function formatRunActor(run: Pick<Run, 'triggered_by_display_name' | 'tri
 	return firstNonEmpty(run.triggered_by_display_name, run.triggered_by_username) ?? '(unknown)';
 }
 
+/** Display name → username → (unknown). Shared by pod/template/workflow attribution cells. */
+export function formatAttribution(
+	displayName?: string | null,
+	username?: string | null
+): string {
+	return firstNonEmpty(displayName, username) ?? '(unknown)';
+}
+
 export function formatRunTargetVm(
 	run: Pick<Run, 'target_vm_name' | 'target_vm_ip'>
 ): { recorded: boolean; name: string; ip?: string } {
