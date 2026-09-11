@@ -1,58 +1,33 @@
-# sv
+# selfservice-ui
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit frontend for **Crucible** (student + instructor portal).
 
-## Creating a project
+Image: `ghcr.io/jmal1/selfservice-ui:<full-sha>` (and short SHA / `latest` from CI on `master`).
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Public vs private config
 
-```sh
-# create a new project
-npx sv create my-app
-```
+This repository is **public**. Tracked `.env.production` holds **empty** public keys only (`PUBLIC_*`); runtime API base URL and SSO are provided by the reverse-proxy / API login flow in production.
 
-To recreate this project with the same configuration:
+Lab hostnames, deploy targets, and secrets are **not** documented here. Production release pins live in private [`jmal1/crucible-deploy`](https://github.com/jmal1/crucible-deploy).
 
-```sh
-# recreate this project
-npx sv create --template minimal --types ts --no-install .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Develop
 
 ```sh
+npm ci
+cp .env.production .env   # needed for svelte-kit sync / svelte-check
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Before pushing
-
-Run the project pre-push gate before opening a PR or pushing to a remote branch:
+## Verify
 
 ```sh
 npm run verify
 ```
 
-This runs the canonical local checks in order: Svelte/TypeScript validation, Vitest unit tests, and the production build.
+CI (`.github/workflows/ci.yaml`) runs verify on push/PR to `master`, then builds and pushes the GHCR image (docs-only path changes are ignored).
 
-## Building
+## Related
 
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-<!-- public hygiene tip 35b6034 -->
-
-
-<!-- verified-merge noop 2026-09-11T10:48:32.0330565-07:00 -->
-
+- API: [`jmal1/selfservice-api`](https://github.com/jmal1/selfservice-api)
+- External Playwright synthetics: [`jmal1/selfservice-synthetic-ui`](https://github.com/jmal1/selfservice-synthetic-ui)
+- Deploy / prod topology (private): [`jmal1/crucible-deploy`](https://github.com/jmal1/crucible-deploy)
