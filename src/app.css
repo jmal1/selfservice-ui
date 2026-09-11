@@ -1,0 +1,424 @@
+@import 'tailwindcss';
+@import '@fontsource/inter';
+@import './theme-crucible.css';
+
+/* Use .dark class for dark mode, not OS prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--font-sans: 'Inter', sans-serif;
+	--color-accent: oklch(0.60 0.22 35);
+	--color-accent-glow: oklch(0.60 0.22 35 / 0.3);
+
+	/* ── Register theme colors for Tailwind v4 utility generation ──
+	   Without these, bg-primary-500, text-surface-400, etc. don't work.
+	   Values match theme-crucible.css. */
+
+	/* Primary: Fire Orange */
+	--color-primary-50: oklch(0.96 0.03 40);
+	--color-primary-100: oklch(0.92 0.06 38);
+	--color-primary-200: oklch(0.84 0.11 36);
+	--color-primary-300: oklch(0.76 0.16 34);
+	--color-primary-400: oklch(0.68 0.19 33);
+	--color-primary-500: oklch(0.60 0.22 35);
+	--color-primary-600: oklch(0.52 0.20 35);
+	--color-primary-700: oklch(0.44 0.17 35);
+	--color-primary-800: oklch(0.37 0.14 35);
+	--color-primary-900: oklch(0.30 0.11 35);
+	--color-primary-950: oklch(0.24 0.09 35);
+
+	/* Secondary: Steel Blue */
+	--color-secondary-50: oklch(0.96 0.02 250);
+	--color-secondary-100: oklch(0.92 0.05 252);
+	--color-secondary-200: oklch(0.84 0.09 254);
+	--color-secondary-300: oklch(0.76 0.14 255);
+	--color-secondary-400: oklch(0.68 0.17 255);
+	--color-secondary-500: oklch(0.60 0.18 255);
+	--color-secondary-600: oklch(0.52 0.16 255);
+	--color-secondary-700: oklch(0.44 0.14 255);
+	--color-secondary-800: oklch(0.37 0.12 255);
+	--color-secondary-900: oklch(0.30 0.09 255);
+	--color-secondary-950: oklch(0.24 0.07 255);
+
+	/* Tertiary: Molten Gold */
+	--color-tertiary-50: oklch(0.97 0.03 95);
+	--color-tertiary-100: oklch(0.94 0.06 95);
+	--color-tertiary-200: oklch(0.89 0.11 93);
+	--color-tertiary-300: oklch(0.84 0.15 92);
+	--color-tertiary-400: oklch(0.79 0.17 90);
+	--color-tertiary-500: oklch(0.74 0.16 88);
+	--color-tertiary-600: oklch(0.65 0.14 85);
+	--color-tertiary-700: oklch(0.55 0.12 85);
+	--color-tertiary-800: oklch(0.46 0.10 85);
+	--color-tertiary-900: oklch(0.38 0.08 85);
+	--color-tertiary-950: oklch(0.30 0.06 85);
+
+	/* Success: Green */
+	--color-success-50: oklch(0.96 0.04 150);
+	--color-success-100: oklch(0.91 0.08 150);
+	--color-success-200: oklch(0.84 0.13 148);
+	--color-success-300: oklch(0.76 0.17 146);
+	--color-success-400: oklch(0.68 0.18 145);
+	--color-success-500: oklch(0.60 0.17 145);
+	--color-success-600: oklch(0.53 0.15 145);
+	--color-success-700: oklch(0.46 0.13 145);
+	--color-success-800: oklch(0.39 0.11 145);
+	--color-success-900: oklch(0.32 0.09 145);
+	--color-success-950: oklch(0.25 0.07 145);
+
+	/* Warning: Amber */
+	--color-warning-50: oklch(0.96 0.04 85);
+	--color-warning-100: oklch(0.91 0.08 85);
+	--color-warning-200: oklch(0.84 0.13 83);
+	--color-warning-300: oklch(0.78 0.15 80);
+	--color-warning-400: oklch(0.72 0.16 78);
+	--color-warning-500: oklch(0.66 0.16 75);
+	--color-warning-600: oklch(0.58 0.14 75);
+	--color-warning-700: oklch(0.50 0.12 75);
+	--color-warning-800: oklch(0.43 0.10 75);
+	--color-warning-900: oklch(0.36 0.08 75);
+	--color-warning-950: oklch(0.29 0.06 75);
+
+	/* Error: Red */
+	--color-error-50: oklch(0.96 0.03 25);
+	--color-error-100: oklch(0.91 0.06 25);
+	--color-error-200: oklch(0.84 0.10 25);
+	--color-error-300: oklch(0.76 0.15 25);
+	--color-error-400: oklch(0.68 0.18 25);
+	--color-error-500: oklch(0.60 0.20 25);
+	--color-error-600: oklch(0.53 0.18 25);
+	--color-error-700: oklch(0.46 0.16 25);
+	--color-error-800: oklch(0.39 0.13 25);
+	--color-error-900: oklch(0.32 0.10 25);
+	--color-error-950: oklch(0.25 0.08 25);
+
+	/* Surface: Dark navy / Warm off-white */
+	--color-surface-50: oklch(0.965 0.005 70);
+	--color-surface-100: oklch(0.935 0.008 70);
+	--color-surface-200: oklch(0.89 0.010 68);
+	--color-surface-300: oklch(0.82 0.012 65);
+	--color-surface-400: oklch(0.45 0.015 60);
+	--color-surface-500: oklch(0.56 0.015 55);
+	--color-surface-600: oklch(0.42 0.02 265);
+	--color-surface-700: oklch(0.27 0.025 270);
+	--color-surface-800: oklch(0.20 0.02 275);
+	--color-surface-900: oklch(0.16 0.018 278);
+	--color-surface-950: oklch(0.13 0.015 278);
+}
+
+/* Scale up the entire UI ~15% so 100% zoom feels comfortable */
+html {
+	font-size: 18px;
+}
+
+/* Animated background blobs */
+@keyframes blob-drift {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33% { transform: translate(30px, -20px) scale(1.05); }
+	66% { transform: translate(-15px, 15px) scale(0.95); }
+}
+
+.bg-blob {
+	animation: blob-drift 20s ease-in-out infinite;
+}
+
+.bg-blob-delayed {
+	animation: blob-drift 25s ease-in-out infinite reverse;
+}
+
+/* Glass panel effect — subtle solid surface with border */
+.glass {
+	background: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.04));
+	border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+}
+
+.glass-hover:hover {
+	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.08));
+}
+
+/* Subtle shadow for primary buttons */
+.glow-primary {
+	box-shadow: 0 1px 3px oklch(0.60 0.22 35 / 0.15);
+}
+.glow-primary:hover {
+	box-shadow: 0 2px 8px oklch(0.60 0.22 35 / 0.2);
+}
+
+/* Pulse animation for status dots */
+@keyframes status-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
+}
+
+.status-pulse {
+	animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* ── Base styles (previously provided by Skeleton) ── */
+
+body {
+	color: oklch(0.20 0.02 275);
+	background-color: oklch(0.965 0.005 70);
+}
+.dark body {
+	color: oklch(0.92 0.005 80);
+	background-color: oklch(0.13 0.015 278);
+}
+h1, h2, h3, h4, h5, h6 {
+	color: var(--color-surface-900);
+}
+.dark :is(h1, h2, h3, h4, h5, h6) {
+	color: oklch(0.96 0.005 80);
+}
+
+/* ── Component classes ──
+   Clean styles using Crucible theme variables.
+   Light/dark handled via .dark class on <html>.
+   Note: surface-300 (oklch 0.82) is too light for borders on white,
+   so light-mode borders use a hardcoded oklch(0.72) midtone. */
+
+/* Cards */
+.card {
+	border-radius: var(--radius-container);
+	border: 1px solid oklch(0.72 0.01 65);
+	background-color: white;
+	box-shadow: 0 1px 3px oklch(0 0 0 / 0.08);
+}
+.dark .card {
+	border-color: var(--color-surface-700);
+	background-color: var(--color-surface-800);
+	box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+/* Buttons — base */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: var(--radius-base);
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 150ms ease;
+	border: 1px solid transparent;
+}
+.btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+.btn-sm {
+	padding: 0.25rem 0.75rem;
+	font-size: 0.8rem;
+}
+
+/* Button variants */
+.btn-primary {
+	background-color: var(--color-primary-500);
+	color: white;
+	border-color: var(--color-primary-600);
+}
+.btn-primary:hover:not(:disabled) {
+	background-color: var(--color-primary-600);
+}
+
+.btn-secondary {
+	border-color: oklch(0.72 0.01 65);
+	background-color: var(--color-surface-100);
+	color: var(--color-surface-800);
+}
+.dark .btn-secondary {
+	border-color: var(--color-surface-600);
+	background-color: var(--color-surface-700);
+	color: var(--color-surface-100);
+}
+.btn-secondary:hover:not(:disabled) {
+	background-color: var(--color-surface-200);
+}
+.dark .btn-secondary:hover:not(:disabled) {
+	background-color: var(--color-surface-600);
+}
+
+.btn-success {
+	background-color: var(--color-success-500);
+	color: white;
+	border-color: var(--color-success-600);
+}
+.btn-success:hover:not(:disabled) {
+	background-color: var(--color-success-600);
+}
+
+.btn-danger {
+	background-color: var(--color-error-500);
+	color: white;
+	border-color: var(--color-error-600);
+}
+.btn-danger:hover:not(:disabled) {
+	background-color: var(--color-error-600);
+}
+
+.btn-ghost {
+	background-color: transparent;
+	color: var(--color-primary-500);
+	border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+	background-color: oklch(0.60 0.22 35 / 0.1);
+}
+
+/* Form inputs */
+.input, .textarea, .select {
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border-radius: var(--radius-base);
+	border: 1px solid oklch(0.72 0.01 65);
+	background-color: var(--color-surface-50);
+	color: var(--color-surface-900);
+	font-size: inherit;
+	font-family: inherit;
+}
+.dark .input, .dark .textarea, .dark .select {
+	border-color: var(--color-surface-600);
+	background-color: var(--color-surface-900);
+	color: var(--color-surface-100);
+}
+.input:focus, .textarea:focus, .select:focus {
+	border-color: var(--color-primary-500);
+	outline: 2px solid oklch(0.60 0.22 35 / 0.3);
+	outline-offset: 1px;
+}
+.input::placeholder, .textarea::placeholder {
+	color: var(--color-surface-400);
+}
+
+/* Labels */
+.label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+.label > span {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--color-surface-800);
+}
+.dark .label > span {
+	color: var(--color-surface-200);
+}
+
+/* Tables */
+.table-container {
+	border: 1px solid oklch(0.72 0.01 65);
+	border-radius: var(--radius-container);
+	overflow: hidden;
+}
+.dark .table-container {
+	border-color: var(--color-surface-700);
+}
+.table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.table th {
+	text-align: left;
+	padding: 0.75rem 1rem;
+	font-weight: 600;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--color-surface-500);
+	border-bottom: 1px solid var(--color-surface-200);
+}
+.dark .table th {
+	color: var(--color-surface-400);
+	border-color: var(--color-surface-700);
+}
+.table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--color-surface-100);
+}
+.dark .table td {
+	border-color: var(--color-surface-800);
+}
+.table-hover tbody tr:hover {
+	background-color: var(--color-surface-100);
+}
+.dark .table-hover tbody tr:hover {
+	background-color: var(--color-surface-800);
+}
+
+/* Badge */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+
+/* Checkbox */
+.checkbox {
+	width: 1.125rem;
+	height: 1.125rem;
+	border-radius: 0.25rem;
+	border: 2px solid var(--color-surface-400);
+	accent-color: var(--color-primary-500);
+}
+.dark .checkbox {
+	border-color: var(--color-surface-500);
+}
+
+/* Touch-friendly targets on coarse pointer devices */
+@media (pointer: coarse) {
+	.touch-target {
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	.bg-blob,
+	.bg-blob-delayed {
+		animation: none;
+	}
+
+	.status-pulse {
+		animation: none;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+.sr-only:focus {
+	position: static;
+	width: auto;
+	height: auto;
+	padding: 0.5rem 1rem;
+	margin: 0;
+	overflow: visible;
+	clip: auto;
+	white-space: normal;
+}

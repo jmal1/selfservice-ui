@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Option 2: Geometric Forge Mark - Hexagonal C with flame core -->
+  <defs>
+    <linearGradient id="flame2" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#CC2200"/>
+      <stop offset="40%" stop-color="#FF4500"/>
+      <stop offset="80%" stop-color="#FF8C00"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+    <linearGradient id="metal2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8E8E8"/>
+      <stop offset="100%" stop-color="#888888"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark background -->
+  <rect width="64" height="64" rx="12" fill="#12121f"/>
+  <!-- Outer hexagonal ring (broken to form C shape) -->
+  <path d="M32 6 L52 17 L52 39 L32 50 L12 39 L12 17 Z" 
+        fill="none" stroke="url(#metal2)" stroke-width="3" stroke-linecap="round"
+        stroke-dasharray="0 28 120" stroke-dashoffset="-14"/>
+  <!-- Inner flame -->
+  <path d="M32 44 
+           C26 40 22 35 22 30 
+           C22 24 26 20 29 18 
+           C28 22 30 21 30 18 
+           C30 14 32 12 32 12 
+           C32 12 34 14 34 18 
+           C34 21 36 22 35 18 
+           C38 20 42 24 42 30 
+           C42 35 38 40 32 44 Z" 
+        fill="url(#flame2)"/>
+  <!-- Inner bright core -->
+  <path d="M32 40 
+           C29 38 27 35 27 32 
+           C27 28 29 26 31 24 
+           C30 27 32 26 32 24 
+           C32 24 34 26 33 24 
+           C35 26 37 28 37 32 
+           C37 35 35 38 32 40 Z" 
+        fill="#FFD700" opacity="0.7"/>
+  <!-- Highlight dot -->
+  <circle cx="32" cy="30" r="2" fill="white" opacity="0.5"/>
+  <!-- Bottom accent line -->
+  <line x1="22" y1="56" x2="42" y2="56" stroke="#FF4500" stroke-width="2" stroke-linecap="round"/>
+</svg>
