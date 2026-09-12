@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { ResourceUsage } from '$lib/types';
+	import type { ResourceUsage, RoleLimits } from '$lib/types';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
 
 	let { usage }: { usage: ResourceUsage | null } = $props();
@@ -22,6 +23,19 @@
 		];
 	});
 
+	const limits = $derived(authStore.user?.limits as RoleLimits | undefined);
+
+	const policyStrip = $derived.by(() => {
+		if (!limits) return null;
+		const idle = limits.idle_suspend_applies
+			? `idle suspend after ${limits.idle_suspend_hours}h`
+			: 'no idle suspend';
+		const orphan = limits.template_orphan_days != null
+			? ` · draft templates cleaned after ${limits.template_orphan_days}d`
+			: '';
+		return `Labs expire after ${limits.pod_ttl_days}d · extend +${limits.extend_days}d (max ${limits.max_extensions}) · ${idle} · suspended labs deleted after ${limits.suspended_delete_days}d · snapshots: original + ${limits.max_user_snapshots} · destroy_failed retries automatically${orphan}`;
+	});
+
 	function percentage(used: number, max: number): number {
 		if (max <= 0) return 0;
 		return Math.min(Math.round((used / max) * 100), 100);
@@ -34,43 +48,51 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-	{#if usage === null}
-		{#each Array(4) as _}
-			<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg">
-				<LoadingSkeleton width="4rem" height="0.75rem" rounded="rounded" />
-				<div class="mt-3">
-					<LoadingSkeleton width="6rem" height="1.75rem" rounded="rounded" />
-				</div>
-				<div class="mt-3">
-					<LoadingSkeleton height="0.375rem" rounded="rounded-full" />
-				</div>
-				<div class="mt-2">
-					<LoadingSkeleton width="3rem" height="0.75rem" rounded="rounded" />
-				</div>
-			</div>
-		{/each}
-	{:else}
-		{#each gauges as gauge}
-			{@const pct = percentage(gauge.used, gauge.max)}
-			<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg hover:shadow-primary-500/5">
-				<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">
-					{gauge.label}
-				</p>
-				<p class="mt-2 text-[28px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
-					{gauge.used} <span class="text-base font-normal text-surface-500">/ {gauge.max}{gauge.unit ? ` ${gauge.unit}` : ''}</span>
-				</p>
-				<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800/60">
-					<div
-						class="h-full rounded-full transition-all duration-1000 {barColor(pct)}"
-						style="width: {pct}%"
-					></div>
-				</div>
-				<div class="mt-1.5 flex justify-between text-[11px] text-surface-500">
-					<span>{pct}% used</span>
-					<span>{gauge.max - gauge.used} remaining</span>
-				</div>
-			</div>
-		{/each}
+<div class="space-y-3">
+	{#if policyStrip}
+		<p class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/60 dark:bg-surface-900/40 px-4 py-2.5 text-xs leading-relaxed text-surface-600 dark:text-surface-400">
+			{policyStrip}
+		</p>
 	{/if}
+
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		{#if usage === null}
+			{#each Array(4) as _}
+				<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg">
+					<LoadingSkeleton width="4rem" height="0.75rem" rounded="rounded" />
+					<div class="mt-3">
+						<LoadingSkeleton width="6rem" height="1.75rem" rounded="rounded" />
+					</div>
+					<div class="mt-3">
+						<LoadingSkeleton height="0.375rem" rounded="rounded-full" />
+					</div>
+					<div class="mt-2">
+						<LoadingSkeleton width="3rem" height="0.75rem" rounded="rounded" />
+					</div>
+				</div>
+			{/each}
+		{:else}
+			{#each gauges as gauge}
+				{@const pct = percentage(gauge.used, gauge.max)}
+				<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg hover:shadow-primary-500/5">
+					<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">
+						{gauge.label}
+					</p>
+					<p class="mt-2 text-[28px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
+						{gauge.used} <span class="text-base font-normal text-surface-500">/ {gauge.max}{gauge.unit ? ` ${gauge.unit}` : ''}</span>
+					</p>
+					<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800/60">
+						<div
+							class="h-full rounded-full transition-all duration-1000 {barColor(pct)}"
+							style="width: {pct}%"
+						></div>
+					</div>
+					<div class="mt-1.5 flex justify-between text-[11px] text-surface-500">
+						<span>{pct}% used</span>
+						<span>{gauge.max - gauge.used} remaining</span>
+					</div>
+				</div>
+			{/each}
+		{/if}
+	</div>
 </div>

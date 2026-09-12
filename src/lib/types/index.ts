@@ -41,6 +41,22 @@ export interface User {
 	max_vcpus: number;
 	max_ram_mb: number;
 	max_pods: number;
+	/** Role policy from GET /auth/me — optional during rolling deploy. */
+	limits?: RoleLimits;
+}
+
+export interface RoleLimits {
+	pod_ttl_days: number;
+	extend_days: number;
+	max_extensions: number;
+	idle_suspend_hours: number | null;
+	idle_suspend_applies: boolean;
+	suspended_delete_days: number;
+	max_user_snapshots: number;
+	max_pods: number;
+	max_vcpus: number;
+	max_ram_mb: number;
+	template_orphan_days?: number;
 }
 
 export type TemplateKind =
@@ -166,6 +182,9 @@ export interface Pod {
 	allow_vm_additions: boolean;
 	vms: PodVM[];
 	owner?: User;
+	extensions_used?: number;
+	extensions_remaining?: number;
+	extend_days?: number;
 }
 
 export interface Blueprint {

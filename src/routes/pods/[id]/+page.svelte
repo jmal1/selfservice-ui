@@ -62,15 +62,31 @@
 
 	async function handleExtendPod() {
 		if (!pod) return;
-		const days = authStore.isAdmin ? 30 : 7;
-		if (!confirm(`Extend "${pod.name}"? This will add ${days} more days.`)) return;
+		if (pod.extensions_remaining !== undefined && pod.extensions_remaining <= 0) {
+			toastStore.error('Extension limit reached (2/2)');
+			return;
+		}
+		const days = pod.extend_days;
+		const confirmMsg =
+			days != null
+				? `Extend "${pod.name}"? This will add ${days} more days.`
+				: `Extend "${pod.name}"?`;
+		if (!confirm(confirmMsg)) return;
 		extendLoading = true;
 		try {
 			const result = await extendPod(pod.id);
 			pod.expires_at = result.expires_at;
+			if (pod.extensions_used != null) pod.extensions_used += 1;
+			if (pod.extensions_remaining != null) pod.extensions_remaining = Math.max(0, pod.extensions_remaining - 1);
 			toastStore.success(`Extended by ${result.extended_by_days} days`);
 		} catch (e) {
-			toastStore.error(friendlyError(e, 'Failed to extend your environment. Please try again.'));
+			const msg = friendlyError(e, 'Failed to extend your environment. Please try again.');
+			if (/extensions_exhausted|extension limit/i.test(msg)) {
+				toastStore.error('Extension limit reached (2/2)');
+				await loadData();
+				return;
+			}
+			toastStore.error(msg);
 		} finally {
 			extendLoading = false;
 		}
@@ -311,13 +327,13 @@
 			</div>
 		{/if}
 
-		<!-- Expiration -->
+		<!-- Limits / Expiration -->
 		{#if pod.expires_at}
 			{@const exp = formatExpiry(pod.expires_at)}
-			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
+			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4 space-y-3">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
-						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
+						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Limits</span>
 						{#if exp}
 							<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
 								{exp.urgency === 'green' ? 'bg-success-500/20 text-success-500' : ''}
@@ -335,24 +351,45 @@
 						{#if pod.status === 'active'}
 							<button
 								onclick={handleExtendPod}
-								disabled={extendLoading}
+								disabled={extendLoading || pod.extensions_remaining === 0}
 								class="inline-flex items-center gap-1.5 rounded-lg bg-secondary-500/10 px-3 py-1.5 text-xs font-semibold text-secondary-400 transition-colors hover:bg-secondary-500/20 disabled:opacity-50"
+								title={pod.extensions_remaining === 0 ? 'Extension limit reached (2/2)' : 'Extend pod lifetime'}
 							>
 								{#if extendLoading}
 									<svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
 								{/if}
-								Extend {authStore.isAdmin ? '30' : '7'} days
+								{#if pod.extend_days != null && pod.extensions_remaining != null}
+									Extend +{pod.extend_days}d ({pod.extensions_remaining} left)
+								{:else if pod.extend_days != null}
+									Extend +{pod.extend_days}d
+								{:else}
+									Extend
+								{/if}
 							</button>
 						{/if}
 					</div>
 				</div>
+				<ul class="grid gap-1 text-xs text-surface-500 sm:grid-cols-2">
+					<li>Extensions: {pod.extensions_used ?? '—'} / 2 used</li>
+					<li>
+						{#if authStore.user?.limits?.idle_suspend_applies}
+							Idle suspend after {authStore.user.limits.idle_suspend_hours}h
+						{:else if authStore.user?.limits}
+							No idle suspend for your role
+						{:else}
+							Idle policy loads with /auth/me
+						{/if}
+					</li>
+					<li>Suspended labs deleted after {authStore.user?.limits?.suspended_delete_days ?? 5}d</li>
+					<li>Snapshots: original + {authStore.user?.limits?.max_user_snapshots ?? 1} (replaceable)</li>
+				</ul>
 			</div>
 		{:else}
 			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
+					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Limits</span>
 					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200/50 dark:bg-surface-800/50 text-surface-400">
-						No expiration
+						No expiration on this pod yet
 					</span>
 				</div>
 			</div>

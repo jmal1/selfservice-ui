@@ -16,6 +16,7 @@ import type {
 	PodVM,
 	Template,
 	User,
+	RoleLimits,
 	ResourceUsage,
 	Job,
 	AuditEntry,
@@ -572,6 +573,7 @@ export function adminListVCenterTemplatesFolder(refresh = false): Promise<VCente
 interface MeResponse {
 	user: User;
 	resource_usage: ResourceUsage;
+	limits?: RoleLimits;
 }
 
 export async function getMe(): Promise<MeResponse> {

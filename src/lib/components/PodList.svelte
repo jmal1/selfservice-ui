@@ -2,7 +2,6 @@
 	import type { Pod } from '$lib/types';
 	import { deletePod, extendPod, startVM, stopVM, restartVM, deleteVM } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { authStore } from '$lib/stores/auth.svelte';
 	import { formatAttribution } from '$lib/utils/run';
 	import StatusBadge from './StatusBadge.svelte';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
@@ -107,15 +106,30 @@
 		return { text, urgency };
 	}
 
-	async function handleExtend(podId: string, podName: string) {
-		const days = authStore.isAdmin ? 30 : 7;
-		if (!confirm(`Extend "${podName}"? This will add ${days} more days.`)) return;
+	async function handleExtend(podId: string, podName: string, pod: Pod) {
+		const remaining = pod.extensions_remaining;
+		if (remaining !== undefined && remaining <= 0) {
+			toastStore.error(`Extension limit reached (2/2) for "${podName}"`);
+			return;
+		}
+		const days = pod.extend_days;
+		const confirmMsg =
+			days != null
+				? `Extend "${podName}"? This will add ${days} more days.`
+				: `Extend "${podName}"?`;
+		if (!confirm(confirmMsg)) return;
 		try {
 			const result = await extendPod(podId);
 			toastStore.success(`Extended "${podName}" by ${result.extended_by_days} days`);
 			onrefresh?.();
 		} catch (e) {
-			toastStore.error(`Failed to extend: ${e instanceof Error ? e.message : 'Unknown error'}`);
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			if (/extensions_exhausted|extension limit/i.test(msg)) {
+				toastStore.error(`Extension limit reached for "${podName}"`);
+				onrefresh?.();
+				return;
+			}
+			toastStore.error(`Failed to extend: ${msg}`);
 		}
 	}
 </script>
@@ -202,11 +216,18 @@
 					</div>
 					<div class="mt-2 flex items-center justify-end gap-1 pl-6">
 						<button
-							onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name); }}
-							class="touch-target px-2 py-1 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors"
-							title="Extend pod lifetime"
+							onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name, pod); }}
+							disabled={pod.extensions_remaining === 0}
+							class="touch-target px-2 py-1 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+							title={pod.extensions_remaining === 0 ? 'Extension limit reached (2/2)' : 'Extend pod lifetime'}
 						>
-							Extend
+							{#if pod.extend_days != null && pod.extensions_remaining != null}
+								Extend +{pod.extend_days}d ({pod.extensions_remaining} left)
+							{:else if pod.extend_days != null}
+								Extend +{pod.extend_days}d
+							{:else}
+								Extend
+							{/if}
 						</button>
 						<a
 							href="/pods/{pod.id}"
@@ -297,11 +318,18 @@
 				</div>
 				<div class="flex items-center justify-end gap-1">
 					<button
-						onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name); }}
-						class="px-2 py-0.5 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors"
-						title="Extend pod lifetime"
+						onclick={(e: MouseEvent) => { e.stopPropagation(); handleExtend(pod.id, pod.name, pod); }}
+						disabled={pod.extensions_remaining === 0}
+						class="px-2 py-0.5 text-xs rounded bg-secondary-500/20 text-secondary-400 hover:bg-secondary-500/30 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+						title={pod.extensions_remaining === 0 ? 'Extension limit reached (2/2)' : 'Extend pod lifetime'}
 					>
-						Extend
+						{#if pod.extend_days != null && pod.extensions_remaining != null}
+							Extend +{pod.extend_days}d ({pod.extensions_remaining} left)
+						{:else if pod.extend_days != null}
+							Extend +{pod.extend_days}d
+						{:else}
+							Extend
+						{/if}
 					</button>
 					<a
 						href="/pods/{pod.id}"
