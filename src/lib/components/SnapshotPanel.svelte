@@ -18,7 +18,8 @@
 	const isStopped = $derived(vmStatus === 'stopped');
 	const initialSnap = $derived(snapshots.find((s) => s.is_initial));
 	const userSnaps = $derived(snapshots.filter((s) => !s.is_initial));
-	const canCreate = $derived(userSnaps.length < 2);
+	const canCreate = $derived(userSnaps.length < 1);
+	const isReplace = $derived(userSnaps.length >= 1);
 
 	onMount(() => {
 		loadSnapshots();
@@ -37,6 +38,12 @@
 
 	async function handleCreate() {
 		if (!newName.trim()) return;
+		if (isReplace) {
+			const ok = confirm(
+				'This replaces your current snapshot. The original lab snapshot is kept.'
+			);
+			if (!ok) return;
+		}
 		actionLoading = 'create';
 		errorMsg = null;
 		try {
@@ -109,19 +116,18 @@
 
 <div class="rounded-xl border border-surface-200 dark:border-surface-800/50 bg-surface-50 dark:bg-surface-950/50 p-4">
 	<div class="mb-3 flex items-center justify-between">
-		<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">Snapshots</span>
-		{#if canCreate}
-			<button
-				onclick={() => {
-					showCreateForm = !showCreateForm;
-				}}
-				class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
-			>
-				+ New Snapshot
-			</button>
-		{:else}
-			<span class="text-xs text-warning-500">Limit reached (2/2)</span>
-		{/if}
+		<div>
+			<span class="text-xs font-semibold uppercase tracking-wider text-surface-400">Snapshots</span>
+			<p class="text-[11px] text-surface-500">User snapshots: {userSnaps.length}/1 · Original protected</p>
+		</div>
+		<button
+			onclick={() => {
+				showCreateForm = !showCreateForm;
+			}}
+			class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-500 transition-colors hover:bg-primary-500/20"
+		>
+			{isReplace ? 'Replace Snapshot' : '+ New Snapshot'}
+		</button>
 	</div>
 
 	{#if errorMsg}
@@ -152,7 +158,7 @@
 					disabled={!newName.trim() || actionLoading === 'create'}
 					class="rounded-lg bg-primary-500 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
 				>
-					{actionLoading === 'create' ? 'Creating…' : 'Create'}
+					{actionLoading === 'create' ? (isReplace ? 'Replacing…' : 'Creating…') : isReplace ? 'Replace' : 'Create'}
 				</button>
 				<button
 					onclick={() => {
