@@ -936,7 +936,7 @@ export function getTestingDashboard(podId: string): Promise<TestingDashboard> {
 
 export function createTestingRun(
 	podId: string,
-	req: { playlist_id?: string; workflow_ids?: string[] }
+	req: { playlist_id: string; target_pod_vm_id: string }
 ): Promise<{ run_id: string; status: string; message: string }> {
 	return apiFetch<{ run_id: string; status: string; message: string }>(`/api/v1/pods/${podId}/testing/run`, {
 		method: 'POST',

@@ -3,17 +3,17 @@
 	import { onMount } from 'svelte';
 	import { getTestingDashboard, createTestingRun } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { authStore } from '$lib/stores/auth.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
-	import type { TestingDashboard, Playlist, Run } from '$lib/types';
+	import type { TestingDashboard, Playlist, TestingTarget } from '$lib/types';
 
 	const podId = $derived(page.params.id as string);
 
-	let dashboard: TestingDashboard | null = $state(null);
+	let dashboard = $state<TestingDashboard | null>(null);
 	let loading = $state(true);
 	let error = $state('');
-	let runningPlaylist = $state('');
+	/** Composite key `${podVmId}:${playlistId}` while a run is in flight. */
+	let runningKey = $state('');
 
 	async function loadDashboard() {
 		try {
@@ -26,12 +26,15 @@
 		}
 	}
 
-	async function runPlaylist(playlist: Playlist) {
+	async function runPlaylist(target: TestingTarget, playlist: Playlist) {
+		const key = `${target.pod_vm_id}:${playlist.id}`;
 		try {
-			runningPlaylist = playlist.id;
-			const result = await createTestingRun(podId, { playlist_id: playlist.id });
-			toastStore.success(`Assessment started: ${result.message}`);
-			// Refresh dashboard to show new run
+			runningKey = key;
+			const result = await createTestingRun(podId, {
+				playlist_id: playlist.id,
+				target_pod_vm_id: target.pod_vm_id
+			});
+			toastStore.success(`Assessment started on ${target.display_name}: ${result.message}`);
 			await loadDashboard();
 		} catch (e: any) {
 			if (e.status === 429) {
@@ -42,7 +45,7 @@
 				toastStore.error(e.message || 'Failed to start assessment');
 			}
 		} finally {
-			runningPlaylist = '';
+			runningKey = '';
 		}
 	}
 
@@ -59,6 +62,20 @@
 		return `${Math.floor(sec / 60)}m ${sec % 60}s`;
 	}
 
+	function formatAssessedVm(run: { target_vm_name?: string; target_vm_ip?: string }): string {
+		if (!run.target_vm_name) return '(not recorded)';
+		return run.target_vm_ip ? `${run.target_vm_name} (${run.target_vm_ip})` : run.target_vm_name;
+	}
+
+	const offerCount = $derived((() => {
+		if (!dashboard) return 0;
+		let n = 0;
+		for (const target of dashboard.targets ?? []) {
+			n += target.playlists?.length ?? 0;
+		}
+		return n;
+	})());
+
 	onMount(() => {
 		loadDashboard();
 		const interval = setInterval(loadDashboard, 10000);
@@ -70,7 +87,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold">Assessments</h1>
-			<p class="text-surface-600 dark:text-surface-400">Run assessments against your pod</p>
+			<p class="text-surface-600 dark:text-surface-400">Run assessments against a specific VM in your pod</p>
 		</div>
 		<a href="/pods/{podId}" class="btn btn-secondary">← Back to Pod</a>
 	</div>
@@ -80,41 +97,68 @@
 	{:else if error}
 		<div class="card bg-error-500/10 text-error-500 p-4">{error}</div>
 	{:else if dashboard}
-		<!-- Playlists -->
 		<section class="space-y-4">
-			<h2 class="text-lg font-semibold">Available Playlists</h2>
-			{#if (dashboard.playlists ?? []).length === 0}
+			<h2 class="text-lg font-semibold">Available Assessments</h2>
+			{#if offerCount === 0}
 				<div class="card p-6 text-center">
-					<p class="text-surface-600 dark:text-surface-400">No assessments assigned to this pod's template.</p>
+					<p class="text-surface-600 dark:text-surface-400">
+						No assessments available. VMs need an IP and a playlist assigned to their template.
+					</p>
 				</div>
 			{:else}
-				<div class="grid gap-4">
-					{#each dashboard.playlists ?? [] as playlist}
-						<div class="card p-4">
-							<div class="flex items-center justify-between">
+				<div class="grid gap-6">
+					{#each dashboard.targets ?? [] as target}
+						{#if (target.playlists ?? []).length > 0}
+							<div class="space-y-3">
 								<div>
-									<h3 class="font-semibold">{playlist.name}</h3>
-									<p class="text-sm text-surface-600 dark:text-surface-400">{playlist.description || 'No description'}</p>
+									<h3 class="font-semibold">{target.display_name}</h3>
+									<p class="text-sm text-surface-600 dark:text-surface-400">
+										{target.template_name || 'Template'}
+										{#if target.ip_address}
+											· {target.ip_address}
+										{/if}
+										· {target.status}
+									</p>
 								</div>
-								<button
-									class="btn btn-primary"
-									disabled={runningPlaylist !== ''}
-									onclick={() => runPlaylist(playlist)}
-								>
-									{#if runningPlaylist === playlist.id}
-										Running...
-									{:else}
-										▶ Run All
-									{/if}
-								</button>
+								<div class="grid gap-3">
+									{#each target.playlists ?? [] as playlist}
+										{@const key = `${target.pod_vm_id}:${playlist.id}`}
+										<div class="card p-4">
+											<div class="flex items-center justify-between gap-4">
+												<div>
+													<h4 class="font-semibold">{playlist.name}</h4>
+													<p class="text-sm text-surface-600 dark:text-surface-400">
+														{playlist.description || 'No description'}
+													</p>
+													<p class="mt-1 text-xs text-surface-500">
+														Runs against {target.display_name}
+														{#if target.ip_address}
+															({target.ip_address})
+														{/if}
+													</p>
+												</div>
+												<button
+													class="btn btn-primary shrink-0"
+													disabled={runningKey !== ''}
+													onclick={() => runPlaylist(target, playlist)}
+												>
+													{#if runningKey === key}
+														Running...
+													{:else}
+														▶ Run All
+													{/if}
+												</button>
+											</div>
+										</div>
+									{/each}
+								</div>
 							</div>
-						</div>
+						{/if}
 					{/each}
 				</div>
 			{/if}
 		</section>
 
-		<!-- Recent Runs -->
 		<section class="space-y-4">
 			<div class="flex items-center justify-between">
 				<h2 class="text-lg font-semibold">Recent Runs</h2>
@@ -128,6 +172,7 @@
 						<thead>
 							<tr>
 								<th>Status</th>
+								<th>Assessed VM</th>
 								<th>Workflows</th>
 								<th>Started</th>
 								<th>Duration</th>
@@ -138,6 +183,7 @@
 							{#each dashboard.recent_runs ?? [] as run}
 								<tr>
 									<td><StatusBadge status={run.status} /></td>
+									<td class="text-sm">{formatAssessedVm(run)}</td>
 									<td>
 										<span class="text-success-500">{run.passed_workflows} passed</span>
 										{#if run.failed_workflows > 0}
