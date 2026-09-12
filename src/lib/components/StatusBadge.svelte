@@ -31,6 +31,7 @@
 			case 'rollback':
 				return { bg: 'bg-error-500/10', text: 'text-error-500', dot: 'bg-error-500', label: format(s), animate: false };
 			case 'destroying':
+				return { bg: 'bg-warning-500/10', text: 'text-warning-500', dot: 'bg-warning-500', label: 'Marked for destruction', animate: true };
 			case 'deleting':
 			case 'suspending':
 			case 'stopping':

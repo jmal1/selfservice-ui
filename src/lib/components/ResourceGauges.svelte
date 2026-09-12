@@ -1,6 +1,5 @@
 <script lang="ts">
-	import type { ResourceUsage, RoleLimits } from '$lib/types';
-	import { authStore } from '$lib/stores/auth.svelte';
+	import type { ResourceUsage } from '$lib/types';
 	import LoadingSkeleton from './LoadingSkeleton.svelte';
 
 	let { usage }: { usage: ResourceUsage | null } = $props();
@@ -23,19 +22,6 @@
 		];
 	});
 
-	const limits = $derived(authStore.user?.limits as RoleLimits | undefined);
-
-	const policyStrip = $derived.by(() => {
-		if (!limits) return null;
-		const idle = limits.idle_suspend_applies
-			? `idle suspend after ${limits.idle_suspend_hours}h`
-			: 'no idle suspend';
-		const orphan = limits.template_orphan_days != null
-			? ` · draft templates cleaned after ${limits.template_orphan_days}d`
-			: '';
-		return `Labs expire after ${limits.pod_ttl_days}d · extend +${limits.extend_days}d (max ${limits.max_extensions}) · ${idle} · suspended labs deleted after ${limits.suspended_delete_days}d · snapshots: original + ${limits.max_user_snapshots} · destroy_failed retries automatically${orphan}`;
-	});
-
 	function percentage(used: number, max: number): number {
 		if (max <= 0) return 0;
 		return Math.min(Math.round((used / max) * 100), 100);
@@ -49,12 +35,6 @@
 </script>
 
 <div class="space-y-3">
-	{#if policyStrip}
-		<p class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/60 dark:bg-surface-900/40 px-4 py-2.5 text-xs leading-relaxed text-surface-600 dark:text-surface-400">
-			{policyStrip}
-		</p>
-	{/if}
-
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		{#if usage === null}
 			{#each Array(4) as _}

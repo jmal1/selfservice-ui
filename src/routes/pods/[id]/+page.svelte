@@ -18,7 +18,6 @@
 	} from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { authStore } from '$lib/stores/auth.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
@@ -327,13 +326,13 @@
 			</div>
 		{/if}
 
-		<!-- Limits / Expiration -->
+		<!-- Expiration -->
 		{#if pod.expires_at}
 			{@const exp = formatExpiry(pod.expires_at)}
 			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4 space-y-3">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
-						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Limits</span>
+						<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Expiration</span>
 						{#if exp}
 							<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
 								{exp.urgency === 'green' ? 'bg-success-500/20 text-success-500' : ''}
@@ -368,29 +367,6 @@
 							</button>
 						{/if}
 					</div>
-				</div>
-				<ul class="grid gap-1 text-xs text-surface-500 sm:grid-cols-2">
-					<li>Extensions: {pod.extensions_used ?? '—'} / 2 used</li>
-					<li>
-						{#if authStore.user?.limits?.idle_suspend_applies}
-							Idle suspend after {authStore.user.limits.idle_suspend_hours}h
-						{:else if authStore.user?.limits}
-							No idle suspend for your role
-						{:else}
-							Idle policy loads with /auth/me
-						{/if}
-					</li>
-					<li>Suspended labs deleted after {authStore.user?.limits?.suspended_delete_days ?? 5}d</li>
-					<li>Snapshots: original + {authStore.user?.limits?.max_user_snapshots ?? 1} (replaceable)</li>
-				</ul>
-			</div>
-		{:else}
-			<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
-				<div class="flex items-center gap-3">
-					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Limits</span>
-					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200/50 dark:bg-surface-800/50 text-surface-400">
-						No expiration on this pod yet
-					</span>
 				</div>
 			</div>
 		{/if}
