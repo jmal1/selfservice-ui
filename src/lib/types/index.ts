@@ -422,8 +422,18 @@ export interface ActionResult {
 	duration_ms: number;
 }
 
-export interface TestingDashboard {
+export interface TestingTarget {
+	pod_vm_id: string;
+	display_name: string;
+	ip_address: string;
+	template_id: string;
+	template_name: string;
+	status: string;
 	playlists: Playlist[];
+}
+
+export interface TestingDashboard {
+	targets: TestingTarget[];
 	recent_runs: Run[];
 }
 

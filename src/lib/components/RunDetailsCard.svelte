@@ -126,6 +126,13 @@
 								{#if result.student_message}
 									<p class="text-sm text-surface-600 dark:text-surface-400">{result.student_message}</p>
 								{/if}
+								{#if targetVm.recorded}
+									<p class="text-xs text-surface-500">
+										Target VM: {targetVm.name}{#if targetVm.ip} ({targetVm.ip}){/if}
+									</p>
+								{:else}
+									<p class="text-xs text-surface-500">Target VM: (not recorded)</p>
+								{/if}
 							</div>
 						</div>
 						<div class="flex items-center gap-4">
