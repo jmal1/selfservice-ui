@@ -37,6 +37,14 @@ export function sourceTypeAllowsSkipGeneralize(sourceType: string): boolean {
 }
 
 /**
+ * Prepared OVA appliances should skip GuestOps clean by default. clone_vcenter
+ * still allows the checkbox but does not auto-check it.
+ */
+export function defaultSkipGeneralizeForSourceType(sourceType: string): boolean {
+	return sourceType === 'ovf';
+}
+
+/**
  * Client-side checks that paraphrase the API 400s. Returns null when the
  * source fields are acceptable. Does not invent new semantics.
  */

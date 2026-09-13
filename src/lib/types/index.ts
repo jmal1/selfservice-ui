@@ -528,3 +528,24 @@ export interface VCenterISOListResponse {
 	cached: boolean;
 	cache_age_seconds: number;
 }
+
+/**
+ * One entry in GET /admin/vcenter/ovas. Selectable imported rows carry
+ * source_ref (the VM moref) for a source_type=ovf draft.
+ */
+export interface OVACatalogEntry {
+	name: string;
+	image_id: string;
+	status: ImageUploadStatus | string;
+	disabled: boolean;
+	source_ref?: string;
+	reason?: string;
+	error_message?: string;
+	size_bytes?: number;
+	created_at?: string;
+}
+
+export interface VCenterOVAListResponse {
+	ovas: OVACatalogEntry[];
+	source_type: 'ovf';
+}

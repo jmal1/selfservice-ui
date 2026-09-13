@@ -32,6 +32,7 @@ import type {
 	Action,
 	ImageUpload,
 	VCenterISOListResponse,
+	VCenterOVAListResponse,
 	ResolvedCredentialsResponse
 } from '$lib/types';
 
@@ -1242,4 +1243,8 @@ export function adminDeleteImage(id: string): Promise<void> {
 export function adminListVCenterISOs(refresh = false): Promise<VCenterISOListResponse> {
 	const qs = refresh ? '?refresh=true' : '';
 	return apiFetch<VCenterISOListResponse>(`/api/v1/admin/vcenter/isos${qs}`);
+}
+
+export function adminListVCenterOVAs(): Promise<VCenterOVAListResponse> {
+	return apiFetch<VCenterOVAListResponse>('/api/v1/admin/vcenter/ovas');
 }
