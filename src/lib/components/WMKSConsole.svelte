@@ -46,9 +46,12 @@
 		title: string;
 		backHref?: string;
 		backLabel?: string;
+		/** Optional overlay rendered above the canvas (e.g. ConsoleHelperPanel).
+		 *  Must not autofocus — physical keyboard delivery targets #console-canvas. */
+		overlay?: import('svelte').Snippet;
 	};
 
-	let { wsUrl, title, backHref, backLabel = '← Back' }: Props = $props();
+	let { wsUrl, title, backHref, backLabel = '← Back', overlay }: Props = $props();
 
 	let canvasContainer: HTMLDivElement;
 	// Persistent #console-canvas container — nwmks this.element. The SDK
@@ -672,6 +675,10 @@
 			onpointerdown={focusConsole}
 			onclick={focusConsole}
 		></div>
+
+		{#if overlay}
+			{@render overlay()}
+		{/if}
 
 		{#if status === 'error'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/80">

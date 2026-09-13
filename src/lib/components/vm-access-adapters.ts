@@ -10,6 +10,12 @@ import type { VMAccessInfo } from '$lib/types/vm-access';
 import type { WizardStateResponse } from '$lib/api/client';
 
 export function podVMToAccessInfo(vm: PodVM): VMAccessInfo {
+	const templateKind =
+		vm.template_kind ?? vm.template?.kind ?? 'clone_with_customize';
+	const assignIp =
+		typeof vm.assign_ip === 'boolean'
+			? vm.assign_ip
+			: vm.template?.assign_ip !== false;
 	return {
 		osType: vm.os_type || vm.template?.os_type || '',
 		ipAddress: vm.ip_address || '',
@@ -22,8 +28,8 @@ export function podVMToAccessInfo(vm: PodVM): VMAccessInfo {
 		displayPassword: vm.generated_password || vm.default_password || '',
 		isPoweredOn: vm.status === 'running',
 		consoleHref: `/console/${vm.pod_id}/${vm.id}`,
-		templateKind: vm.template?.kind ?? 'clone_with_customize',
-		noIpExpected: vm.template?.assign_ip === false,
+		templateKind,
+		noIpExpected: assignIp === false,
 		isSuspended: vm.status === 'suspended',
 		suspendReason: vm.suspend_reason ?? undefined,
 	};

@@ -153,6 +153,12 @@ export interface PodVM {
 	boot_order: number;
 	template_name: string;
 	os_type: string;
+	/** Wire field from templates.kind (preferred over nested template). */
+	template_kind?: TemplateKind;
+	/** Wire field from templates.assign_ip. Defaults true when omitted. */
+	assign_ip?: boolean;
+	/** Wire field from templates.skip_generalize. Defaults false when omitted. */
+	skip_generalize?: boolean;
 	template?: Template;
 	// Suspend fields (migration 000025). Omitted by the API when not suspended.
 	suspended_at?: string;
