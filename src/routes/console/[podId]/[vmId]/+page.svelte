@@ -17,7 +17,10 @@
        Resume, we call the /start endpoint, poll until 'running', then
        show the console — no dead terminal, no silent hang.
     4. Computing the WebSocket URL for /api/v1/pods/{podID}/vms/{vmID}/console/ws.
-    5. Rendering <WMKSConsole> with a back link to the pod detail page.
+    5. Building ConsoleHelperContext from the pod/VM payload and rendering
+       the helper overlay (credentials always; network when skip_generalize
+       or assign_ip=false).
+    6. Rendering <WMKSConsole> with a back link to the pod detail page.
 -->
 <script lang="ts">
 	import { page } from '$app/state';
@@ -26,6 +29,13 @@
 	import { getPod, resumeVM } from '$lib/api/client';
 	import { onMount } from 'svelte';
 	import WMKSConsole from '$lib/components/WMKSConsole.svelte';
+	import ConsoleHelperPanel from '$lib/components/ConsoleHelperPanel.svelte';
+	import {
+		resolveConsoleHelpers,
+		type ConsoleHelperContext,
+		type ConsoleHelperSection
+	} from '$lib/console/helpers';
+	import type { Pod, PodVM, TemplateKind } from '$lib/types';
 
 	const podId = $derived(page.params.podId as string);
 	const vmId = $derived(page.params.vmId as string);
@@ -36,6 +46,7 @@
 	let resumeError = $state<string | null>(null);
 	// Once resume completes and the VM is running we flip this to show WMKS.
 	let readyForConsole = $state(false);
+	let helperSections = $state<ConsoleHelperSection[]>([]);
 
 	const wsUrl = $derived.by(() => {
 		const base = config.apiBaseUrl || window.location.origin;
@@ -45,11 +56,48 @@
 
 	const title = $derived(vmName ? `Console: ${vmName}` : 'VM Console');
 
+	function buildHelperContext(pod: Pod, vm: PodVM): ConsoleHelperContext {
+		const username = vm.generated_username || vm.default_username || '';
+		const password = vm.generated_password || vm.default_password || '';
+		const templateKind: TemplateKind =
+			vm.template_kind ?? vm.template?.kind ?? 'clone_with_customize';
+		const assignIp =
+			typeof vm.assign_ip === 'boolean'
+				? vm.assign_ip
+				: vm.template?.assign_ip !== false;
+		const skipGeneralize =
+			typeof vm.skip_generalize === 'boolean'
+				? vm.skip_generalize
+				: !!vm.template?.skip_generalize;
+		return {
+			username,
+			password,
+			credentialsPending: vm.status !== 'running' || (!username && !password),
+			vlanId: pod.vlan_id,
+			subnet: pod.subnet || '',
+			ipAddress: vm.ip_address || '',
+			assignIp,
+			skipGeneralize,
+			templateKind,
+			osType: vm.os_type || vm.template?.os_type || ''
+		};
+	}
+
+	function applyPodState(pod: Pod) {
+		const vm = pod.vms?.find((v) => v.id === vmId);
+		if (!vm) {
+			helperSections = [];
+			return null;
+		}
+		vmName = vm.display_name || vm.vcenter_vm_name;
+		helperSections = resolveConsoleHelpers(buildHelperContext(pod, vm));
+		return vm;
+	}
+
 	onMount(() => {
 		getPod(podId).then((pod) => {
-			const vm = pod.vms?.find((v) => v.id === vmId);
+			const vm = applyPodState(pod);
 			if (vm) {
-				vmName = vm.display_name || vm.vcenter_vm_name;
 				if (vm.status === 'suspended') {
 					isSuspended = true;
 					suspendReason = vm.suspend_reason ?? undefined;
@@ -87,7 +135,7 @@
 			await new Promise<void>((r) => setTimeout(r, intervalMs));
 			try {
 				const pod = await getPod(podId);
-				const vm = pod.vms?.find((v) => v.id === vmId);
+				const vm = applyPodState(pod);
 				if (vm?.status === 'running') return;
 				if (vm?.status === 'error') throw new Error('VM entered error state while resuming');
 			} catch (e) {
@@ -145,6 +193,12 @@
 				</button>
 			{/if}
 
+			{#if helperSections.length > 0}
+				<div class="mt-4">
+					<ConsoleHelperPanel sections={helperSections} variant="inline" />
+				</div>
+			{/if}
+
 			<a
 				href="/pods/{podId}"
 				class="mt-4 block text-center text-xs text-surface-500 hover:text-surface-300"
@@ -154,5 +208,9 @@
 		</div>
 	</div>
 {:else if readyForConsole}
-	<WMKSConsole {wsUrl} {title} backHref="/pods/{podId}" backLabel="← Back to Pod" />
+	<WMKSConsole {wsUrl} {title} backHref="/pods/{podId}" backLabel="← Back to Pod">
+		{#snippet overlay()}
+			<ConsoleHelperPanel sections={helperSections} />
+		{/snippet}
+	</WMKSConsole>
 {/if}
