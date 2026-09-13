@@ -27,6 +27,7 @@
 	import { friendlyError } from '$lib/errors/friendly';
 	import { config } from '$lib/config';
 	import { getPod, resumeVM } from '$lib/api/client';
+	import { pollUntilRunning } from '$lib/api/poll-vm';
 	import { onMount } from 'svelte';
 	import WMKSConsole from '$lib/components/WMKSConsole.svelte';
 	import ConsoleHelperPanel from '$lib/components/ConsoleHelperPanel.svelte';
@@ -119,8 +120,13 @@
 		resumeError = null;
 		try {
 			await resumeVM(podId, vmId);
-			// Poll until the VM transitions to 'running' (or up to ~60s).
-			await pollUntilRunning();
+			await pollUntilRunning(podId, vmId);
+			try {
+				const pod = await getPod(podId);
+				applyPodState(pod);
+			} catch {
+				// Helpers refresh is best-effort; console open does not depend on it.
+			}
 			isSuspended = false;
 			readyForConsole = true;
 		} catch (e) {
@@ -128,22 +134,6 @@
 		} finally {
 			resumeLoading = false;
 		}
-	}
-
-	async function pollUntilRunning(maxAttempts = 24, intervalMs = 2500): Promise<void> {
-		for (let i = 0; i < maxAttempts; i++) {
-			await new Promise<void>((r) => setTimeout(r, intervalMs));
-			try {
-				const pod = await getPod(podId);
-				const vm = applyPodState(pod);
-				if (vm?.status === 'running') return;
-				if (vm?.status === 'error') throw new Error('VM entered error state while resuming');
-			} catch (e) {
-				// Re-throw hard errors; ignore transient fetch failures.
-				if (e instanceof Error && e.message.includes('error state')) throw e;
-			}
-		}
-		throw new Error('VM did not return to running within 60 s. Please check the pod status page.');
 	}
 </script>
 
