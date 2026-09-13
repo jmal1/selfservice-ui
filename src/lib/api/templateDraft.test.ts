@@ -6,6 +6,7 @@ import {
 	SKIP_GENERALIZE_ISO,
 	SKIP_GENERALIZE_CLONE_TEMPLATE,
 	sourceTypeAllowsSkipGeneralize,
+	defaultSkipGeneralizeForSourceType,
 	validateTemplateDraftSource,
 	buildCreateTemplateDraftBody
 } from './templateDraft';
@@ -36,6 +37,15 @@ describe('sourceTypeAllowsSkipGeneralize', () => {
 		expect(sourceTypeAllowsSkipGeneralize('iso')).toBe(false);
 		expect(sourceTypeAllowsSkipGeneralize('clone_template')).toBe(false);
 		expect(sourceTypeAllowsSkipGeneralize('')).toBe(false);
+	});
+});
+
+describe('defaultSkipGeneralizeForSourceType', () => {
+	it('defaults on for prepared OVA/OVF appliances only', () => {
+		expect(defaultSkipGeneralizeForSourceType('ovf')).toBe(true);
+		expect(defaultSkipGeneralizeForSourceType('clone_vcenter')).toBe(false);
+		expect(defaultSkipGeneralizeForSourceType('iso')).toBe(false);
+		expect(defaultSkipGeneralizeForSourceType('clone_template')).toBe(false);
 	});
 });
 

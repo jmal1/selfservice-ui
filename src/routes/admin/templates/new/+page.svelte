@@ -1,27 +1,30 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 		import { onMount } from 'svelte';
+		import { page } from '$app/state';
 		import {
 			adminCreateTemplateDraft,
 			adminListVCenterTemplatesFolder,
 			adminListVCenterISOs,
+			adminListVCenterOVAs,
 			adminListGuestOSCatalog,
-			adminListImages,
 			getTemplates,
 			ApiError,
 			type CreateTemplateDraftRequest,
 			type GuestOSOption,
 			type VCenterFolderVM
 		} from '$lib/api/client';
-		import type { Template, MergedISOEntry, ImageUpload } from '$lib/types';
+		import type { Template, MergedISOEntry, OVACatalogEntry } from '$lib/types';
 		import { authStore } from '$lib/stores/auth.svelte';
 		import { toastStore } from '$lib/stores/toast.svelte';
 		import { safeErrorText } from '$lib/errors/friendly';
 		import { handleWizardEnter } from '$lib/utils/wizardEnter';
 		import {
+			defaultSkipGeneralizeForSourceType,
 			sourceTypeAllowsSkipGeneralize,
 			validateTemplateDraftSource
 		} from '$lib/api/templateDraft';
+		import { ovaPickerLabel, ovaPickerOptions } from '$lib/api/ovaCatalog';
 
 	// Step 1 of the T4 template wizard.
 	//
@@ -51,9 +54,8 @@
 
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
-	// Imported OVAs from Images/ImportOVA. source_ref is the vCenter moref
-	// (vcenter_vm_id), never the image-upload UUID.
-	let importedOVAs = $state<ImageUpload[]>([]);
+	// OVA catalog from GET /admin/vcenter/ovas — the only OVF picker source.
+	let catalogOVAs = $state<OVACatalogEntry[]>([]);
 	let mergedISOs = $state<MergedISOEntry[]>([]);
 	// Local checkbox state. Only copied onto the draft request when true so
 	// clone/iso payloads stay unchanged when the box is off (default false).
@@ -64,6 +66,8 @@
 	// distinct "Couldn't load ISOs — <reason>" panel with a Retry button.
 	let isoLoadError = $state<string | null>(null);
 	let refreshingISOs = $state(false);
+	let ovaLoadError = $state<string | null>(null);
+	let refreshingOVAs = $state(false);
 	let loadingSources = $state(true);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
@@ -134,6 +138,19 @@
 		}
 	}
 
+	async function reloadOVAs() {
+		refreshingOVAs = true;
+		ovaLoadError = null;
+		try {
+			const r = await adminListVCenterOVAs();
+			catalogOVAs = r.ovas ?? [];
+		} catch (e) {
+			ovaLoadError = e instanceof ApiError ? `${e.status} ${e.message}` : String(e);
+		} finally {
+			refreshingOVAs = false;
+		}
+	}
+
 	// Unattend config fields (bound separately, merged into req.unattend_config on submit)
 	let unattendHostname = $state('');
 	let unattendUsername = $state('');
@@ -150,7 +167,7 @@
 			return;
 		}
 		try {
-			const [tpls, folder, vcISOs, catalog, images] = await Promise.all([
+			const [tpls, folder, vcISOs, catalog, ovas] = await Promise.all([
 				getTemplates(),
 				adminListVCenterTemplatesFolder().catch(() => ({ vms: [] as VCenterFolderVM[] })),
 				adminListVCenterISOs().catch((e) => {
@@ -158,16 +175,24 @@
 					return { isos: [] as MergedISOEntry[], datastore: '', cached: false, cache_age_seconds: 0 };
 				}),
 				adminListGuestOSCatalog().catch(() => ({ options: guestOSFallback })),
-				adminListImages().catch(() => [] as ImageUpload[])
+				adminListVCenterOVAs().catch((e) => {
+					ovaLoadError = e instanceof ApiError ? `${e.status} ${e.message}` : String(e);
+					return { ovas: [] as OVACatalogEntry[], source_type: 'ovf' as const };
+				})
 			]);
 			existingTemplates = tpls;
 			vcenterVMs = folder.vms ?? [];
 			mergedISOs = vcISOs.isos ?? [];
-			importedOVAs = images.filter(
-				(img) => img.kind === 'ova' && img.status === 'imported' && !!img.vcenter_vm_id
-			);
+			catalogOVAs = ovas.ovas ?? [];
 			if (catalog.options && catalog.options.length > 0) {
 				guestOSCatalog = catalog.options;
+			}
+			const linkedType = page.url.searchParams.get('source_type');
+			const linkedRef = page.url.searchParams.get('source_ref') ?? '';
+			if (linkedType === 'ovf') {
+				req.source_type = 'ovf';
+				skipGeneralize = true;
+				if (linkedRef) req.source_ref = linkedRef;
 			}
 		} catch (err) {
 			console.error('load source data', err);
@@ -177,28 +202,15 @@
 		}
 	});
 
-	// Folder VMs plus imported-OVA morefs that are not already in the folder
-	// list. Used only when source_type=ovf.
-	let ovfMorefOptions = $derived.by(() => {
-		const seen = new Set(vcenterVMs.map((vm) => vm.moref));
-		const extras = importedOVAs
-			.filter((img) => img.vcenter_vm_id && !seen.has(img.vcenter_vm_id))
-			.map((img) => ({
-				moref: img.vcenter_vm_id,
-				name: img.filename,
-				guest_full_name: 'imported OVA',
-				os_type: ''
-			}));
-		return [...vcenterVMs, ...extras];
-	});
+	let ovfPickerOptions = $derived.by(() =>
+		ovaPickerOptions(catalogOVAs, req.source_type === 'ovf' ? req.source_ref : undefined)
+	);
 
 	function onSourceTypeChange() {
 		// Switching pickers invalidates the previous source_ref shape
 		// (template UUID vs moref vs ISO path).
 		req.source_ref = '';
-		if (!sourceTypeAllowsSkipGeneralize(req.source_type)) {
-			skipGeneralize = false;
-		}
+		skipGeneralize = defaultSkipGeneralizeForSourceType(req.source_type);
 	}
 
 	function valid(): boolean {
@@ -217,6 +229,13 @@
 		if (!req.source_ref) {
 			error = 'Pick a source';
 			return false;
+		}
+		if (req.source_type === 'ovf') {
+			const chosen = ovfPickerOptions.find((e) => e.source_ref === req.source_ref);
+			if (chosen?.disabled) {
+				error = chosen.reason || 'That OVA is not imported yet';
+				return false;
+			}
 		}
 		if (req.source_type === 'iso' && !(req.guest_id ?? '').trim()) {
 			error = 'Pick a Guest OS (or choose "Other (advanced)" and type a guest OS ID) for an ISO build';
@@ -436,7 +455,17 @@
 		{:else if req.source_type === 'ovf'}
 			<label class="label">
 				<span class="text-sm">Imported OVA (vCenter VM moref) *</span>
-				{#if ovfMorefOptions.length === 0}
+				{#if refreshingOVAs}
+					<p class="text-sm text-surface-500">Loading OVAs…</p>
+				{:else if ovaLoadError}
+					<aside class="card preset-tonal-error p-3 text-sm space-y-2">
+						<p class="font-semibold">⚠️ Couldn't load OVAs</p>
+						<p>{ovaLoadError}</p>
+						<button type="button" class="btn btn-sm preset-filled-primary" onclick={reloadOVAs}>
+							Retry
+						</button>
+					</aside>
+				{:else if ovfPickerOptions.length === 0}
 					<aside class="card preset-tonal-warning p-3 text-sm space-y-2">
 						<p class="font-semibold">⚠️ No imported OVAs found</p>
 						<p>
@@ -444,21 +473,28 @@
 							<a href="/admin/images" class="anchor font-semibold">Images page</a>
 							first. Then pick its vCenter VM moref here — not the image-upload UUID.
 						</p>
+						<button type="button" class="btn btn-sm preset-tonal" onclick={reloadOVAs}>
+							Refresh OVAs
+						</button>
 					</aside>
 				{:else}
-					<select class="select" bind:value={req.source_ref}>
+					<select class="select" bind:value={req.source_ref} data-testid="ovf-ova-select">
 						<option value="">— pick an imported OVA VM —</option>
-						{#each ovfMorefOptions as vm (vm.moref)}
-							<option value={vm.moref}>
-								{vm.name} — {vm.guest_full_name || vm.os_type || vm.moref}
+						{#each ovfPickerOptions as ova (ova.image_id || ova.source_ref || ova.name)}
+							<option value={ova.source_ref ?? ''} disabled={ova.disabled}>
+								{ovaPickerLabel(ova)}
 							</option>
 						{/each}
 					</select>
-					<span class="text-xs text-surface-500 mt-1 block">
-						<code>source_ref</code> is the vCenter VM moref of an already-imported
-						OVA (same shape as clone from vCenter). Import via
-						<a href="/admin/images" class="anchor">Images / Import OVA</a> first.
-					</span>
+					<div class="flex items-center gap-3 mt-1">
+						<p class="text-xs text-surface-500">
+							Entries labelled ⏳ are still importing. Failed imports stay listed so you can retry on
+							<a href="/admin/images" class="anchor">Images</a>.
+						</p>
+						<button type="button" class="btn btn-sm preset-tonal ml-auto" onclick={reloadOVAs}>
+							Refresh OVAs
+						</button>
+					</div>
 				{/if}
 			</label>
 		{:else if req.source_type === 'iso'}
@@ -640,12 +676,13 @@
 				/>
 				<span>
 					<span class="text-sm font-medium">
-						Image is already generalized — do not run sysprep/cloud-init clean
+						Prepared appliance — skip sysprep/cloud-init clean
 					</span>
 					<span class="text-xs text-surface-500 mt-1 block">
 						Skips GuestOps generalize only (sysprep / cloud-init clean).
 						<strong>Verify still runs</strong>: publish still goes
-						<code>ready → verifying → active</code>. This does not skip verify
+						<code>ready → verifying → active</code>. Uncheck only if this source
+						is a raw OS that still needs generalize. This does not skip verify
 						or publish.
 					</span>
 				</span>

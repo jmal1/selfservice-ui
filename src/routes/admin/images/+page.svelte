@@ -13,6 +13,8 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { goto } from '$app/navigation';
+	import { ovaCreateTemplateHref } from '$lib/api/ovaCatalog';
+	import { imageStatusNeedsPoll, rejectImageFile } from '$lib/images/library';
 
 	// --- State ---
 
@@ -69,8 +71,8 @@
 		if (pollTimer) return;
 		pollTimer = setInterval(async () => {
 			const needsPoll =
-				images.some((img) => img.status === 'uploading' || img.status === 'importing') ||
-				uploads.some((u) => u.status === 'importing');
+				images.some((img) => imageStatusNeedsPoll(img.status)) ||
+				uploads.some((u) => u.status === 'uploading' || u.status === 'completing' || u.status === 'importing');
 			if (needsPoll) {
 				await refreshList();
 			}
@@ -113,9 +115,9 @@
 
 	function enqueueFiles(files: File[]) {
 		for (const file of files) {
-			const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-			if (ext !== '.iso' && ext !== '.ova') {
-				toastStore.error('Unsupported file type', `${file.name} — only .iso and .ova are accepted`);
+			const reject = rejectImageFile(file.name, file.size);
+			if (reject) {
+				toastStore.error('Unsupported file', `${file.name} — ${reject}`);
 				continue;
 			}
 			const entry: UploadEntry = {
@@ -214,7 +216,8 @@
 
 				entry.progress = 100;
 
-				// Step 3: complete multipart — this also auto-enqueues the import job
+				// Step 3: complete multipart — this also auto-enqueues the import job.
+				// The row sits at 'uploaded' until the worker claims it, then 'importing'.
 				entry.status = 'completing';
 				await adminCompleteImageUpload(init.id, parts);
 
@@ -337,8 +340,8 @@
 		<p class="text-surface-600 dark:text-surface-300 text-sm">
 			Upload ISO or OVA images to MinIO; they are then imported into vCenter and available for
 			template creation. Imported ISOs appear in the template wizard's ISO source picker. Imported
-			OVAs appear as a vCenter VM moref under the wizard's <strong>OVF/OVA</strong> source type
-			(and in the clone-from-vCenter picker).
+			OVAs appear under the wizard's <strong>OVF/OVA</strong> source type (vCenter VM moref). Pack a
+			bare <code>.ovf</code> folder into a single <code>.ova</code> before uploading.
 		</p>
 	</header>
 
@@ -352,7 +355,7 @@
 		ondragleave={onDragLeave}
 		ondrop={onDrop}
 	>
-		<p class="text-surface-500 mb-3">Drag & drop <code>.iso</code> or <code>.ova</code> files here</p>
+		<p class="text-surface-500 mb-3">Drag & drop <code>.iso</code> or <code>.ova</code> files here (max 16 GiB)</p>
 		<label class="btn preset-filled-primary cursor-pointer">
 			Browse files
 			<input type="file" accept=".iso,.ova" multiple class="hidden" onchange={onFileInput} />
@@ -456,10 +459,22 @@
 								<td class="text-xs text-surface-500 max-w-xs">
 									{#if img.status === 'error' && img.error_message}
 										<span class="text-error-600">{img.error_message}</span>
+									{:else if img.status === 'imported' && img.kind === 'ova' && img.vcenter_vm_id}
+										<div class="space-y-1">
+											<code data-testid="ova-moref">{img.vcenter_vm_id}</code>
+											<a
+												href={ovaCreateTemplateHref(img.vcenter_vm_id)}
+												class="anchor block"
+											>
+												Create template
+											</a>
+										</div>
 									{:else if img.status === 'imported' && img.datastore_path}
 										{img.datastore_path}
 									{:else if img.status === 'importing'}
 										<span class="text-warning-600">Importing into vCenter…</span>
+									{:else if img.status === 'uploaded'}
+										<span class="text-primary-600">Waiting for import…</span>
 									{:else}
 										—
 									{/if}
