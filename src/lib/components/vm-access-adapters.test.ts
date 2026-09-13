@@ -105,6 +105,22 @@ describe('podVMToAccessInfo', () => {
 		expect(info.noIpExpected).toBe(true);
 		expect(info.templateKind).toBe('registered_existing_vm');
 	});
+
+	it('prefers wire template_kind / assign_ip over nested template', () => {
+		const info = podVMToAccessInfo({
+			...baseVM,
+			template_kind: 'clone_no_customize',
+			assign_ip: false,
+			skip_generalize: true,
+			template: {
+				...({} as any),
+				kind: 'clone_with_customize',
+				assign_ip: true
+			}
+		});
+		expect(info.templateKind).toBe('clone_no_customize');
+		expect(info.noIpExpected).toBe(true);
+	});
 });
 
 describe('wizardStateToAccessInfo', () => {
