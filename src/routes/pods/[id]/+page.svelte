@@ -16,6 +16,7 @@
 		getTemplates,
 		getMyJobs
 	} from '$lib/api/client';
+	import { pollUntilRunning, pollUntilDeleted } from '$lib/api/poll-vm';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
@@ -24,12 +25,14 @@
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
 	import { podVMToAccessInfo } from '$lib/components/vm-access-adapters';
 	import SnapshotPanel from '$lib/components/SnapshotPanel.svelte';
+	import JobPanel from '$lib/components/JobPanel.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 
 	const podId = $derived(page.params.id as string);
 
 	let pod = $state<Pod | null>(null);
 	let templates = $state<Template[]>([]);
+	let jobs = $state<Job[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let actionLoading = $state<Record<string, boolean>>({});
@@ -106,7 +109,13 @@
 	function checkJobTransitions(newJobs: Job[]) {
 		for (const job of newJobs) {
 			const prev = prevJobStatuses.get(job.id);
-			if (!prev) continue;
+			if (!prev) {
+				// Seed newly seen non-terminal jobs so later completion can toast.
+				if (job.status !== 'completed' && job.status !== 'failed') {
+					prevJobStatuses.set(job.id, job.status);
+				}
+				continue;
+			}
 			if (prev === job.status) continue;
 
 			const label = jobTypeLabels[job.type] ?? job.type.replace(/_/g, ' ');
@@ -173,8 +182,8 @@
 			// Silently ignore refresh errors
 		}
 		try {
-			const newJobs = await getMyJobs();
-			checkJobTransitions(newJobs);
+			jobs = await getMyJobs();
+			checkJobTransitions(jobs);
 		} catch {
 			// Silently ignore job polling errors
 		}
@@ -187,6 +196,12 @@
 			error = friendlyError(e, 'Failed to load pod');
 		} finally {
 			loading = false;
+		}
+		try {
+			jobs = await getMyJobs();
+			checkJobTransitions(jobs);
+		} catch {
+			// Jobs panel is best-effort
 		}
 		// Templates may fail (e.g., 500) — don't block pod display
 		try {
@@ -201,7 +216,23 @@
 		try {
 			await action();
 		} catch (e) {
-			console.error('Action failed:', e);
+			toastStore.error(friendlyError(e, 'Action failed. Please try again.'));
+		} finally {
+			actionLoading = { ...actionLoading, [key]: false };
+		}
+	}
+
+	async function handleResumeVM(vmId: string) {
+		const key = `resume-${vmId}`;
+		if (actionLoading[key]) return;
+		actionLoading = { ...actionLoading, [key]: true };
+		try {
+			await resumeVM(podId, vmId);
+			toastStore.success('Resume queued');
+			await pollUntilRunning(podId, vmId);
+			await refreshPod();
+		} catch (e) {
+			toastStore.error(friendlyError(e, 'Resume failed. Please try again.'));
 		} finally {
 			actionLoading = { ...actionLoading, [key]: false };
 		}
@@ -224,12 +255,18 @@
 			return;
 		}
 		confirmDelete = null;
-		await handleAction(`delete-${vmId}`, async () => {
+		const key = `delete-${vmId}`;
+		actionLoading = { ...actionLoading, [key]: true };
+		try {
 			await deleteVM(podId, vmId);
-			if (pod) {
-				pod = { ...pod, vms: (pod.vms ?? []).filter((vm) => vm.id !== vmId) };
-			}
-		});
+			toastStore.success('Delete queued');
+			await pollUntilDeleted(podId, vmId);
+			await refreshPod();
+		} catch (e) {
+			toastStore.error(friendlyError(e, 'Delete failed. Please try again.'));
+		} finally {
+			actionLoading = { ...actionLoading, [key]: false };
+		}
 	}
 
 	function cancelConfirm() {
@@ -256,6 +293,7 @@
 		</div>
 		<a href="/" class="text-sm text-primary-500 hover:text-primary-400">← Back to Dashboard</a>
 	{:else if pod}
+		<JobPanel {jobs} />
 		<!-- Header -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-4">
@@ -477,7 +515,7 @@
 											aria-label="Resume VM"
 											title="Resume suspended VM"
 											disabled={!!actionLoading[`resume-${vm.id}`]}
-											onclick={() => handleAction(`resume-${vm.id}`, () => resumeVM(podId, vm.id))}
+											onclick={() => handleResumeVM(vm.id)}
 										>
 											{#if actionLoading[`resume-${vm.id}`]}
 												<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
@@ -559,7 +597,7 @@
 										aria-label="Resume VM"
 										title="Resume suspended VM"
 										disabled={!!actionLoading[`resume-${vm.id}`]}
-										onclick={() => handleAction(`resume-${vm.id}`, () => resumeVM(podId, vm.id))}
+										onclick={() => handleResumeVM(vm.id)}
 									>
 										{#if actionLoading[`resume-${vm.id}`]}
 											<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
@@ -644,11 +682,15 @@
 							{#if vm.status === 'suspended'}
 								<div class="border-t border-warning-500/20 bg-warning-500/5 px-5 py-2 flex items-center gap-3">
 									<span class="text-xs text-warning-400">
-										⏸ <strong>Suspended</strong> — automatically parked after 6 hours of inactivity.
-										{#if vm.suspend_reason}
-											<span class="opacity-70"> Reason: {vm.suspend_reason}.</span>
+										{#if actionLoading[`resume-${vm.id}`]}
+											⏸ <strong>Resuming…</strong> this may take up to 60 seconds.
+										{:else}
+											⏸ <strong>Suspended</strong> — automatically parked after 6 hours of inactivity.
+											{#if vm.suspend_reason}
+												<span class="opacity-70"> Reason: {vm.suspend_reason}.</span>
+											{/if}
+											Use the <strong>Resume</strong> button to wake it back up.
 										{/if}
-										Use the <strong>Resume</strong> button to wake it back up.
 									</span>
 								</div>
 							{/if}
