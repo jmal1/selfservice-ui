@@ -462,7 +462,12 @@
 					<aside class="card preset-tonal-error p-3 text-sm space-y-2">
 						<p class="font-semibold">⚠️ Couldn't load OVAs</p>
 						<p>{ovaLoadError}</p>
-						<button type="button" class="btn btn-sm preset-filled-primary" onclick={reloadOVAs}>
+						<button
+							type="button"
+							class="btn btn-sm preset-filled-primary"
+							onclick={reloadOVAs}
+							aria-label="Retry"
+						>
 							Retry
 						</button>
 					</aside>
@@ -474,7 +479,13 @@
 							<a href="/admin/images" class="anchor font-semibold">Images page</a>
 							first. Then pick its vCenter VM moref here — not the image-upload UUID.
 						</p>
-						<button type="button" class="btn btn-sm preset-tonal" onclick={reloadOVAs}>
+						<!-- aria-label: nested inside <label>, so accessible name otherwise swallows the whole field. -->
+						<button
+							type="button"
+							class="btn btn-sm preset-tonal"
+							onclick={reloadOVAs}
+							aria-label="Refresh OVAs"
+						>
 							Refresh OVAs
 						</button>
 					</aside>
@@ -492,7 +503,12 @@
 							Entries labelled ⏳ are still importing. Failed imports stay listed so you can retry on
 							<a href="/admin/images" class="anchor">Images</a>.
 						</p>
-						<button type="button" class="btn btn-sm preset-tonal ml-auto" onclick={reloadOVAs}>
+						<button
+							type="button"
+							class="btn btn-sm preset-tonal ml-auto"
+							onclick={reloadOVAs}
+							aria-label="Refresh OVAs"
+						>
 							Refresh OVAs
 						</button>
 					</div>
