@@ -14,6 +14,7 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { goto } from '$app/navigation';
 	import { ovaCreateTemplateHref } from '$lib/api/ovaCatalog';
+	import { OVA_SOURCE_TYPE_LABEL } from '$lib/api/templateDraft';
 	import { imageStatusNeedsPoll, rejectImageFile } from '$lib/images/library';
 
 	// --- State ---
@@ -338,10 +339,12 @@
 		<a href="/admin" class="text-sm text-surface-500 hover:underline">← Admin</a>
 		<h1 class="h2">VM Images</h1>
 		<p class="text-surface-600 dark:text-surface-300 text-sm">
-			Upload ISO or OVA images to MinIO; they are then imported into vCenter and available for
-			template creation. Imported ISOs appear in the template wizard's ISO source picker. Imported
-			OVAs appear under the wizard's <strong>OVF/OVA</strong> source type (vCenter VM moref). Pack a
-			bare <code>.ovf</code> folder into a single <code>.ova</code> before uploading.
+			Upload <code>.iso</code> or <code>.ova</code> files to MinIO; they are then imported into
+			vCenter and available for template creation. Imported ISOs appear in the template wizard's
+			ISO source picker. Imported OVAs appear in the wizard's
+			<strong>{OVA_SOURCE_TYPE_LABEL}</strong> picker (a vCenter VM moref). Bare
+			<code>.ovf</code> / OVF-folder exports are not accepted — pack the folder into a single
+			<code>.ova</code> first.
 		</p>
 	</header>
 

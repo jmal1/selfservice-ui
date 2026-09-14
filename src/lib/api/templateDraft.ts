@@ -17,6 +17,12 @@ export const TEMPLATE_DRAFT_SOURCE_TYPES = [
 
 export type TemplateDraftSourceType = (typeof TEMPLATE_DRAFT_SOURCE_TYPES)[number];
 
+/**
+ * Instructor-facing name for API `source_type=ovf`.
+ * Upload is `.ova` only; a bare `.ovf` / OVF-folder export is rejected.
+ */
+export const OVA_SOURCE_TYPE_LABEL = 'Imported OVA';
+
 /** API 400 copy — keep client-side messages aligned with these strings. */
 export const SOURCE_TYPE_REQUIRED =
 	'source_type is required (clone_template, clone_vcenter, iso, or ovf)';

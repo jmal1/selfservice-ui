@@ -33,7 +33,7 @@ const failed: OVACatalogEntry = {
 };
 
 describe('ovaCreateTemplateHref', () => {
-	it('encodes the imported moref for the wizard OVF picker', () => {
+	it('encodes the imported moref for the wizard OVA picker', () => {
 		expect(ovaCreateTemplateHref('vm-4242')).toBe(
 			'/admin/templates/new?source_type=ovf&source_ref=vm-4242'
 		);
