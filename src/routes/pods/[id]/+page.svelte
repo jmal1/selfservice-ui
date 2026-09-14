@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import {
+		ApiError,
 		getPod,
 		deletePod,
 		extendPod,
@@ -243,10 +244,27 @@
 			confirmDelete = 'pod';
 			return;
 		}
-		await handleAction('delete-pod', async () => {
-			await deletePod(podId);
+		const key = 'delete-pod';
+		if (actionLoading[key]) return;
+		actionLoading = { ...actionLoading, [key]: true };
+		try {
+			try {
+				await deletePod(podId);
+			} catch (e) {
+				// 409 already destroying/destroyed (or 404 gone) — still leave the detail page.
+				// Swallowing here without goto left the Confirm Delete strip stuck while JobPanel
+				// already showed destroy completed (UI synthetic create_and_destroy flake).
+				if (!(e instanceof ApiError && (e.status === 409 || e.status === 404))) {
+					throw e;
+				}
+			}
+			confirmDelete = null;
 			await goto('/');
-		});
+		} catch (e) {
+			toastStore.error(friendlyError(e, 'Delete failed. Please try again.'));
+		} finally {
+			actionLoading = { ...actionLoading, [key]: false };
+		}
 	}
 
 	async function handleDeleteVM(vmId: string) {
