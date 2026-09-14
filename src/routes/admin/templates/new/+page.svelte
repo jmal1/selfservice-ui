@@ -25,7 +25,7 @@
 			sourceTypeAllowsSkipGeneralize,
 			validateTemplateDraftSource
 		} from '$lib/api/templateDraft';
-		import { ovaPickerLabel, ovaPickerOptions } from '$lib/api/ovaCatalog';
+		import { ovaEntryIsSelectable, ovaPickerLabel, ovaPickerOptions } from '$lib/api/ovaCatalog';
 
 	// Step 1 of the T4 template wizard.
 	//
@@ -493,7 +493,8 @@
 					<select class="select" bind:value={req.source_ref} data-testid="ovf-ova-select">
 						<option value="">— pick an imported OVA VM —</option>
 						{#each ovfPickerOptions as ova (ova.image_id || ova.source_ref || ova.name)}
-							<option value={ova.source_ref ?? ''} disabled={ova.disabled}>
+							<!-- Selectable = !disabled && source_ref; importing rows can omit disabled. -->
+							<option value={ova.source_ref ?? ''} disabled={!ovaEntryIsSelectable(ova)}>
 								{ovaPickerLabel(ova)}
 							</option>
 						{/each}
