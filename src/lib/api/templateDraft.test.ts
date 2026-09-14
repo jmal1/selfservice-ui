@@ -7,6 +7,7 @@ import {
 	SKIP_GENERALIZE_CLONE_TEMPLATE,
 	sourceTypeAllowsSkipGeneralize,
 	defaultSkipGeneralizeForSourceType,
+	OVA_SOURCE_TYPE_LABEL,
 	validateTemplateDraftSource,
 	buildCreateTemplateDraftBody
 } from './templateDraft';
@@ -41,11 +42,18 @@ describe('sourceTypeAllowsSkipGeneralize', () => {
 });
 
 describe('defaultSkipGeneralizeForSourceType', () => {
-	it('defaults on for prepared OVA/OVF appliances only', () => {
+	it('defaults on for prepared OVA appliances only', () => {
 		expect(defaultSkipGeneralizeForSourceType('ovf')).toBe(true);
 		expect(defaultSkipGeneralizeForSourceType('clone_vcenter')).toBe(false);
 		expect(defaultSkipGeneralizeForSourceType('iso')).toBe(false);
 		expect(defaultSkipGeneralizeForSourceType('clone_template')).toBe(false);
+	});
+});
+
+describe('OVA_SOURCE_TYPE_LABEL', () => {
+	it('names the wizard option OVA, not OVF', () => {
+		expect(OVA_SOURCE_TYPE_LABEL).toBe('Imported OVA');
+		expect(OVA_SOURCE_TYPE_LABEL).not.toMatch(/OVF/i);
 	});
 });
 

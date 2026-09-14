@@ -21,6 +21,7 @@
 		import { handleWizardEnter } from '$lib/utils/wizardEnter';
 		import {
 			defaultSkipGeneralizeForSourceType,
+			OVA_SOURCE_TYPE_LABEL,
 			sourceTypeAllowsSkipGeneralize,
 			validateTemplateDraftSource
 		} from '$lib/api/templateDraft';
@@ -54,7 +55,7 @@
 
 	let existingTemplates = $state<Template[]>([]);
 	let vcenterVMs = $state<VCenterFolderVM[]>([]);
-	// OVA catalog from GET /admin/vcenter/ovas — the only OVF picker source.
+	// OVA catalog from GET /admin/vcenter/ovas — the only Imported OVA picker source.
 	let catalogOVAs = $state<OVACatalogEntry[]>([]);
 	let mergedISOs = $state<MergedISOEntry[]>([]);
 	// Local checkbox state. Only copied onto the draft request when true so
@@ -417,13 +418,13 @@
 			<select class="select" bind:value={req.source_type} onchange={onSourceTypeChange}>
 				<option value="clone_template">Clone an existing Crucible template</option>
 				<option value="clone_vcenter">Clone an existing vCenter VM</option>
-				<option value="ovf">OVF/OVA</option>
+				<option value="ovf">{OVA_SOURCE_TYPE_LABEL}</option>
 				<option value="iso">ISO install</option>
 			</select>
 			<span class="text-xs text-surface-500 mt-1 block">
 				Easiest is <strong>Clone an existing Crucible template</strong> — start
-				from something that already works. Pick <strong>OVF/OVA</strong> for an
-				already-imported OVA (moref of the vCenter VM). Pick
+				from something that already works. Pick <strong>{OVA_SOURCE_TYPE_LABEL}</strong>
+				for an appliance uploaded on the Images page (vCenter VM moref). Pick
 				<strong>ISO install</strong> only if you're installing an OS from scratch.
 			</span>
 		</label>
@@ -660,10 +661,12 @@
 				</div>
 
 				<aside class="card preset-tonal-surface p-3 text-sm text-surface-600 dark:text-surface-300">
-					💡 An imported OVA is authored with source type <strong>OVF/OVA</strong>
-					(or clone from vCenter). Import it on the
-					<a href="/admin/images" class="anchor">Images page</a> first, then pick
-					the vCenter VM moref — not an image-upload UUID.
+					💡 Upload a <code>.ova</code> on the
+					<a href="/admin/images" class="anchor">Images page</a>, then pick it here
+					by vCenter VM moref — not an image-upload UUID. Bare
+					<code>.ovf</code> / OVF-folder exports are not accepted; pack them into a
+					single <code>.ova</code> first. Clone-from-vCenter is for arbitrary folder
+					VMs, not this catalog.
 				</aside>
 		{/if}
 

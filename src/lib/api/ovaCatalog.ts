@@ -1,5 +1,5 @@
 /**
- * Helpers for GET /api/v1/admin/vcenter/ovas — the wizard's OVF/OVA picker.
+ * Helpers for GET /api/v1/admin/vcenter/ovas — the wizard's Imported OVA picker.
  *
  * The catalog (not /admin/images and not the templates-folder VM list) is the
  * discovery surface for source_type=ovf. Selectable rows carry source_ref, the
@@ -21,7 +21,7 @@ export function ovaEntryIsSelectable(entry: OVACatalogEntry): boolean {
 	return !entry.disabled && !!entry.source_ref;
 }
 
-/** Options the OVF picker may bind as source_ref. Folder VMs are not mixed in. */
+/** Options the Imported OVA picker may bind as source_ref. Folder VMs are not mixed in. */
 export function ovaPickerOptions(
 	ovas: OVACatalogEntry[],
 	deepLinkedSourceRef?: string
