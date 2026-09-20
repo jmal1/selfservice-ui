@@ -231,7 +231,7 @@
 				<div class="text-2xl font-bold text-warning-500">{stats.allocated}</div>
 			</div>
 			<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 px-4 py-3 backdrop-blur-xl">
-				<div class="text-xs font-medium text-surface-500">All Hosts / Switch1 Only</div>
+				<div class="text-xs font-medium text-surface-500">All Hosts / Legacy switch1</div>
 				<div class="text-2xl font-bold text-surface-900 dark:text-surface-100">
 					{stats.allScope} <span class="text-sm font-normal text-surface-500">/</span> {stats.switch1Scope}
 				</div>
@@ -268,7 +268,7 @@
 						<span class="text-xs font-medium text-surface-500">Host Scope</span>
 						<select bind:value={addScope} class={inputClass}>
 							<option value="all">All Hosts (both switches)</option>
-							<option value="switch1">Switch 1 Only (esxi1/esxi2)</option>
+							<option value="switch1">Legacy switch1 (unused — both switches trunk pod VLANs)</option>
 						</select>
 					</label>
 				</div>
@@ -310,7 +310,7 @@
 						<span class="text-xs font-medium text-surface-500">Host Scope</span>
 						<select bind:value={batchScope} class={inputClass}>
 							<option value="all">All Hosts (both switches)</option>
-							<option value="switch1">Switch 1 Only (esxi1/esxi2)</option>
+							<option value="switch1">Legacy switch1 (unused — both switches trunk pod VLANs)</option>
 						</select>
 					</label>
 				</div>
@@ -337,7 +337,7 @@
 			<select bind:value={filterScope} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100">
 				<option value="all-scopes">All Scopes</option>
 				<option value="all">All Hosts</option>
-				<option value="switch1">Switch 1 Only</option>
+				<option value="switch1">Legacy switch1</option>
 			</select>
 			<select bind:value={filterStatus} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-1.5 text-sm text-surface-900 dark:text-surface-100">
 				<option value="all-status">All Status</option>
@@ -383,7 +383,7 @@
 										<td class="px-5 py-3">
 											<select bind:value={editScope} class="rounded border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-2 py-1 text-sm text-surface-900 dark:text-surface-100">
 												<option value="all">All Hosts</option>
-												<option value="switch1">Switch 1 Only</option>
+												<option value="switch1">Legacy switch1</option>
 											</select>
 										</td>
 										<td class="px-5 py-3">
@@ -449,7 +449,7 @@
 											<span class="rounded-full px-2 py-0.5 text-xs font-medium {v.host_scope === 'all'
 												? 'bg-primary-500/10 text-primary-500'
 												: 'bg-surface-300/50 dark:bg-surface-700/50 text-surface-600 dark:text-surface-400'}">
-												{v.host_scope === 'all' ? 'All Hosts' : 'Switch 1'}
+												{v.host_scope === 'all' ? 'All Hosts' : 'Legacy switch1'}
 											</span>
 										</td>
 										<td class="px-5 py-3">
