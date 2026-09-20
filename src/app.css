@@ -111,37 +111,10 @@ html {
 	font-size: 18px;
 }
 
-/* Animated background blobs */
-@keyframes blob-drift {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	33% { transform: translate(30px, -20px) scale(1.05); }
-	66% { transform: translate(-15px, 15px) scale(0.95); }
-}
-
-.bg-blob {
-	animation: blob-drift 20s ease-in-out infinite;
-}
-
-.bg-blob-delayed {
-	animation: blob-drift 25s ease-in-out infinite reverse;
-}
-
-/* Glass panel effect — subtle solid surface with border */
-.glass {
-	background: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.04));
-	border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
-}
-
-.glass-hover:hover {
-	background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.08));
-}
-
-/* Subtle shadow for primary buttons */
-.glow-primary {
-	box-shadow: 0 1px 3px oklch(0.60 0.22 35 / 0.15);
-}
-.glow-primary:hover {
-	box-shadow: 0 2px 8px oklch(0.60 0.22 35 / 0.2);
+/* Solid panels — no glassmorphism */
+.panel {
+	background: light-dark(oklch(1 0 0), oklch(0.18 0.018 278));
+	border: 1px solid light-dark(oklch(0.88 0.01 60), oklch(0.28 0.02 270));
 }
 
 /* Pulse animation for status dots */
@@ -380,11 +353,6 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
-	.bg-blob,
-	.bg-blob-delayed {
-		animation: none;
-	}
-
 	.status-pulse {
 		animation: none;
 	}

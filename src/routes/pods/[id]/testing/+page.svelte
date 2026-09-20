@@ -86,8 +86,8 @@
 <div class="mx-auto max-w-5xl space-y-6 p-6">
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold">Assessments</h1>
-			<p class="text-surface-600 dark:text-surface-400">Run assessments against a specific VM in your pod</p>
+			<h1 class="text-2xl font-bold">Vulnerability Assessments</h1>
+			<p class="text-surface-600 dark:text-surface-400">Run vulnerability assessments against a specific VM in your pod</p>
 		</div>
 		<a href="/pods/{podId}" class="btn btn-secondary">← Back to Pod</a>
 	</div>
@@ -98,11 +98,11 @@
 		<div class="card bg-error-500/10 text-error-500 p-4">{error}</div>
 	{:else if dashboard}
 		<section class="space-y-4">
-			<h2 class="text-lg font-semibold">Available Assessments</h2>
+			<h2 class="text-lg font-semibold">Available Vulnerability Assessments</h2>
 			{#if offerCount === 0}
 				<div class="card p-6 text-center">
 					<p class="text-surface-600 dark:text-surface-400">
-						No assessments available. VMs need an IP and a playlist assigned to their template.
+						No vulnerability assessments available. VMs need an IP and a playlist assigned to their template.
 					</p>
 				</div>
 			{:else}

@@ -95,7 +95,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold">Run Details</h1>
-			<a href="/pods/{podId}/testing" class="text-sm text-primary-500 hover:underline">← Back to Assessments</a>
+			<a href="/pods/{podId}/testing" class="text-sm text-primary-500 hover:underline">← Back to Vulnerability Assessments</a>
 		</div>
 		{#if isActive}
 			<button

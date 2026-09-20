@@ -600,6 +600,32 @@ export async function getMyJobs(): Promise<Job[]> {
 	return asArray(jobs);
 }
 
+export async function getMyRuns(): Promise<Run[]> {
+	if (isMock) return mockApi.adminListRuns();
+	const runs = await apiFetch<Run[]>('/api/v1/runs');
+	return asArray(runs);
+}
+
+export interface ClusterUsagePoint {
+	t: number;
+	v: number;
+}
+
+export interface ClusterUsage {
+	available: boolean;
+	cpu_percent: number | null;
+	ram_percent: number | null;
+	series: { cpu: ClusterUsagePoint[]; ram: ClusterUsagePoint[] };
+	allocated_vcpus: number;
+	allocated_ram_mb: number;
+	active_pods: number;
+	message?: string;
+}
+
+export async function getClusterUsage(): Promise<ClusterUsage> {
+	return apiFetch<ClusterUsage>('/api/v1/admin/cluster-usage');
+}
+
 // --- Admin ---
 
 export function adminGetUsers(): Promise<User[]> {
