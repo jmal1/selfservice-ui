@@ -13,12 +13,10 @@
 
 	const gauges = $derived.by((): GaugeItem[] => {
 		if (!usage) return [];
-		const storageUsed = usage.used_storage_gb ?? 0;
 		return [
 			{ label: 'vCPU', used: usage.used_vcpus ?? 0, max: usage.max_vcpus ?? 0, unit: 'cores' },
 			{ label: 'RAM', used: Math.round((usage.used_ram_mb ?? 0) / 1024), max: Math.round((usage.max_ram_mb ?? 0) / 1024), unit: 'GB' },
-			{ label: 'Pods', used: usage.active_pods ?? 0, max: usage.max_pods ?? 0, unit: '' },
-			{ label: 'Storage', used: storageUsed, max: storageUsed > 0 ? Math.ceil(storageUsed * 2) : 100, unit: 'GB' }
+			{ label: 'Pods', used: usage.active_pods ?? 0, max: usage.max_pods ?? 0, unit: '' }
 		];
 	});
 
@@ -35,10 +33,10 @@
 </script>
 
 <div class="space-y-3">
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 		{#if usage === null}
-			{#each Array(4) as _}
-				<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg">
+			{#each Array(3) as _}
+				<div class="panel rounded-2xl p-5">
 					<LoadingSkeleton width="4rem" height="0.75rem" rounded="rounded" />
 					<div class="mt-3">
 						<LoadingSkeleton width="6rem" height="1.75rem" rounded="rounded" />
@@ -54,7 +52,7 @@
 		{:else}
 			{#each gauges as gauge}
 				{@const pct = percentage(gauge.used, gauge.max)}
-				<div class="glass rounded-2xl p-5 transition-all hover:border-primary-500/20 hover:shadow-lg hover:shadow-primary-500/5">
+				<div class="panel rounded-2xl p-5">
 					<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">
 						{gauge.label}
 					</p>

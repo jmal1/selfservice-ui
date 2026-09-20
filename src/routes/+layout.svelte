@@ -81,8 +81,9 @@
 	});
 
 	const navItems = [
-		{ href: '/', label: 'Dashboard', icon: 'dashboard' },
-		{ href: '/pods', label: 'My Labs', icon: 'pods' },
+		{ href: '/', label: 'My Labs', icon: 'pods' },
+		{ href: '/operations', label: 'Current Operations', icon: 'jobs' },
+		{ href: '/quotas', label: 'Quotas', icon: 'dashboard' },
 		{ href: '/templates', label: 'Templates', icon: 'templates' },
 		{ href: '/guide', label: 'Student Guide', icon: 'guide' }
 	];
@@ -115,7 +116,10 @@
 	);
 
 	function isActive(href: string): boolean {
-		if (href === '/' || href === '/admin') return page.url.pathname === href;
+		if (href === '/') {
+			return page.url.pathname === '/' || page.url.pathname.startsWith('/pods');
+		}
+		if (href === '/admin') return page.url.pathname === href;
 		return page.url.pathname.startsWith(href);
 	}
 
@@ -201,12 +205,6 @@
 {/snippet}
 
 <div class="relative flex h-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
-	<!-- Animated background gradients (fire + blue blobs) -->
-	<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-		<div class="bg-blob absolute -left-[20%] -top-[20%] h-[700px] w-[700px] rounded-full bg-primary-500/3 blur-[120px]"></div>
-		<div class="bg-blob-delayed absolute -bottom-[15%] -right-[15%] h-[600px] w-[600px] rounded-full bg-secondary-500/2 blur-[100px]"></div>
-		<div class="bg-blob-delayed absolute left-[40%] top-[60%] h-[400px] w-[400px] rounded-full bg-tertiary-500/2 blur-[100px]"></div>
-	</div>
 
 	{#if showSidebar}
 	<!-- Mobile top bar -->
@@ -253,7 +251,7 @@
 			{#if provisioningStore.canProvision}
 				<a
 					href="/deploy"
-					class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary-600"
+					class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600"
 				>
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
 					Deploy VM

@@ -295,6 +295,16 @@
 		expandedVMs = { ...expandedVMs, [vmId]: !expandedVMs[vmId] };
 	}
 
+	$effect(() => {
+		if (!pod) return;
+		const running = (pod.vms ?? []).filter((vm) => vm.status === 'running');
+		if (running.length !== 1) return;
+		const id = running[0].id;
+		if (expandedVMs[id] === undefined) {
+			expandedVMs = { ...expandedVMs, [id]: true };
+		}
+	});
+
 	function templateName(templateId: string): string {
 		return templates.find((t) => t.id === templateId)?.name ?? 'Unknown';
 	}
@@ -309,13 +319,13 @@
 		<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">
 			{error}
 		</div>
-		<a href="/" class="text-sm text-primary-500 hover:text-primary-400">← Back to Dashboard</a>
+		<a href="/" class="text-sm text-primary-500 hover:text-primary-400">← Back to My Labs</a>
 	{:else if pod}
 		<JobPanel {jobs} />
 		<!-- Header -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-4">
-				<a href="/" class="text-surface-500 hover:text-surface-900 dark:hover:text-surface-100" aria-label="Back to dashboard">
+				<a href="/" class="text-surface-500 hover:text-surface-900 dark:hover:text-surface-100" aria-label="Back to My Labs">
 					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
 					</svg>
@@ -427,20 +437,17 @@
 			</div>
 		{/if}
 
-		<!-- Assessments -->
-		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl px-5 py-4">
+		<!-- Vulnerability Assessments -->
+		<div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100 dark:bg-surface-900 px-5 py-4">
 			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Assessments</span>
-					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500/10 text-primary-400">
-						Testing
-					</span>
+				<div>
+					<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Vulnerability Assessments</span>
 				</div>
 				<a
 					href="/pods/{podId}/testing"
-					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-500/20"
+					class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600"
 				>
-					Run Assessments →
+					Run Vulnerability Assessments →
 				</a>
 			</div>
 		</div>
@@ -505,14 +512,12 @@
 									<span>{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB · {vm.disk_gb} GB</span>
 								</div>
 								<div class="flex items-center gap-1 flex-wrap">
-									{#if vm.ip_address}
-										<button
-											class="touch-target text-xs text-primary-500 hover:text-primary-400 px-2 py-1"
-											onclick={() => toggleVMAccess(vm.id)}
-										>
-											{expandedVMs[vm.id] ? 'Hide' : 'Access'}
-										</button>
-									{/if}
+									<button
+										class="touch-target rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600"
+										onclick={() => toggleVMAccess(vm.id)}
+									>
+										{expandedVMs[vm.id] ? 'Hide' : 'Connect'}
+									</button>
 									{#if vm.status === 'stopped'}
 										<button
 											class="touch-target inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-200-800 text-surface-500 transition-colors hover:bg-success-500/10 hover:text-success-500 disabled:opacity-50"
@@ -585,14 +590,12 @@
 								{vm.vcpus} vCPU · {Math.round(vm.ram_mb / 1024)} GB · {vm.disk_gb} GB
 							</div>
 							<div>
-								{#if vm.ip_address}
-									<button
-										class="text-xs text-primary-500 hover:text-primary-400"
-										onclick={() => toggleVMAccess(vm.id)}
-									>
-										{expandedVMs[vm.id] ? 'Hide' : 'Access'}
-									</button>
-								{/if}
+								<button
+									class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600"
+									onclick={() => toggleVMAccess(vm.id)}
+								>
+									{expandedVMs[vm.id] ? 'Hide' : 'Connect'}
+								</button>
 							</div>
 							<div class="flex items-center gap-1">
 								{#if vm.status === 'stopped'}

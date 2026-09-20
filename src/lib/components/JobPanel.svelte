@@ -2,7 +2,7 @@
 	import { safeErrorText } from '$lib/errors/friendly';
 	import type { Job } from '$lib/types';
 
-	let { jobs }: { jobs: Job[] } = $props();
+	let { jobs, title = 'Provisioning jobs' }: { jobs: Job[]; title?: string } = $props();
 
 	let expanded = $state(false);
 
@@ -218,14 +218,14 @@
 	}
 </script>
 
-<div class="glass overflow-hidden rounded-2xl">
+<div class="panel overflow-hidden rounded-2xl">
 	<!-- Header -->
 	<button
 		class="flex w-full items-center justify-between px-5 py-3 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30"
 		onclick={() => (expanded = !expanded)}
 	>
 		<div class="flex items-center gap-2">
-			<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">Active Jobs</span>
+			<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">{title}</span>
 			{#if activeJobs.length > 0}
 				<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5 text-xs font-bold text-white">
 					{activeJobs.length}

@@ -38,17 +38,12 @@ const pod: Pod = {
 };
 
 describe('PodList maintenance behavior', () => {
-	it('keeps cleanup and existing-VM controls usable', () => {
+	it('opens the lab from the list and keeps delete/power on the detail page', () => {
 		render(PodList, { props: { pods: [pod] } });
 
-		for (const button of screen.getAllByRole('button', { name: /delete pod/i })) {
-			expect((button as HTMLButtonElement).disabled).toBe(false);
-		}
-		for (const button of screen.getAllByRole('button', { name: /delete vm/i })) {
-			expect((button as HTMLButtonElement).disabled).toBe(false);
-		}
-		for (const button of screen.getAllByRole('button', { name: /start vm/i })) {
-			expect((button as HTMLButtonElement).disabled).toBe(false);
-		}
+		expect(screen.getAllByRole('link', { name: 'Open Existing lab' }).length).toBeGreaterThan(0);
+		expect(screen.queryByRole('button', { name: /delete pod/i })).toBeNull();
+		expect(screen.queryByRole('button', { name: /delete vm/i })).toBeNull();
+		expect(screen.queryByRole('button', { name: /start vm/i })).toBeNull();
 	});
 });
