@@ -615,7 +615,16 @@ export interface ClusterUsage {
 	available: boolean;
 	cpu_percent: number | null;
 	ram_percent: number | null;
-	series: { cpu: ClusterUsagePoint[]; ram: ClusterUsagePoint[] };
+	host_cpu_usage_mhz: number | null;
+	host_cpu_max_mhz: number | null;
+	host_ram_usage_mb: number | null;
+	host_ram_max_mb: number | null;
+	series: {
+		cpu: ClusterUsagePoint[];
+		ram: ClusterUsagePoint[];
+		cpu_usage_mhz?: ClusterUsagePoint[];
+		ram_usage_mb?: ClusterUsagePoint[];
+	};
 	allocated_vcpus: number;
 	allocated_ram_mb: number;
 	active_pods: number;

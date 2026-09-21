@@ -35,7 +35,11 @@
 				available: false,
 				cpu_percent: null,
 				ram_percent: null,
-				series: { cpu: [], ram: [] },
+				host_cpu_usage_mhz: null,
+				host_cpu_max_mhz: null,
+				host_ram_usage_mb: null,
+				host_ram_max_mb: null,
+				series: { cpu: [], ram: [], cpu_usage_mhz: [], ram_usage_mb: [] },
 				allocated_vcpus: 0,
 				allocated_ram_mb: 0,
 				active_pods: 0,
@@ -93,27 +97,47 @@
 			{/if}
 		</div>
 
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			<div class="panel rounded-2xl p-5">
-				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Allocated vCPU</p>
+				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Crucible allocated vCPU</p>
 				<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">{usage?.allocated_vcpus ?? '—'}</p>
+				<p class="mt-1 text-xs text-surface-500">Sum of student VM vCPUs (not host cores)</p>
 			</div>
 			<div class="panel rounded-2xl p-5">
-				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Allocated RAM</p>
+				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Crucible allocated RAM</p>
 				<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">
 					{usage ? Math.round(usage.allocated_ram_mb / 1024) : '—'}
 					{#if usage}<span class="text-base font-normal text-surface-500">GB</span>{/if}
 				</p>
+				<p class="mt-1 text-xs text-surface-500">Sum of student VM RAM</p>
 			</div>
 			<div class="panel rounded-2xl p-5">
-				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">Host CPU / RAM now</p>
+				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">ESXi host CPU</p>
 				<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">
-					{#if usage?.available && usage.cpu_percent != null && usage.ram_percent != null}
-						{usage.cpu_percent.toFixed(0)}% / {usage.ram_percent.toFixed(0)}%
+					{#if usage?.available && usage.host_cpu_usage_mhz != null && usage.host_cpu_max_mhz != null}
+						{(usage.host_cpu_usage_mhz / 1000).toFixed(1)}
+						<span class="text-base font-normal text-surface-500">/ {(usage.host_cpu_max_mhz / 1000).toFixed(1)} GHz</span>
 					{:else}
 						—
 					{/if}
 				</p>
+				{#if usage?.available && usage.cpu_percent != null}
+					<p class="mt-1 text-xs text-surface-500">{usage.cpu_percent.toFixed(0)}% of physical host CPU</p>
+				{/if}
+			</div>
+			<div class="panel rounded-2xl p-5">
+				<p class="text-xs font-semibold uppercase tracking-wider text-surface-500">ESXi host RAM</p>
+				<p class="mt-1 text-3xl font-bold text-surface-900 dark:text-surface-100">
+					{#if usage?.available && usage.host_ram_usage_mb != null && usage.host_ram_max_mb != null}
+						{Math.round(usage.host_ram_usage_mb / 1024)}
+						<span class="text-base font-normal text-surface-500">/ {Math.round(usage.host_ram_max_mb / 1024)} GB</span>
+					{:else}
+						—
+					{/if}
+				</p>
+				{#if usage?.available && usage.ram_percent != null}
+					<p class="mt-1 text-xs text-surface-500">{usage.ram_percent.toFixed(0)}% of physical host RAM</p>
+				{/if}
 			</div>
 		</div>
 
@@ -123,8 +147,18 @@
 			</div>
 		{:else if usage}
 			<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-				<ClusterUsageChart label="Host CPU (7 days)" points={usage.series.cpu} />
-				<ClusterUsageChart label="Host RAM (7 days)" points={usage.series.ram} />
+				<ClusterUsageChart
+					label="Host CPU (7 days)"
+					points={usage.series.cpu_usage_mhz?.length ? usage.series.cpu_usage_mhz : usage.series.cpu}
+					unit={usage.series.cpu_usage_mhz?.length ? 'GHz' : '%'}
+					maxValue={usage.host_cpu_max_mhz}
+				/>
+				<ClusterUsageChart
+					label="Host RAM (7 days)"
+					points={usage.series.ram_usage_mb?.length ? usage.series.ram_usage_mb : usage.series.ram}
+					unit={usage.series.ram_usage_mb?.length ? 'GB' : '%'}
+					maxValue={usage.host_ram_max_mb}
+				/>
 			</div>
 		{/if}
 

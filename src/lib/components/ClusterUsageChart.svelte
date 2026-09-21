@@ -4,11 +4,15 @@
 	let {
 		label,
 		points,
-		unit = '%'
+		unit = '%',
+		maxValue = null as number | null,
+		maxLabel = ''
 	}: {
 		label: string;
 		points: UsagePoint[];
 		unit?: string;
+		maxValue?: number | null;
+		maxLabel?: string;
 	} = $props();
 
 	const width = 640;
@@ -22,7 +26,7 @@
 		const minX = Math.min(...xs);
 		const maxX = Math.max(...xs);
 		const minY = 0;
-		const maxY = Math.max(100, ...ys);
+		const maxY = maxValue != null && maxValue > 0 ? maxValue : Math.max(unit === '%' ? 100 : 1, ...ys);
 		const spanX = Math.max(maxX - minX, 1);
 		const spanY = Math.max(maxY - minY, 1);
 		return points
@@ -35,14 +39,23 @@
 	});
 
 	const latest = $derived(points.length ? points[points.length - 1].v : null);
+
+	function formatValue(v: number): string {
+		if (unit === 'GHz') return (v / 1000).toFixed(1);
+		if (unit === 'GB') return (v / 1024).toFixed(0);
+		return v.toFixed(0);
+	}
 </script>
 
 <div class="panel rounded-2xl p-5">
-	<div class="flex items-baseline justify-between">
+	<div class="flex items-baseline justify-between gap-3">
 		<p class="text-xs font-semibold uppercase tracking-[0.05em] text-surface-500">{label}</p>
 		{#if latest != null}
 			<p class="text-lg font-bold text-surface-900 dark:text-surface-100">
-				{latest.toFixed(0)}{unit}
+				{formatValue(latest)}{unit === '%' ? '%' : ` ${unit}`}
+				{#if maxValue != null && maxValue > 0}
+					<span class="text-sm font-normal text-surface-500">/ {formatValue(maxValue)}{unit === '%' ? '%' : ` ${unit}`}{maxLabel ? ` ${maxLabel}` : ''}</span>
+				{/if}
 			</p>
 		{/if}
 	</div>
