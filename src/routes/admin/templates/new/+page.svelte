@@ -744,9 +744,11 @@
 		<h2 class="h4">Guest credentials</h2>
 		<p class="text-sm text-surface-500">
 			{#if skipGeneralize && sourceTypeAllowsSkipGeneralize(req.source_type)}
-				Optional. Generalize will skip GuestOps, so these are not required for
-				that step. Students will still see their own
-				<strong>randomly-generated</strong> password on the pod page after launch.
+				Enter the login <strong>already baked into</strong> this OVA (or source
+				VM). Skip-generalize means Crucible will <strong>not</strong> rewrite
+				guest credentials — students see <strong>these exact values</strong> on
+				the pod page after launch. If they do not match the image, students
+				cannot log in.
 			{:else}
 				The login the wizard uses to clean the VM during Generalize. Students
 				will see their own <strong>randomly-generated</strong> password on the
@@ -759,8 +761,14 @@
 				<span class="text-sm">Default username</span>
 				<input class="input" type="text" bind:value={req.default_username} placeholder="student" />
 				<span class="text-xs text-surface-500 mt-1 block">
-					Linux must be <code>student</code>; Windows use <code>Student</code>.
-					Leave blank when cloning — it's copied from the source.
+					{#if skipGeneralize && sourceTypeAllowsSkipGeneralize(req.source_type)}
+						Must match the account inside the image. Prefer
+						<code>student</code> (Linux) or <code>Student</code> (Windows)
+						so lab tooling stays consistent.
+					{:else}
+						Linux must be <code>student</code>; Windows use <code>Student</code>.
+						Leave blank when cloning — it's copied from the source.
+					{/if}
 				</span>
 			</label>
 			<label class="label">
@@ -769,11 +777,18 @@
 					class="input"
 					type="password"
 					bind:value={req.default_password}
-					placeholder="BUILD_PASSWORD"
+					placeholder={skipGeneralize && sourceTypeAllowsSkipGeneralize(req.source_type)
+						? 'password baked into the OVA'
+						: 'BUILD_PASSWORD'}
 					autocomplete="new-password"
 				/>
 				<span class="text-xs text-surface-500 mt-1 block">
-					Set a strong build password (do not commit it). Leave blank when cloning.
+					{#if skipGeneralize && sourceTypeAllowsSkipGeneralize(req.source_type)}
+						The real password already set in the image. Students will see it
+						on the pod page — do not use a placeholder.
+					{:else}
+						Set a strong build password (do not commit it). Leave blank when cloning.
+					{/if}
 				</span>
 			</label>
 		</div>
