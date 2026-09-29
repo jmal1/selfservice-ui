@@ -245,7 +245,7 @@ export interface AuditEntry {
 	action: string;
 	resource_type: string;
 	resource_id: string;
-	details: Record<string, unknown>;
+	details?: Record<string, unknown> | null;
 	ip_address: string;
 	created_at: string;
 }
