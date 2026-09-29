@@ -363,7 +363,7 @@
 		ondragleave={onDragLeave}
 		ondrop={onDrop}
 	>
-		<p class="text-surface-500 mb-3">Drag & drop <code>.iso</code> or <code>.ova</code> files here (max 16 GiB)</p>
+		<p class="text-surface-500 mb-3">Drag & drop <code>.iso</code> or <code>.ova</code> files here (max 32 GiB)</p>
 		<label class="btn preset-filled-primary cursor-pointer">
 			Browse files
 			<input type="file" accept=".iso,.ova" multiple class="hidden" onchange={onFileInput} />
