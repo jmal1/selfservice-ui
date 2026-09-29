@@ -667,8 +667,12 @@ export function adminGetAuditLog(): Promise<AuditEntry[]> {
 }
 
 export function adminSearchAuditLog(params: {
-	action?: string;
+	action?: string[];
+	exclude_action?: string[];
+	actor?: string;
+	q?: string;
 	user_id?: string;
+	resource_type?: string;
 	resource_id?: string;
 	since?: string;
 	until?: string;
@@ -676,8 +680,12 @@ export function adminSearchAuditLog(params: {
 	per_page?: number;
 } = {}): Promise<AuditLogPage> {
 	const qs = new URLSearchParams();
-	if (params.action) qs.set('action', params.action);
+	for (const action of params.action ?? []) qs.append('action', action);
+	for (const action of params.exclude_action ?? []) qs.append('exclude_action', action);
+	if (params.actor) qs.set('actor', params.actor);
+	if (params.q) qs.set('q', params.q);
 	if (params.user_id) qs.set('user_id', params.user_id);
+	if (params.resource_type) qs.set('resource_type', params.resource_type);
 	if (params.resource_id) qs.set('resource_id', params.resource_id);
 	if (params.since) qs.set('since', params.since);
 	if (params.until) qs.set('until', params.until);
