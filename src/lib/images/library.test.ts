@@ -5,7 +5,8 @@ import {
 	MAX_IMAGE_UPLOAD_BYTES,
 	UNSUPPORTED_IMAGE_TYPE,
 	imageStatusNeedsPoll,
-	rejectImageFile
+	rejectImageFile,
+	uploadProgressPercent
 } from './library';
 
 describe('imageStatusNeedsPoll', () => {
@@ -16,6 +17,16 @@ describe('imageStatusNeedsPoll', () => {
 		expect(imageStatusNeedsPoll('importing')).toBe(true);
 		expect(imageStatusNeedsPoll('imported')).toBe(false);
 		expect(imageStatusNeedsPoll('error')).toBe(false);
+	});
+});
+
+describe('uploadProgressPercent', () => {
+	it('tracks bytes sent and clamps the ends', () => {
+		expect(uploadProgressPercent(0, 1000)).toBe(0);
+		expect(uploadProgressPercent(250, 1000)).toBe(25);
+		expect(uploadProgressPercent(1000, 1000)).toBe(100);
+		expect(uploadProgressPercent(1500, 1000)).toBe(100);
+		expect(uploadProgressPercent(10, 0)).toBe(0);
 	});
 });
 

@@ -20,6 +20,15 @@ export function imageStatusNeedsPoll(status: string): boolean {
 	return NON_TERMINAL_IMAGE_STATUSES.has(status as ImageUploadStatus);
 }
 
+/** Bytes sent over the whole file, clamped to 0–100. Total of 0 stays at 0. */
+export function uploadProgressPercent(loaded: number, total: number): number {
+	if (total <= 0) return 0;
+	const pct = Math.round((loaded / total) * 100);
+	if (pct < 0) return 0;
+	if (pct > 100) return 100;
+	return pct;
+}
+
 export const BARE_OVF_REJECTED =
 	'Pack the OVF folder into a single .ova (tar of .ovf + disks) and upload that.';
 
