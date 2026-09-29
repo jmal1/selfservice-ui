@@ -15,7 +15,7 @@
 	import { goto } from '$app/navigation';
 	import { ovaCreateTemplateHref } from '$lib/api/ovaCatalog';
 	import { OVA_SOURCE_TYPE_LABEL } from '$lib/api/templateDraft';
-	import { imageStatusNeedsPoll, rejectImageFile } from '$lib/images/library';
+	import { imageStatusNeedsPoll, rejectImageFile, uploadProgressPercent } from '$lib/images/library';
 
 	// --- State ---
 
@@ -131,7 +131,10 @@
 				xhrs: []
 			};
 			uploads.push(entry);
-			startUpload(entry);
+			// The list renders the proxied row. Progress written on the plain
+			// object never reaches that proxy, so the bar stays at 0% until
+			// the upload ends and something else re-renders the page.
+			void startUpload(uploads[uploads.length - 1]);
 		}
 	}
 
@@ -171,10 +174,11 @@
 					entry.xhrs.push(xhr);
 
 					xhr.upload.onprogress = (ev) => {
-						if (ev.lengthComputable) {
-							const loaded = partBytesAtStart + ev.loaded;
-							entry.progress = Math.round((loaded / entry.file.size) * 100);
-						}
+						// Blob uploads sometimes omit lengthComputable until the
+						// part finishes. ev.loaded still advances, and we already
+						// know the file size.
+						const loaded = partBytesAtStart + ev.loaded;
+						entry.progress = uploadProgressPercent(loaded, entry.file.size);
 					};
 
 					xhr.onload = () => {
@@ -212,6 +216,7 @@
 				});
 
 				bytesUploaded += chunkSize;
+				entry.progress = uploadProgressPercent(bytesUploaded, entry.file.size);
 				parts.push({ part_number: i + 1, etag });
 			}
 
