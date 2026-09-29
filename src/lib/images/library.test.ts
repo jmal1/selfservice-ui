@@ -35,7 +35,7 @@ describe('rejectImageFile', () => {
 		expect(rejectImageFile('appliance.ovf', 1024)).toBe(BARE_OVF_REJECTED);
 	});
 
-	it('accepts .iso and .ova under the 16 GiB cap', () => {
+	it('accepts .iso and .ova under the 32 GiB cap', () => {
 		expect(rejectImageFile('disk.iso', 1024)).toBeNull();
 		expect(rejectImageFile('lab.ova', MAX_IMAGE_UPLOAD_BYTES)).toBeNull();
 	});
