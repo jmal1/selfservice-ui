@@ -4,6 +4,8 @@
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
+	import { getPods } from '$lib/api/client';
+	import { labsClosed, retainsIsolatedLab, showDeploy, showMyLabs } from '$lib/labs/access';
 	import { config } from '$lib/config';
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
@@ -80,6 +82,26 @@
 		mobileMenuOpen = false;
 	});
 
+	let ownsIsolatedPod = $state(false);
+	$effect(() => {
+		const user = authStore.user;
+		if (!labsClosed(user)) {
+			ownsIsolatedPod = false;
+			return;
+		}
+		let cancelled = false;
+		getPods()
+			.then((pods) => {
+				if (!cancelled) ownsIsolatedPod = retainsIsolatedLab(pods);
+			})
+			.catch(() => {
+				if (!cancelled) ownsIsolatedPod = true;
+			});
+		return () => {
+			cancelled = true;
+		};
+	});
+
 	const navItems = [
 		{ href: '/', label: 'My Labs', icon: 'pods' },
 		{ href: '/operations', label: 'Current Operations', icon: 'jobs' },
@@ -114,6 +136,10 @@
 	const visibleAdminItems = $derived(
 		adminItems.filter((item) => item.minRole !== 'admin' || authStore.isAdmin)
 	);
+	const visibleNavItems = $derived(
+		navItems.filter((item) => item.href !== '/' || showMyLabs(authStore.user, ownsIsolatedPod))
+	);
+	const deployVisible = $derived(showDeploy(authStore.user));
 
 	function isActive(href: string): boolean {
 		if (href === '/') {
@@ -248,7 +274,7 @@
 
 		<!-- Quick action -->
 		<div class="px-3 pt-4 pb-2">
-			{#if provisioningStore.canProvision}
+			{#if deployVisible && provisioningStore.canProvision}
 				<a
 					href="/deploy"
 					class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600"
@@ -256,7 +282,7 @@
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
 					Deploy VM
 				</a>
-			{:else}
+			{:else if deployVisible}
 				<span
 					class="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[10px] bg-surface-300 px-3 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
 					role="link"
@@ -271,7 +297,7 @@
 
 		<!-- Navigation -->
 		<nav class="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Main navigation">
-			{#each navItems as item}
+			{#each visibleNavItems as item}
 				<a
 					href={item.href}
 					class="relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors

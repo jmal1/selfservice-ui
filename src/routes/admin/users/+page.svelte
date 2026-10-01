@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { friendlyError } from '$lib/errors/friendly';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { adminGetUsers, adminUpdateQuota } from '$lib/api/client';
+	import { adminGetUsers, adminUpdateAccess, adminUpdateQuota } from '$lib/api/client';
+	import { accessPatch, studentAccessEditable } from '$lib/labs/access';
 	import type { User } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 
@@ -10,10 +11,18 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let editingId = $state<string | null>(null);
-	let editValues = $state<{ max_vcpus: number; max_ram_mb: number; max_pods: number }>({
+	let editValues = $state<{
+		max_vcpus: number;
+		max_ram_mb: number;
+		max_pods: number;
+		labs_enabled: boolean;
+		max_single_vms: number;
+	}>({
 		max_vcpus: 0,
 		max_ram_mb: 0,
-		max_pods: 0
+		max_pods: 0,
+		labs_enabled: false,
+		max_single_vms: 1
 	});
 	let saving = $state(false);
 
@@ -43,7 +52,9 @@
 		editValues = {
 			max_vcpus: user.max_vcpus,
 			max_ram_mb: user.max_ram_mb,
-			max_pods: user.max_pods
+			max_pods: user.max_pods,
+			labs_enabled: user.labs_enabled === true,
+			max_single_vms: user.max_single_vms ?? 1
 		};
 	}
 
@@ -51,11 +62,26 @@
 		editingId = null;
 	}
 
-	async function saveQuota(userId: string) {
+	async function saveQuota(user: User) {
 		saving = true;
+		error = null;
 		try {
-			const updated = await adminUpdateQuota(userId, editValues);
-			users = users.map((u) => (u.id === userId ? updated : u));
+			let updated = user;
+			if (studentAccessEditable(user.role)) {
+				const patch = accessPatch(editValues.labs_enabled, Number(editValues.max_single_vms));
+				if (!patch.ok) {
+					error = patch.error;
+					return;
+				}
+				updated = await adminUpdateAccess(user.id, patch);
+				users = users.map((u) => (u.id === user.id ? { ...u, ...updated } : u));
+			}
+			updated = await adminUpdateQuota(user.id, {
+				max_vcpus: editValues.max_vcpus,
+				max_ram_mb: editValues.max_ram_mb,
+				max_pods: editValues.max_pods
+			});
+			users = users.map((u) => (u.id === user.id ? { ...u, ...updated } : u));
 			editingId = null;
 		} catch (e) {
 			error = friendlyError(e, 'Failed to update quota');
@@ -89,6 +115,8 @@
 							<th scope="col" class="px-5 py-3">vCPUs</th>
 							<th scope="col" class="px-5 py-3">RAM (MB)</th>
 							<th scope="col" class="px-5 py-3">Pods</th>
+							<th scope="col" class="px-5 py-3">Labs</th>
+							<th scope="col" class="px-5 py-3">Single VMs</th>
 							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
@@ -96,7 +124,7 @@
 						{#if loading}
 							{#each Array(5) as _}
 								<tr class="border-b border-surface-200 dark:border-surface-800">
-									{#each Array(7) as _cell}
+									{#each Array(9) as _cell}
 										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
 								</tr>
@@ -146,12 +174,38 @@
 												class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
 											/>
 										</td>
+										<td class="px-5 py-3">
+											{#if studentAccessEditable(user.role)}
+												<input
+													type="checkbox"
+													bind:checked={editValues.labs_enabled}
+													aria-label="Labs and blueprints for {user.username}"
+													class="accent-primary-500"
+												/>
+											{:else}
+												<span class="text-surface-400">—</span>
+											{/if}
+										</td>
+										<td class="px-5 py-3">
+											{#if studentAccessEditable(user.role)}
+												<input
+													type="number"
+													min="0"
+													max="3"
+													bind:value={editValues.max_single_vms}
+													aria-label="Single VM limit for {user.username}"
+													class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+												/>
+											{:else}
+												<span class="text-surface-400">—</span>
+											{/if}
+										</td>
 										<td class="px-5 py-3 text-right">
 											<div class="flex items-center justify-end gap-1">
 												<button
 													class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600 disabled:opacity-50"
 													disabled={saving}
-													onclick={() => saveQuota(user.id)}
+													onclick={() => saveQuota(user)}
 												>
 													{saving ? 'Saving…' : 'Save'}
 												</button>
@@ -167,6 +221,12 @@
 										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_vcpus}</td>
 										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_ram_mb}</td>
 										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_pods}</td>
+										<td class="px-5 py-3 text-surface-600 dark:text-surface-400">
+											{studentAccessEditable(user.role) ? (user.labs_enabled ? 'Yes' : 'No') : '—'}
+										</td>
+										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">
+											{studentAccessEditable(user.role) ? (user.max_single_vms ?? 1) : '—'}
+										</td>
 										<td class="px-5 py-3 text-right">
 											<button
 												class="text-xs text-primary-500 hover:text-primary-400"

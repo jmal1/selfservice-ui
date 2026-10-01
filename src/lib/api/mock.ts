@@ -681,6 +681,14 @@ export const mockApi = {
 		return mockUsers[idx];
 	},
 
+	async adminUpdateAccess(userId: string, req: { labs_enabled: boolean; max_single_vms: number }): Promise<User> {
+		await delay();
+		const idx = mockUsers.findIndex((u) => u.id === userId);
+		if (idx === -1) throw new Error('User not found');
+		mockUsers[idx] = { ...mockUsers[idx], ...req };
+		return mockUsers[idx];
+	},
+
 	async adminGetJobs(): Promise<Job[]> {
 		await delay();
 		return mockJobs;

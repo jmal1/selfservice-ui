@@ -41,6 +41,10 @@ export interface User {
 	max_vcpus: number;
 	max_ram_mb: number;
 	max_pods: number;
+	labs_enabled?: boolean;
+	max_single_vms?: number;
+	/** Copied from GET /auth/me. Absent or false leaves labs open. */
+	labs_require_grant?: boolean;
 	/** Role policy from GET /auth/me — optional during rolling deploy. */
 	limits?: RoleLimits;
 }
@@ -110,6 +114,7 @@ export interface Template {
 	// Verify still runs (ready → verifying → active). Allowed on ovf and
 	// clone_vcenter; rejected on iso and clone_template.
 	skip_generalize?: boolean;
+	single_vm_only?: boolean;
 	staging_network?: string;
 	vcenter_vm_id?: string;
 	created_by?: string;
@@ -185,6 +190,7 @@ export interface Pod {
 	error_message: string;
 	expires_at: string;
 	blueprint_id?: string;
+	network_mode?: 'isolated' | 'shared';
 	allow_vm_additions: boolean;
 	vms: PodVM[];
 	owner?: User;

@@ -5,6 +5,8 @@
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { isolatedLabsDeniedMessage, labsPageDenied, showDeploy } from '$lib/labs/access';
 	import type { Pod, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import PodList from '$lib/components/PodList.svelte';
 
@@ -127,7 +129,7 @@
 			<h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100">My Labs</h1>
 			<p class="mt-1 text-sm text-surface-500">Your lab environments</p>
 		</div>
-		{#if provisioningStore.canProvision}
+		{#if showDeploy(authStore.user) && provisioningStore.canProvision}
 			<a
 				href="/deploy"
 				class="inline-flex items-center gap-2 rounded-[10px] bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600"
@@ -137,7 +139,7 @@
 				</svg>
 				Deploy VM
 			</a>
-		{:else}
+		{:else if showDeploy(authStore.user)}
 			<span
 				class="inline-flex cursor-not-allowed items-center gap-2 rounded-[10px] bg-surface-300 px-5 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
 				role="link"
@@ -167,5 +169,11 @@
 		</a>
 	{/if}
 
-	<PodList {pods} loading={loadingPods} onrefresh={loadData} />
+	{#if labsPageDenied(authStore.user, pods, loadingPods)}
+		<div class="rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 px-4 py-3 text-sm text-surface-600 dark:text-surface-300">
+			{isolatedLabsDeniedMessage}
+		</div>
+	{:else}
+		<PodList {pods} loading={loadingPods} onrefresh={loadData} />
+	{/if}
 </div>

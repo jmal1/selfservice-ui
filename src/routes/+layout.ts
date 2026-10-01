@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
+import { sessionUser } from '$lib/labs/access';
 import { authStore } from '$lib/stores/auth.svelte';
 import { config } from '$lib/config';
 import { mockApi } from '$lib/api/mock';
@@ -13,7 +14,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	// Mock mode: auto-login with fake user, skip SSO entirely
 	if (config.mock) {
 		const user = await mockApi.getMe();
-		authStore.login(user, 'mock-token');
+		authStore.login(sessionUser({ user }), 'mock-token');
 		return {};
 	}
 
@@ -27,8 +28,7 @@ export const load: LayoutLoad = async ({ url }) => {
 
 		if (res.ok) {
 			const data = await res.json();
-			const user = data.user ?? data;
-			authStore.login({ ...user, limits: data.limits ?? user.limits }, 'session');
+			authStore.login(sessionUser(data), 'session');
 			return {};
 		}
 	} catch {

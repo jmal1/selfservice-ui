@@ -5,6 +5,8 @@
 	import type { Template } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { showDeploy } from '$lib/labs/access';
 
 	let templates = $state<Template[]>([]);
 	let loading = $state(true);
@@ -43,14 +45,14 @@
 			<h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Templates</h1>
 			<p class="mt-1 text-sm text-surface-500">Available VM templates you can deploy</p>
 		</div>
-		{#if provisioningStore.canProvision}
+		{#if showDeploy(authStore.user) && provisioningStore.canProvision}
 			<a
 				href="/deploy"
 				class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
 			>
 				Deploy VM
 			</a>
-		{:else}
+		{:else if showDeploy(authStore.user)}
 			<span
 				class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-surface-300 px-4 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
 				role="link"

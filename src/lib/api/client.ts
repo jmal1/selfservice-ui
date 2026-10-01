@@ -276,6 +276,7 @@ export interface CreateTemplateRequest {
 	kind?: 'clone_with_customize' | 'clone_no_customize' | 'registered_existing_vm';
 	assign_ip?: boolean;
 	visibility?: TemplateVisibility;
+	single_vm_only?: boolean;
 }
 
 export function adminCreateTemplate(req: CreateTemplateRequest): Promise<Template> {
@@ -575,6 +576,7 @@ interface MeResponse {
 	user: User;
 	resource_usage: ResourceUsage;
 	limits?: RoleLimits;
+	labs_require_grant?: boolean;
 }
 
 export async function getMe(): Promise<MeResponse> {
@@ -651,6 +653,19 @@ export interface UpdateQuotaRequest {
 export function adminUpdateQuota(userId: string, req: UpdateQuotaRequest): Promise<User> {
 	if (isMock) return mockApi.adminUpdateQuota(userId, req);
 	return apiFetch<User>(`/api/v1/admin/users/${userId}/quotas`, {
+		method: 'PATCH',
+		body: JSON.stringify(req)
+	});
+}
+
+export interface UpdateAccessRequest {
+	labs_enabled: boolean;
+	max_single_vms: number;
+}
+
+export function adminUpdateAccess(userId: string, req: UpdateAccessRequest): Promise<User> {
+	if (isMock) return mockApi.adminUpdateAccess(userId, req);
+	return apiFetch<User>(`/api/v1/admin/users/${userId}/access`, {
 		method: 'PATCH',
 		body: JSON.stringify(req)
 	});
