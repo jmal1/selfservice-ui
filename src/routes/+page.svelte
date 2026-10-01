@@ -7,6 +7,7 @@
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { isolatedLabsDeniedMessage, labsPageDenied, showDeploy } from '$lib/labs/access';
+	import { isolatedPods } from '$lib/labs/single-vm';
 	import type { Pod, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import PodList from '$lib/components/PodList.svelte';
 
@@ -174,6 +175,6 @@
 			{isolatedLabsDeniedMessage}
 		</div>
 	{:else}
-		<PodList {pods} loading={loadingPods} onrefresh={loadData} />
+		<PodList pods={isolatedPods(pods)} loading={loadingPods} onrefresh={loadData} />
 	{/if}
 </div>
