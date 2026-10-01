@@ -20,6 +20,7 @@
 	import PasswordField from '$lib/components/PasswordField.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { formatAttribution } from '$lib/utils/run';
+	import { templateUpdateError } from '$lib/labs/access';
 
 	let templates = $state<Template[]>([]);
 	let loading = $state(true);
@@ -61,7 +62,8 @@
 			default_password: '',
 			kind: 'clone_with_customize',
 			assign_ip: true,
-			visibility: 'public'
+			visibility: 'public',
+			single_vm_only: false
 		};
 	}
 
@@ -148,7 +150,8 @@
 			default_password: t.default_password ?? '',
 			kind: t.kind ?? 'clone_with_customize',
 			assign_ip: t.assign_ip ?? true,
-			visibility: t.visibility ?? 'public'
+			visibility: t.visibility ?? 'public',
+			single_vm_only: t.single_vm_only === true
 		};
 	}
 
@@ -170,9 +173,7 @@
 			editingUpdatedAt = undefined;
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409) {
-				error =
-					'This template was modified by another admin since you opened the edit form. ' +
-					'Cancel and re-open the row to load the latest version, then re-apply your changes.';
+				error = templateUpdateError(friendlyError(e, ''));
 			} else {
 				error = friendlyError(e, 'Failed to update template');
 			}
@@ -578,6 +579,15 @@
 													/>
 													<span>Active</span>
 												</label>
+												<label class="flex items-center gap-1 text-xs">
+													<input
+														type="checkbox"
+														bind:checked={editValues.single_vm_only}
+														class="accent-primary-500"
+														aria-label="Single VM only"
+													/>
+													<span>Single VM only</span>
+												</label>
 											</div>
 										</td>
 										<td class="px-5 py-3 text-right">
@@ -634,6 +644,11 @@
 											{#if t.visibility === 'instructor_only'}
 												<span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium bg-warning-500/10 text-warning-500">
 													🔒 Instructor only
+												</span>
+											{/if}
+											{#if t.single_vm_only}
+												<span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium bg-primary-500/10 text-primary-500">
+													Single VM only
 												</span>
 											{/if}
 										</td>

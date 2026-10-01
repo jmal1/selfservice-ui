@@ -14,6 +14,8 @@
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import { handleWizardEnter } from '$lib/utils/wizardEnter';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { isolatedLabsDeniedMessage, labsClosed } from '$lib/labs/access';
 
 	// Destination: 'new' = new environment, or a pod ID for existing
 	let destination = $state<'new' | string>('new');
@@ -82,6 +84,10 @@
 	});
 
 	onMount(async () => {
+		if (labsClosed(authStore.user)) {
+			loading = false;
+			return;
+		}
 		try {
 			const [tpl, usg, allPods, bps] = await Promise.all([
 				getTemplates(),
@@ -214,10 +220,16 @@
 			isLastStep: () => step === steps.length,
 			advance: nextStep,
 			submit: handleSubmit,
-			busy: () => submitting || loading || !provisioningStore.canProvision
+			busy: () => submitting || loading || !provisioningStore.canProvision || labsClosed(authStore.user)
 		})}
 />
 
+{#if labsClosed(authStore.user)}
+	<div class="mx-auto max-w-4xl space-y-3">
+		<h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100">Deploy VMs</h1>
+		<p class="text-sm text-surface-600 dark:text-surface-300">{isolatedLabsDeniedMessage}</p>
+	</div>
+{:else}
 <div class="mx-auto max-w-4xl space-y-6">
 	<div class="flex items-center gap-3">
 		<a href="/" class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-500 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100" aria-label="Back">
@@ -547,3 +559,4 @@
 		{/if}
 	</div>
 </div>
+{/if}
