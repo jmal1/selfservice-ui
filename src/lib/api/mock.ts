@@ -523,6 +523,31 @@ export const mockApi = {
 		return mockPods.filter((p) => p.owner_id === mockUser.id || mockUser.role === 'admin');
 	},
 
+	async listSingleVMs(): Promise<Pod[]> {
+		await delay();
+		return mockPods.filter((p) => p.network_mode === 'shared');
+	},
+
+	async createSingleVM(req: { name: string; template_id: string }): Promise<{ pod_id: string; job_id: string; vlan: number }> {
+		await delay();
+		const pod: Pod = {
+			id: id(),
+			owner_id: mockUser.id,
+			name: req.name,
+			salt: generateSalt(),
+			vlan_id: 347,
+			subnet: '10.110.0.0/26',
+			status: 'pending',
+			error_message: '',
+			expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+			network_mode: 'shared',
+			allow_vm_additions: false,
+			vms: []
+		};
+		mockPods.push(pod);
+		return { pod_id: pod.id, job_id: id(), vlan: 347 };
+	},
+
 	async getPod(podId: string): Promise<Pod> {
 		await delay();
 		const pod = mockPods.find((p) => p.id === podId);

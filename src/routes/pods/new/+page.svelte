@@ -16,6 +16,7 @@
 	import { handleWizardEnter } from '$lib/utils/wizardEnter';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { isolatedLabsDeniedMessage, labsClosed } from '$lib/labs/access';
+	import { labEligibleTemplates } from '$lib/labs/single-vm';
 
 	// Destination: 'new' = new environment, or a pod ID for existing
 	let destination = $state<'new' | string>('new');
@@ -95,7 +96,7 @@
 				getPods(),
 				getBlueprints()
 			]);
-			templates = tpl;
+			templates = labEligibleTemplates(tpl);
 			usage = usg;
 			pods = allPods;
 			blueprints = bps.filter(b => b.is_active);

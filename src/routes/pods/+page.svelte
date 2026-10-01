@@ -8,6 +8,7 @@
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { isolatedLabsDeniedMessage, labsPageDenied, showDeploy } from '$lib/labs/access';
+	import { isolatedPods } from '$lib/labs/single-vm';
 
 	let pods = $state<Pod[]>([]);
 	let loading = $state(true);
@@ -73,6 +74,6 @@
 			{isolatedLabsDeniedMessage}
 		</div>
 	{:else}
-		<PodList {pods} {loading} />
+		<PodList pods={isolatedPods(pods)} {loading} />
 	{/if}
 </div>

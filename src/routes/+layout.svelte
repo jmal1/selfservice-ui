@@ -6,6 +6,7 @@
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { getPods } from '$lib/api/client';
 	import { labsClosed, retainsIsolatedLab, showDeploy, showMyLabs } from '$lib/labs/access';
+	import { quickAction } from '$lib/labs/single-vm';
 	import { config } from '$lib/config';
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
@@ -103,6 +104,7 @@
 	});
 
 	const navItems = [
+		{ href: '/single-vm', label: 'Single VM', icon: 'pods' },
 		{ href: '/', label: 'My Labs', icon: 'pods' },
 		{ href: '/operations', label: 'Current Operations', icon: 'jobs' },
 		{ href: '/quotas', label: 'Quotas', icon: 'dashboard' },
@@ -140,6 +142,7 @@
 		navItems.filter((item) => item.href !== '/' || showMyLabs(authStore.user, ownsIsolatedPod))
 	);
 	const deployVisible = $derived(showDeploy(authStore.user));
+	const action = $derived(quickAction(deployVisible));
 
 	function isActive(href: string): boolean {
 		if (href === '/') {
@@ -274,15 +277,15 @@
 
 		<!-- Quick action -->
 		<div class="px-3 pt-4 pb-2">
-			{#if deployVisible && provisioningStore.canProvision}
+			{#if provisioningStore.canProvision}
 				<a
-					href="/deploy"
+					href={action.href}
 					class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600"
 				>
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-					Deploy VM
+					{action.label}
 				</a>
-			{:else if deployVisible}
+			{:else}
 				<span
 					class="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[10px] bg-surface-300 px-3 py-2.5 text-sm font-semibold text-surface-500 dark:bg-surface-800"
 					role="link"
@@ -290,7 +293,7 @@
 					title={provisioningStore.message}
 				>
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-					Deploy VM
+					{action.label}
 				</span>
 			{/if}
 		</div>

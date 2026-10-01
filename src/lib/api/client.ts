@@ -140,6 +140,20 @@ export async function getPods(): Promise<Pod[]> {
 	return asArray(pods).map(normalizePod);
 }
 
+export function listSingleVMs(): Promise<Pod[]> {
+	if (isMock) return mockApi.listSingleVMs();
+	return apiFetch<Pod[]>('/api/v1/single-vms').then((pods) => asArray(pods).map(normalizePod));
+}
+
+export function createSingleVM(req: { name: string; template_id: string }): Promise<{
+	pod_id: string;
+	job_id: string;
+	vlan: number;
+}> {
+	if (isMock) return mockApi.createSingleVM(req);
+	return apiFetch('/api/v1/single-vms', { method: 'POST', body: JSON.stringify(req) });
+}
+
 export async function getPod(id: string): Promise<Pod> {
 	if (isMock) return mockApi.getPod(id);
 	const pod = await apiFetch<Pod>(`/api/v1/pods/${id}`);

@@ -11,6 +11,7 @@
 	} from '$lib/api/client';
 	import type { CreateBlueprintRequest } from '$lib/api/client';
 	import type { Blueprint, BlueprintVM, Template } from '$lib/types';
+	import { labEligibleTemplates } from '$lib/labs/single-vm';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import BlueprintPlaylistsView from '$lib/components/BlueprintPlaylistsView.svelte';
 
@@ -308,7 +309,7 @@
 						<span class="text-xs font-medium text-surface-500">Template</span>
 						<select bind:value={vms[i].template_id} class={inputClass}>
 							<option value="">Select template…</option>
-							{#each templates.filter(t => t.is_active) as tpl (tpl.id)}
+							{#each labEligibleTemplates(templates.filter(t => t.is_active)) as tpl (tpl.id)}
 								<option value={tpl.id}>{tpl.name}</option>
 							{/each}
 						</select>

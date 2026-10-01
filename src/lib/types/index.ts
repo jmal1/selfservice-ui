@@ -103,6 +103,7 @@ export interface Template {
 	kind: TemplateKind;
 	assign_ip: boolean;
 	is_active: boolean;
+	is_internal?: boolean;
 	visibility?: TemplateVisibility;
 	// T4 wizard lifecycle fields (migration 000018). Older templates
 	// created before T4 default to template_state="active" via the
