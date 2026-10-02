@@ -47,10 +47,10 @@
 		</div>
 		{#if showDeploy(authStore.user) && provisioningStore.canProvision}
 			<a
-				href="/deploy"
+				href="/single-vm/new"
 				class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
 			>
-				Deploy VM
+				New environment
 			</a>
 		{:else if showDeploy(authStore.user)}
 			<span
@@ -59,7 +59,7 @@
 				aria-disabled="true"
 				title={provisioningStore.message}
 			>
-				Deploy VM
+				New environment
 			</span>
 		{/if}
 	</div>

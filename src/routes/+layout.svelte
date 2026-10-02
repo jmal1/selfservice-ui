@@ -5,7 +5,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { getPods } from '$lib/api/client';
-	import { labsClosed, retainsIsolatedLab, showDeploy, showMyLabs } from '$lib/labs/access';
+	import { labsClosed, retainsIsolatedLab, showMyLabs } from '$lib/labs/access';
 	import { quickAction } from '$lib/labs/single-vm';
 	import { config } from '$lib/config';
 	import { goto } from '$app/navigation';
@@ -141,8 +141,7 @@
 	const visibleNavItems = $derived(
 		navItems.filter((item) => item.href !== '/' || showMyLabs(authStore.user, ownsIsolatedPod))
 	);
-	const deployVisible = $derived(showDeploy(authStore.user));
-	const action = $derived(quickAction(deployVisible));
+	const action = $derived(quickAction());
 
 	function isActive(href: string): boolean {
 		if (href === '/') {

@@ -1,7 +1,6 @@
-export const sharedNetworkBanner =
-	'This VM shares a network with other Single VMs. They can reach yours.';
-
 export const emptySingleVMMessage = 'You don’t have a VM yet.';
+export const newEnvironmentLabel = 'New environment';
+export const newEnvironmentHref = '/single-vm/new';
 
 export interface PickerTemplate {
 	id: string;
@@ -47,7 +46,6 @@ export function podBackLink(networkMode: string | undefined): { href: string; la
 	return { href: '/', label: 'Back to My Labs' };
 }
 
-export function quickAction(showLabsDeploy: boolean): { href: string; label: string } {
-	if (showLabsDeploy) return { href: '/deploy', label: 'Deploy VM' };
-	return { href: '/single-vm/new', label: 'New VM' };
+export function quickAction(): { href: string; label: string } {
+	return { href: newEnvironmentHref, label: newEnvironmentLabel };
 }

@@ -41,7 +41,7 @@
 				href="/single-vm/new"
 				class="inline-flex items-center gap-2 rounded-[10px] bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600"
 			>
-				New VM
+				New environment
 			</a>
 		{/if}
 	</div>

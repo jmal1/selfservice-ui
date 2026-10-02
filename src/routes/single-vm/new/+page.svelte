@@ -45,7 +45,7 @@
 <div class="mx-auto max-w-xl space-y-6">
 	<div>
 		<a href="/single-vm" class="text-sm text-primary-500 hover:text-primary-400">← Single VM</a>
-		<h1 class="mt-2 text-2xl font-bold text-surface-900 dark:text-surface-100">New VM</h1>
+		<h1 class="mt-2 text-2xl font-bold text-surface-900 dark:text-surface-100">New environment</h1>
 		<p class="mt-1 text-sm text-surface-500">Pick any template you can already use.</p>
 	</div>
 
