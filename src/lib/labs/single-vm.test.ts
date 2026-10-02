@@ -5,7 +5,9 @@ import {
 	isolatedPods,
 	isSharedPod,
 	labEligibleTemplates,
+	activeNavHref,
 	podBackLink,
+	podScopedId,
 	quickAction,
 	newEnvironmentHref,
 	newEnvironmentLabel,
@@ -52,5 +54,27 @@ describe('single vm picker', () => {
 
 	it('uses New environment as the sidebar action', () => {
 		expect(quickAction()).toEqual({ href: '/single-vm/new', label: 'New environment' });
+	});
+
+	it('keeps a shared pod on Single VM and an isolated pod on My Labs', () => {
+		const shared = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+		expect(podScopedId('/single-vm')).toBeNull();
+		expect(podScopedId('/pods')).toBeNull();
+		expect(podScopedId('/pods/new')).toBeNull();
+		expect(podScopedId(`/pods/${shared}`)).toBe(shared);
+		expect(podScopedId(`/pods/${shared}/testing`)).toBe(shared);
+		expect(podScopedId(`/console/${shared}/vm-1`)).toBe(shared);
+
+		expect(activeNavHref('/single-vm', undefined)).toBe('/single-vm');
+		expect(activeNavHref('/single-vm/new', undefined)).toBe('/single-vm');
+		expect(activeNavHref('/', 'shared')).toBe('/');
+		expect(activeNavHref('/pods', 'shared')).toBe('/');
+		expect(activeNavHref('/pods/new', 'shared')).toBe('/');
+		expect(activeNavHref(`/pods/${shared}`, 'shared')).toBe('/single-vm');
+		expect(activeNavHref(`/pods/${shared}/testing/runs`, 'shared')).toBe('/single-vm');
+		expect(activeNavHref(`/console/${shared}/vm-1`, 'shared')).toBe('/single-vm');
+		expect(activeNavHref(`/pods/${shared}`, 'isolated')).toBe('/');
+		expect(activeNavHref(`/pods/${shared}`, undefined)).toBe('/');
+		expect(activeNavHref('/operations', 'shared')).toBeNull();
 	});
 });
