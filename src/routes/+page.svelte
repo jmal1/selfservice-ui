@@ -132,13 +132,13 @@
 		</div>
 		{#if showDeploy(authStore.user) && provisioningStore.canProvision}
 			<a
-				href="/single-vm/new"
+				href="/deploy"
 				class="inline-flex items-center gap-2 rounded-[10px] bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600"
 			>
 				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 				</svg>
-				New environment
+				New lab
 			</a>
 		{:else if showDeploy(authStore.user)}
 			<span
@@ -150,7 +150,7 @@
 				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 				</svg>
-				New environment
+				New lab
 			</span>
 		{/if}
 	</div>
