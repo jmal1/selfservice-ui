@@ -38,6 +38,13 @@ export function showMyLabs(user: LabsSession | null | undefined, ownsIsolatedPod
 	return ownsIsolatedPod;
 }
 
+// defaultHome is the page every signed-in user can open. Students without a
+// labs grant land on Single VM. My Labs stays the home for everyone else.
+export function defaultHome(user: LabsSession | null | undefined, ownsIsolatedPod: boolean): '/' | '/single-vm' {
+	if (showMyLabs(user, ownsIsolatedPod)) return '/';
+	return '/single-vm';
+}
+
 export function labsPageDenied(
 	user: LabsSession | null | undefined,
 	pods: { status: string; network_mode?: string }[],

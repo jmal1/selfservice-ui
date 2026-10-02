@@ -34,7 +34,6 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100">Single VM</h1>
-			<p class="mt-1 text-sm text-surface-500">One lab VM on a shared network</p>
 		</div>
 		{#if provisioningStore.canProvision}
 			<a

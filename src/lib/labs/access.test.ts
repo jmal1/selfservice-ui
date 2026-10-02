@@ -7,6 +7,7 @@ import {
 	labsPageDenied,
 	retainsIsolatedLab,
 	sessionUser,
+	defaultHome,
 	showDeploy,
 	showMyLabs,
 	studentAccessEditable,
@@ -39,6 +40,10 @@ describe('labs access', () => {
 		expect(showMyLabs(student({ labs_require_grant: false }), false)).toBe(true);
 		expect(showMyLabs(student(), false)).toBe(false);
 		expect(showMyLabs(student(), true)).toBe(true);
+		expect(defaultHome(student(), false)).toBe('/single-vm');
+		expect(defaultHome(student(), true)).toBe('/');
+		expect(defaultHome(student({ labs_enabled: true }), false)).toBe('/');
+		expect(defaultHome(student({ role: 'instructor', labs_enabled: false }), false)).toBe('/');
 	});
 
 	it('counts a missing network mode as an isolated lab and ignores destroyed or shared pods', () => {
