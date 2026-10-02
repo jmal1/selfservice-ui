@@ -5,6 +5,9 @@
 	let { jobs, title = 'Provisioning jobs' }: { jobs: Job[]; title?: string } = $props();
 
 	let expanded = $state(false);
+	// Plain array on purpose: the effect must not treat this as a dependency,
+	// or a refresh of the same jobs would look new and reopen a closed panel.
+	let knownJobIds: string[] = [];
 
 	const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -25,9 +28,11 @@
 	});
 
 	$effect(() => {
-		if (activeJobs.length > 0) {
+		const ids = activeJobs.map((job) => job.id);
+		if (ids.some((id) => !knownJobIds.includes(id))) {
 			expanded = true;
 		}
+		knownJobIds = [...new Set([...knownJobIds, ...ids])];
 	});
 
 	interface StepInfo {

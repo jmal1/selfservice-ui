@@ -21,7 +21,7 @@
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
-	import { isSharedPod, podBackLink, sharedNetworkBanner, showAddVM } from '$lib/labs/single-vm';
+	import { podBackLink, showAddVM } from '$lib/labs/single-vm';
 	import type { Pod, Template, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import VMAccessPanel from '$lib/components/VMAccessPanel.svelte';
@@ -345,11 +345,6 @@
 								📋 Blueprint
 							</span>
 						{/if}
-						{#if pod.network_mode === 'shared'}
-							<span class="text-xs bg-warning-500/20 text-warning-400 px-2 py-0.5 rounded-full">
-								Shared network
-							</span>
-						{/if}
 						{#if pod.allow_vm_additions === false}
 							<span class="text-xs bg-warning-500/20 text-warning-400 px-2 py-0.5 rounded-full" title="VM additions are locked for this environment">
 								🔒 Locked
@@ -385,12 +380,6 @@
 				{/if}
 			</div>
 		</div>
-
-		{#if isSharedPod(pod.network_mode)}
-			<div class="rounded-xl border border-warning-500/30 bg-warning-500/10 px-4 py-3 text-sm text-warning-500">
-				{sharedNetworkBanner}
-			</div>
-		{/if}
 
 		{#if error}
 			<div class="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-500">

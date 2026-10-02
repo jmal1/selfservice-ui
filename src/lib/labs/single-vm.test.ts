@@ -7,7 +7,8 @@ import {
 	labEligibleTemplates,
 	podBackLink,
 	quickAction,
-	sharedNetworkBanner,
+	newEnvironmentHref,
+	newEnvironmentLabel,
 	showAddVM
 } from './single-vm';
 
@@ -24,7 +25,8 @@ const templates = [
 describe('single vm picker', () => {
 	it('lists every eligible template, including Single VM only', () => {
 		expect(emptySingleVMMessage).toContain('don’t have a VM');
-		expect(sharedNetworkBanner).toContain('shares a network');
+		expect(newEnvironmentLabel).toBe('New environment');
+		expect(newEnvironmentHref).toBe('/single-vm/new');
 		const student = eligibleSingleVMTemplates(templates, 'student').map((t) => t.id);
 		expect(student).toEqual(['normal', 'only', 'legacy']);
 		const instructor = eligibleSingleVMTemplates(templates, 'instructor').map((t) => t.id);
@@ -48,8 +50,7 @@ describe('single vm picker', () => {
 		expect(isolatedPods([{ network_mode: 'shared' }, { network_mode: 'isolated' }, {}])).toHaveLength(2);
 	});
 
-	it('uses New VM as the sidebar action when labs deploy is hidden', () => {
-		expect(quickAction(true)).toEqual({ href: '/deploy', label: 'Deploy VM' });
-		expect(quickAction(false)).toEqual({ href: '/single-vm/new', label: 'New VM' });
+	it('uses New environment as the sidebar action', () => {
+		expect(quickAction()).toEqual({ href: '/single-vm/new', label: 'New environment' });
 	});
 });

@@ -4,6 +4,15 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { adminGetUsers, adminUpdateAccess, adminUpdateQuota } from '$lib/api/client';
 	import { accessPatch, studentAccessEditable } from '$lib/labs/access';
+	import {
+		filterUsers,
+		nextSort,
+		rolePillClass,
+		sortUsers,
+		staffRole,
+		type SortDirection,
+		type UserColumn
+	} from '$lib/admin/userTable';
 	import type { User } from '$lib/types';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 
@@ -25,6 +34,28 @@
 		max_single_vms: 1
 	});
 	let saving = $state(false);
+	let query = $state('');
+	let sortColumn = $state<UserColumn>('username');
+	let sortDirection = $state<SortDirection>('asc');
+
+	const visibleUsers = $derived(sortUsers(filterUsers(users, query), sortColumn, sortDirection));
+
+	const columns: { key: UserColumn; label: string }[] = [
+		{ key: 'username', label: 'Username' },
+		{ key: 'email', label: 'Email' },
+		{ key: 'role', label: 'Role' },
+		{ key: 'max_vcpus', label: 'vCPUs' },
+		{ key: 'max_ram_mb', label: 'RAM (MB)' },
+		{ key: 'max_pods', label: 'Pods' },
+		{ key: 'labs', label: 'Labs' },
+		{ key: 'single_vms', label: 'Single VMs' }
+	];
+
+	function sortBy(column: UserColumn) {
+		const next = nextSort(sortColumn, sortDirection, column);
+		sortColumn = next.column;
+		sortDirection = next.direction;
+	}
 
 	async function loadUsers() {
 		try {
@@ -103,20 +134,27 @@
 			{error}
 		</div>
 	{:else}
+		<label class="block max-w-sm">
+			<span class="text-xs font-medium text-surface-500">Filter</span>
+			<input
+				bind:value={query}
+				placeholder="Any column"
+				class="mt-1 w-full rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-950 px-3 py-2 text-sm"
+			/>
+		</label>
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
 					<caption class="sr-only">User accounts and quota management</caption>
 					<thead>
 						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
-							<th scope="col" class="px-5 py-3">Username</th>
-							<th scope="col" class="px-5 py-3">Email</th>
-							<th scope="col" class="px-5 py-3">Role</th>
-							<th scope="col" class="px-5 py-3">vCPUs</th>
-							<th scope="col" class="px-5 py-3">RAM (MB)</th>
-							<th scope="col" class="px-5 py-3">Pods</th>
-							<th scope="col" class="px-5 py-3">Labs</th>
-							<th scope="col" class="px-5 py-3">Single VMs</th>
+							{#each columns as column (column.key)}
+								<th scope="col" class="px-5 py-3">
+									<button type="button" class="hover:text-surface-900 dark:hover:text-surface-100" onclick={() => sortBy(column.key)}>
+										{column.label}{sortColumn === column.key ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
+									</button>
+								</th>
+							{/each}
 							<th scope="col" class="px-5 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
@@ -130,17 +168,12 @@
 								</tr>
 							{/each}
 						{:else}
-							{#each users as user (user.id)}
+							{#each visibleUsers as user (user.id)}
 								<tr class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30">
 									<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">{user.username}</td>
 									<td class="px-5 py-3 text-surface-600 dark:text-surface-400">{user.email}</td>
 									<td class="px-5 py-3">
-										<span
-											class="rounded-full px-2 py-0.5 text-xs font-medium
-												{user.role === 'admin'
-												? 'bg-primary-500/10 text-primary-500'
-												: 'bg-surface-200 dark:bg-surface-800 text-surface-500'}"
-										>
+										<span class="rounded-full px-2 py-0.5 text-xs font-medium {rolePillClass(user.role)}">
 											{user.role}
 										</span>
 									</td>
@@ -225,7 +258,7 @@
 											{studentAccessEditable(user.role) ? (user.labs_enabled ? 'Yes' : 'No') : '—'}
 										</td>
 										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">
-											{studentAccessEditable(user.role) ? (user.max_single_vms ?? 1) : '—'}
+											{staffRole(user.role) ? 'Unlimited' : (user.max_single_vms ?? 1)}
 										</td>
 										<td class="px-5 py-3 text-right">
 											<button
