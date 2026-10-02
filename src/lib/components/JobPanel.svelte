@@ -1,38 +1,57 @@
 <script lang="ts">
+	import { onDestroy, untrack } from 'svelte';
 	import { safeErrorText } from '$lib/errors/friendly';
+	import { attentionCount, opensPanel, SUCCESS_FLASH_MS, visibleJobs } from '$lib/jobs/attention';
 	import type { Job } from '$lib/types';
 
 	let { jobs, title = 'Provisioning jobs' }: { jobs: Job[]; title?: string } = $props();
 
 	let expanded = $state(false);
-	// Plain array on purpose: the effect must not treat this as a dependency,
+	let flashing = $state<string[]>([]);
+	// Plain values on purpose: the effects must not treat these as dependencies,
 	// or a refresh of the same jobs would look new and reopen a closed panel.
 	let knownJobIds: string[] = [];
+	let previousStatus = new Map<string, string>();
+	const flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-	const ONE_HOUR_MS = 60 * 60 * 1000;
+	const shown = $derived.by(() => visibleJobs(jobs, Date.now(), new Set(flashing)));
+	const badgeCount = $derived(attentionCount(jobs, Date.now()));
 
-	const activeJobs = $derived.by(() => {
-		const now = Date.now();
-		const running = jobs
-			.filter((j) => j.status === 'in_progress' || j.status === 'claimed' || j.status === 'pending')
-			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-		const recent = jobs
-			.filter((j) => {
-				if (j.status !== 'completed' && j.status !== 'failed') return false;
-				if (!j.completed_at) return false;
-				return now - new Date(j.completed_at).getTime() < ONE_HOUR_MS;
-			})
-			.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
-			.slice(0, 3);
-		return [...running, ...recent];
+	$effect(() => {
+		const incoming = jobs;
+		const panelOpen = expanded;
+		const started: string[] = [];
+		for (const job of incoming) {
+			const prev = previousStatus.get(job.id);
+			if (prev && prev !== 'completed' && job.status === 'completed' && panelOpen) {
+				started.push(job.id);
+			}
+		}
+		previousStatus = new Map(incoming.map((job) => [job.id, job.status]));
+		for (const id of started) {
+			if (flashTimers.has(id)) continue;
+			const current = untrack(() => flashing);
+			if (!current.includes(id)) flashing = [...current, id];
+			flashTimers.set(
+				id,
+				setTimeout(() => {
+					flashTimers.delete(id);
+					flashing = untrack(() => flashing).filter((jobId) => jobId !== id);
+				}, SUCCESS_FLASH_MS)
+			);
+		}
 	});
 
 	$effect(() => {
-		const ids = activeJobs.map((job) => job.id);
+		const ids = shown.filter((job) => opensPanel(job.status)).map((job) => job.id);
 		if (ids.some((id) => !knownJobIds.includes(id))) {
 			expanded = true;
 		}
 		knownJobIds = [...new Set([...knownJobIds, ...ids])];
+	});
+
+	onDestroy(() => {
+		for (const timer of flashTimers.values()) clearTimeout(timer);
 	});
 
 	interface StepInfo {
@@ -223,6 +242,7 @@
 	}
 </script>
 
+{#if shown.length > 0}
 <div class="panel overflow-hidden rounded-2xl">
 	<!-- Header -->
 	<button
@@ -231,9 +251,9 @@
 	>
 		<div class="flex items-center gap-2">
 			<span class="text-sm font-semibold text-surface-900 dark:text-surface-100">{title}</span>
-			{#if activeJobs.length > 0}
+			{#if badgeCount > 0}
 				<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5 text-xs font-bold text-white">
-					{activeJobs.length}
+					{badgeCount}
 				</span>
 			{/if}
 		</div>
@@ -253,17 +273,9 @@
 	>
 		<div class="overflow-hidden">
 		<div class="border-t border-surface-200-800 px-5 py-4">
-			{#if activeJobs.length === 0}
-				<div class="flex items-center gap-3 py-4 text-surface-400">
-					<svg class="h-5 w-5 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-					</svg>
-					<span class="text-sm">No active jobs</span>
-				</div>
-			{:else}
 				<div class="space-y-4">
-					{#each activeJobs as job (job.id)}
-						<div class="space-y-2">
+					{#each shown as job (job.id)}
+						<div class="space-y-2" class:job-done-flash={flashing.includes(job.id)}>
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-2">
 									<span class="text-sm font-medium text-surface-900 dark:text-surface-100">{jobLabel(job)}</span>
@@ -321,8 +333,25 @@
 						</div>
 					{/each}
 				</div>
-			{/if}
 		</div>
 		</div>
 	</div>
 </div>
+{/if}
+
+<style>
+	.job-done-flash {
+		animation: job-done-flash 0.8s ease-in-out 2;
+		border-radius: 0.5rem;
+	}
+
+	@keyframes job-done-flash {
+		0%,
+		100% {
+			background-color: transparent;
+		}
+		50% {
+			background-color: color-mix(in srgb, var(--color-success-500, #22c55e) 28%, transparent);
+		}
+	}
+</style>
