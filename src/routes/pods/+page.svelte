@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { friendlyError } from '$lib/errors/friendly';
 	import { getPods } from '$lib/api/client';
 	import type { Pod } from '$lib/types';
@@ -7,7 +8,7 @@
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { isolatedLabsDeniedMessage, labsPageDenied, showDeploy } from '$lib/labs/access';
+	import { defaultHome, isolatedLabsDeniedMessage, labsPageDenied, retainsIsolatedLab, showDeploy } from '$lib/labs/access';
 	import { isolatedPods } from '$lib/labs/single-vm';
 
 	let pods = $state<Pod[]>([]);
@@ -32,6 +33,13 @@
 		}, 10000);
 
 		return () => clearInterval(interval);
+	});
+
+	$effect(() => {
+		if (loading) return;
+		if (defaultHome(authStore.user, retainsIsolatedLab(pods)) === '/single-vm') {
+			void goto('/single-vm');
+		}
 	});
 </script>
 

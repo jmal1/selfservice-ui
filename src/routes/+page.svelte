@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { friendlyError, safeErrorText } from '$lib/errors/friendly';
 	import { getPods, getMyJobs } from '$lib/api/client';
 	import { wsStore } from '$lib/stores/websocket.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { isolatedLabsDeniedMessage, labsPageDenied, showDeploy } from '$lib/labs/access';
+	import { defaultHome, isolatedLabsDeniedMessage, labsPageDenied, retainsIsolatedLab, showDeploy } from '$lib/labs/access';
 	import { isolatedPods } from '$lib/labs/single-vm';
 	import type { Pod, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
 	import PodList from '$lib/components/PodList.svelte';
@@ -122,6 +123,13 @@
 			jobs = [];
 		}
 	}
+
+	$effect(() => {
+		if (loadingPods) return;
+		if (defaultHome(authStore.user, retainsIsolatedLab(pods)) === '/single-vm') {
+			void goto('/single-vm');
+		}
+	});
 </script>
 
 <div class="mx-auto max-w-7xl space-y-6">
