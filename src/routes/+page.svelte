@@ -7,6 +7,7 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { attentionLabel, attentionSummary } from '$lib/jobs/attention';
 	import { defaultHome, isolatedLabsDeniedMessage, labsPageDenied, retainsIsolatedLab, showDeploy } from '$lib/labs/access';
 	import { isolatedPods } from '$lib/labs/single-vm';
 	import type { Pod, Job, WSPodStatusEvent, WSVMStatusEvent } from '$lib/types';
@@ -34,9 +35,7 @@
 		vm_snapshot_delete: 'Snapshot deleted',
 	};
 
-	const activeJobs = $derived(
-		jobs.filter((j) => j.status !== 'completed' && j.status !== 'failed')
-	);
+	const attention = $derived.by(() => attentionSummary(jobs, Date.now()));
 
 	function checkJobTransitions(newJobs: Job[]) {
 		for (const job of newJobs) {
@@ -169,12 +168,12 @@
 		</div>
 	{/if}
 
-	{#if activeJobs.length > 0}
+	{#if attention.total > 0}
 		<a
 			href="/operations"
 			class="block rounded-xl border border-primary-500/30 bg-primary-500/10 px-4 py-3 text-sm text-primary-600 dark:text-primary-400"
 		>
-			{activeJobs.length} operation{activeJobs.length === 1 ? '' : 's'} in progress — view Current Operations
+			{attentionLabel(attention)}
 		</a>
 	{/if}
 
