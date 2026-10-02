@@ -260,7 +260,7 @@
 				}
 			}
 			confirmDelete = null;
-			await goto('/');
+			await goto(podBackLink(pod?.network_mode).href);
 		} catch (e) {
 			toastStore.error(friendlyError(e, 'Delete failed. Please try again.'));
 		} finally {

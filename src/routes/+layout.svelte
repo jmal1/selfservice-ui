@@ -4,9 +4,9 @@
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
-	import { getPods } from '$lib/api/client';
+	import { getPod, getPods } from '$lib/api/client';
 	import { labsClosed, retainsIsolatedLab, showMyLabs } from '$lib/labs/access';
-	import { quickAction } from '$lib/labs/single-vm';
+	import { activeNavHref, podScopedId, quickAction } from '$lib/labs/single-vm';
 	import { config } from '$lib/config';
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
@@ -143,7 +143,33 @@
 	);
 	const action = $derived(quickAction());
 
+	let scopedNetworkMode = $state<string | undefined>(undefined);
+	// Plain id, not state: the effect must not re-run (and drop the in-flight
+	// read) when detail, testing, and console share one pod.
+	let scopedPodId: string | null = null;
+	$effect(() => {
+		const id = podScopedId(page.url.pathname);
+		if (!id) {
+			scopedPodId = null;
+			scopedNetworkMode = undefined;
+			return;
+		}
+		if (id === scopedPodId) return;
+		const fetching = id;
+		scopedPodId = id;
+		scopedNetworkMode = undefined;
+		getPod(id)
+			.then((pod) => {
+				if (scopedPodId === fetching) scopedNetworkMode = pod.network_mode;
+			})
+			.catch(() => {
+				if (scopedPodId === fetching) scopedNetworkMode = undefined;
+			});
+	});
+
 	function isActive(href: string): boolean {
+		const dashboard = activeNavHref(page.url.pathname, scopedNetworkMode);
+		if (dashboard) return href === dashboard;
 		if (href === '/') {
 			return page.url.pathname === '/' || page.url.pathname.startsWith('/pods');
 		}

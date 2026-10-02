@@ -41,9 +41,27 @@ export function showAddVM(networkMode: string | undefined): boolean {
 	return !isSharedPod(networkMode);
 }
 
-export function podBackLink(networkMode: string | undefined): { href: string; label: string } {
+export function podBackLink(networkMode: string | undefined): { href: '/' | '/single-vm'; label: string } {
 	if (isSharedPod(networkMode)) return { href: '/single-vm', label: 'Back to Single VM' };
 	return { href: '/', label: 'Back to My Labs' };
+}
+
+// Pod detail, its assessment pages, and the VM console share /pods/{id} and
+// /console/{podId}. Those stay in whichever dashboard owns the pod. /pods/new
+// and the labs list stay on My Labs.
+export function podScopedId(pathname: string): string | null {
+	const pods = pathname.match(/^\/pods\/([^/]+)/);
+	if (pods && pods[1] !== 'new') return pods[1];
+	const consolePath = pathname.match(/^\/console\/([^/]+)/);
+	if (consolePath) return consolePath[1];
+	return null;
+}
+
+export function activeNavHref(pathname: string, networkMode: string | undefined): '/' | '/single-vm' | null {
+	if (pathname === '/single-vm' || pathname.startsWith('/single-vm/')) return '/single-vm';
+	if (pathname === '/' || pathname === '/pods' || pathname === '/pods/new' || pathname.startsWith('/pods/new/')) return '/';
+	if (podScopedId(pathname)) return podBackLink(networkMode).href;
+	return null;
 }
 
 export function quickAction(): { href: string; label: string } {
