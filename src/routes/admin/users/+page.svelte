@@ -40,15 +40,15 @@
 
 	const visibleUsers = $derived(sortUsers(filterUsers(users, query), sortColumn, sortDirection));
 
-	const columns: { key: UserColumn; label: string }[] = [
-		{ key: 'username', label: 'Username' },
-		{ key: 'email', label: 'Email' },
-		{ key: 'role', label: 'Role' },
-		{ key: 'max_vcpus', label: 'vCPUs' },
-		{ key: 'max_ram_mb', label: 'RAM (MB)' },
-		{ key: 'max_pods', label: 'Pods' },
-		{ key: 'labs', label: 'Labs' },
-		{ key: 'single_vms', label: 'Single VMs' }
+	const columns: { key: UserColumn; label: string; width: string }[] = [
+		{ key: 'username', label: 'Username', width: 'w-[15%]' },
+		{ key: 'email', label: 'Email', width: 'w-[20%]' },
+		{ key: 'role', label: 'Role', width: 'w-[10%]' },
+		{ key: 'max_vcpus', label: 'vCPUs', width: 'w-[8%]' },
+		{ key: 'max_ram_mb', label: 'RAM (MB)', width: 'w-[10%]' },
+		{ key: 'max_pods', label: 'Pods', width: 'w-[7%]' },
+		{ key: 'labs', label: 'Labs', width: 'w-[8%]' },
+		{ key: 'single_vms', label: 'Single VMs', width: 'w-[11%]' }
 	];
 
 	function sortBy(column: UserColumn) {
@@ -144,18 +144,18 @@
 		</label>
 		<div class="overflow-hidden rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/50 backdrop-blur-xl">
 			<div class="overflow-x-auto">
-				<table class="w-full text-left text-sm">
+				<table class="w-full table-fixed text-left text-sm">
 					<caption class="sr-only">User accounts and quota management</caption>
 					<thead>
 						<tr class="border-b border-surface-200-800 text-xs font-semibold uppercase tracking-wider text-surface-500">
 							{#each columns as column (column.key)}
-								<th scope="col" class="px-5 py-3">
+								<th scope="col" class="px-3 py-3 {column.width}">
 									<button type="button" class="hover:text-surface-900 dark:hover:text-surface-100" onclick={() => sortBy(column.key)}>
 										{column.label}{sortColumn === column.key ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 									</button>
 								</th>
 							{/each}
-							<th scope="col" class="px-5 py-3 text-right">Actions</th>
+							<th scope="col" class="w-[11%] px-3 py-3 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -163,113 +163,122 @@
 							{#each Array(5) as _}
 								<tr class="border-b border-surface-200 dark:border-surface-800">
 									{#each Array(9) as _cell}
-										<td class="px-5 py-3"><LoadingSkeleton width="5rem" /></td>
+										<td class="px-3 py-3"><LoadingSkeleton width="5rem" /></td>
 									{/each}
 								</tr>
 							{/each}
 						{:else}
 							{#each visibleUsers as user (user.id)}
-								<tr class="border-b border-surface-200 dark:border-surface-800 transition-colors hover:bg-surface-200 dark:hover:bg-surface-800/30">
-									<td class="px-5 py-3 font-medium text-surface-900 dark:text-surface-100">{user.username}</td>
-									<td class="px-5 py-3 text-surface-600 dark:text-surface-400">{user.email}</td>
-									<td class="px-5 py-3">
+								<tr
+									class="border-b border-surface-200 dark:border-surface-800 transition-colors {editingId === user.id
+										? 'bg-primary-500/5'
+										: 'hover:bg-surface-200 dark:hover:bg-surface-800/30'}"
+								>
+									<td class="max-w-0 px-3 py-3 font-medium text-surface-900 dark:text-surface-100">
+										<span class="block truncate" title={user.username}>{user.username}</span>
+									</td>
+									<td class="max-w-0 px-3 py-3 text-surface-600 dark:text-surface-400">
+										<span class="block truncate" title={user.email}>{user.email}</span>
+									</td>
+									<td class="px-3 py-3">
 										<span class="rounded-full px-2 py-0.5 text-xs font-medium {rolePillClass(user.role)}">
 											{user.role}
 										</span>
 									</td>
-
-									{#if editingId === user.id}
-										<td class="px-5 py-3">
-											<input
-												type="number"
-												min="1"
-												bind:value={editValues.max_vcpus}
-												aria-label="Maximum vCPUs for {user.username}"
-												class="w-20 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-											/>
-										</td>
-										<td class="px-5 py-3">
-											<input
-												type="number"
-												min="512"
-												step="512"
-												bind:value={editValues.max_ram_mb}
-												aria-label="Maximum RAM in MB for {user.username}"
-												class="w-24 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-											/>
-										</td>
-										<td class="px-5 py-3">
-											<input
-												type="number"
-												min="1"
-												bind:value={editValues.max_pods}
-												aria-label="Maximum pods for {user.username}"
-												class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-											/>
-										</td>
-										<td class="px-5 py-3">
-											{#if studentAccessEditable(user.role)}
-												<input
-													type="checkbox"
-													bind:checked={editValues.labs_enabled}
-													aria-label="Labs and blueprints for {user.username}"
-													class="accent-primary-500"
-												/>
-											{:else}
-												<span class="text-surface-400">—</span>
-											{/if}
-										</td>
-										<td class="px-5 py-3">
-											{#if studentAccessEditable(user.role)}
-												<input
-													type="number"
-													min="0"
-													max="3"
-													bind:value={editValues.max_single_vms}
-													aria-label="Single VM limit for {user.username}"
-													class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-												/>
-											{:else}
-												<span class="text-surface-400">—</span>
-											{/if}
-										</td>
-										<td class="px-5 py-3 text-right">
-											<div class="flex items-center justify-end gap-1">
-												<button
-													class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600 disabled:opacity-50"
-													disabled={saving}
-													onclick={() => saveQuota(user)}
-												>
-													{saving ? 'Saving…' : 'Save'}
-												</button>
-												<button
-													class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
-													onclick={cancelEdit}
-												>
-													Cancel
-												</button>
+									<td class="px-3 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_vcpus}</td>
+									<td class="px-3 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_ram_mb}</td>
+									<td class="px-3 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_pods}</td>
+									<td class="px-3 py-3 text-surface-600 dark:text-surface-400">
+										{studentAccessEditable(user.role) ? (user.labs_enabled ? 'Yes' : 'No') : '—'}
+									</td>
+									<td class="px-3 py-3 font-mono text-surface-600 dark:text-surface-400">
+										{staffRole(user.role) ? 'Unlimited' : (user.max_single_vms ?? 1)}
+									</td>
+									<td class="px-3 py-3 text-right">
+										<button
+											class="text-xs text-primary-500 hover:text-primary-400"
+											onclick={() => startEdit(user)}
+										>
+											Edit Quota
+										</button>
+									</td>
+								</tr>
+								{#if editingId === user.id}
+									<tr class="border-b border-surface-200 dark:border-surface-800 bg-primary-500/5">
+										<td colspan="9" class="px-3 py-3">
+											<div class="flex min-w-0 flex-wrap items-end gap-3">
+												<label class="flex flex-col gap-1 text-xs font-medium text-surface-500">
+													vCPUs
+													<input
+														type="number"
+														min="1"
+														bind:value={editValues.max_vcpus}
+														aria-label="Maximum vCPUs for {user.username}"
+														class="w-20 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+													/>
+												</label>
+												<label class="flex flex-col gap-1 text-xs font-medium text-surface-500">
+													RAM (MB)
+													<input
+														type="number"
+														min="512"
+														step="512"
+														bind:value={editValues.max_ram_mb}
+														aria-label="Maximum RAM in MB for {user.username}"
+														class="w-24 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+													/>
+												</label>
+												<label class="flex flex-col gap-1 text-xs font-medium text-surface-500">
+													Pods
+													<input
+														type="number"
+														min="1"
+														bind:value={editValues.max_pods}
+														aria-label="Maximum pods for {user.username}"
+														class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+													/>
+												</label>
+												{#if studentAccessEditable(user.role)}
+													<label class="flex items-center gap-2 pb-1.5 text-xs font-medium text-surface-500">
+														<input
+															type="checkbox"
+															bind:checked={editValues.labs_enabled}
+															aria-label="Labs and blueprints for {user.username}"
+															class="accent-primary-500"
+														/>
+														Labs
+													</label>
+													<label class="flex flex-col gap-1 text-xs font-medium text-surface-500">
+														Single VMs
+														<input
+															type="number"
+															min="0"
+															max="3"
+															bind:value={editValues.max_single_vms}
+															aria-label="Single VM limit for {user.username}"
+															class="w-16 rounded border border-surface-200-800 bg-surface-50-950 px-2 py-1 text-sm text-surface-900-100 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+														/>
+													</label>
+												{/if}
+												<div class="flex items-center gap-1">
+													<button
+														class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-600 disabled:opacity-50"
+														disabled={saving}
+														onclick={() => saveQuota(user)}
+													>
+														{saving ? 'Saving…' : 'Save'}
+													</button>
+													<button
+														class="rounded-lg border border-surface-200 dark:border-surface-800 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-200 dark:hover:bg-surface-800"
+														onclick={cancelEdit}
+													>
+														Cancel
+													</button>
+												</div>
 											</div>
 										</td>
-									{:else}
-										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_vcpus}</td>
-										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_ram_mb}</td>
-										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">{user.max_pods}</td>
-										<td class="px-5 py-3 text-surface-600 dark:text-surface-400">
-											{studentAccessEditable(user.role) ? (user.labs_enabled ? 'Yes' : 'No') : '—'}
-										</td>
-										<td class="px-5 py-3 font-mono text-surface-600 dark:text-surface-400">
-											{staffRole(user.role) ? 'Unlimited' : (user.max_single_vms ?? 1)}
-										</td>
-										<td class="px-5 py-3 text-right">
-											<button
-												class="text-xs text-primary-500 hover:text-primary-400"
-												onclick={() => startEdit(user)}
-											>
-												Edit Quota
-											</button>
-										</td>
-									{/if}
-								</tr>
+									</tr>
+								{/if}
 							{/each}
 						{/if}
 					</tbody>
