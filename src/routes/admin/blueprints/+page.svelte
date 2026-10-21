@@ -601,6 +601,13 @@
 												>
 													Playlists
 												</button>
+												<a
+													class="text-xs text-primary-500 hover:text-primary-400"
+													href={`/admin/blueprints/${bp.id}/briefing`}
+													title="Write the briefing students read after they deploy this blueprint"
+												>
+													Briefing
+												</a>
 												<button
 													class="text-xs text-primary-500 hover:text-primary-400"
 													onclick={() => startEdit(bp)}

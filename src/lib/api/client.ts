@@ -1320,3 +1320,71 @@ export function adminListVCenterISOs(refresh = false): Promise<VCenterISOListRes
 export function adminListVCenterOVAs(): Promise<VCenterOVAListResponse> {
 	return apiFetch<VCenterOVAListResponse>('/api/v1/admin/vcenter/ovas');
 }
+
+// --- Lab briefings (instructor authoring) ---
+// Owners are templates (incl. Single VM templates) or blueprints. Every save
+// is an immutable revision; students only ever see `published_revision`.
+
+export type BriefingOwnerKind = 'templates' | 'blueprints';
+
+export interface BriefingMeta {
+	owner_kind: 'template' | 'blueprint';
+	owner_id: string;
+	head_revision: number;
+	published_revision: number | null;
+	updated_at: string | null;
+}
+
+export interface BriefingRevision {
+	revision: number;
+	body_md?: string;
+	body_sha256: string;
+	message: string;
+	author_id: string | null;
+	author: string;
+	restored_from: number | null;
+	is_published: boolean;
+	created_at: string;
+}
+
+const briefingPath = (kind: BriefingOwnerKind, id: string) =>
+	`/api/v1/admin/${kind}/${encodeURIComponent(id)}/briefing`;
+
+export function adminGetBriefing(kind: BriefingOwnerKind, id: string): Promise<BriefingMeta> {
+	return apiFetch<BriefingMeta>(briefingPath(kind, id));
+}
+
+export function adminListBriefingRevisions(kind: BriefingOwnerKind, id: string): Promise<BriefingRevision[]> {
+	return apiFetch<BriefingRevision[]>(`${briefingPath(kind, id)}/revisions`);
+}
+
+export function adminGetBriefingRevision(kind: BriefingOwnerKind, id: string, revision: number): Promise<BriefingRevision> {
+	return apiFetch<BriefingRevision>(`${briefingPath(kind, id)}/revisions/${revision}`);
+}
+
+/** Throws ApiError 409 with body.head_revision when baseRevision is stale. */
+export function adminSaveBriefingRevision(
+	kind: BriefingOwnerKind,
+	id: string,
+	body: { body_md: string; message: string; base_revision: number }
+): Promise<BriefingRevision> {
+	return apiFetch<BriefingRevision>(`${briefingPath(kind, id)}/revisions`, {
+		method: 'POST',
+		body: JSON.stringify(body)
+	});
+}
+
+export function adminRestoreBriefingRevision(kind: BriefingOwnerKind, id: string, revision: number): Promise<BriefingRevision> {
+	return apiFetch<BriefingRevision>(`${briefingPath(kind, id)}/revisions/${revision}/restore`, { method: 'POST' });
+}
+
+export function adminPublishBriefing(kind: BriefingOwnerKind, id: string, revision: number): Promise<BriefingMeta> {
+	return apiFetch<BriefingMeta>(`${briefingPath(kind, id)}/publish`, {
+		method: 'POST',
+		body: JSON.stringify({ revision })
+	});
+}
+
+export function adminUnpublishBriefing(kind: BriefingOwnerKind, id: string): Promise<BriefingMeta> {
+	return apiFetch<BriefingMeta>(`${briefingPath(kind, id)}/unpublish`, { method: 'POST' });
+}
