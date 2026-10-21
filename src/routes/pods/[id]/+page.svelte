@@ -29,6 +29,7 @@
 	import SnapshotPanel from '$lib/components/SnapshotPanel.svelte';
 	import JobPanel from '$lib/components/JobPanel.svelte';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
+	import BriefingCard from '$lib/components/BriefingCard.svelte';
 
 	const podId = $derived(page.params.id as string);
 
@@ -392,6 +393,8 @@
 				{pod.error_message}
 			</div>
 		{/if}
+
+		<BriefingCard podId={pod.id} />
 
 		<!-- Expiration -->
 		{#if pod.expires_at}
