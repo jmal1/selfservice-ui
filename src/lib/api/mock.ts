@@ -2,7 +2,7 @@
  * Mock data for local development without a backend.
  * Enable by setting PUBLIC_MOCK=true in .env
  */
-import type { ProvisioningStatus } from './client';
+import type { BriefingSection, ProvisioningStatus } from './client';
 import type { Pod, PodVM, Template, User, ResourceUsage, Job, AuditEntry, Run } from '$lib/types';
 
 // --- Helpers ---
@@ -507,7 +507,43 @@ function delay(ms = 300): Promise<void> {
 }
 
 // --- Mock API implementations ---
+// pod-001 shows a published lab briefing; other mock pods have none.
+const mockBriefings: Record<string, BriefingSection[]> = {
+	'pod-001': [
+		{
+			scope: 'blueprint',
+			title: 'Web Exploitation Lab',
+			body_md: [
+				'# Web Exploitation Lab',
+				'',
+				'> [!important]',
+				'> Stay inside your lab subnet.',
+				'',
+				'## Objectives',
+				'',
+				'- [ ] Enumerate the target',
+				'- [ ] Find the admin panel'
+			].join('\n'),
+			revision: 3,
+			updated_at: '2026-10-21T00:00:00Z'
+		},
+		{
+			scope: 'template',
+			title: 'Kali Linux',
+			template_name: 'Kali Linux',
+			vm_names: ['Kali'],
+			body_md: ['# Kali', '', 'Start with:', '', '```bash', 'nmap -sV 10.0.0.5', '```', '', 'See [Nmap docs](https://nmap.org).'].join('\n'),
+			revision: 1,
+			updated_at: '2026-10-21T00:00:00Z'
+		}
+	]
+};
+
 export const mockApi = {
+	async getPodBriefing(podId: string): Promise<BriefingSection[]> {
+		await delay(100);
+		return mockBriefings[podId] ?? [];
+	},
 	async getProvisioningStatus(): Promise<ProvisioningStatus> {
 		await delay(100);
 		return { enabled: true, message: 'Provisioning is available.' };

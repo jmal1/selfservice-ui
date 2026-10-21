@@ -1388,3 +1388,25 @@ export function adminPublishBriefing(kind: BriefingOwnerKind, id: string, revisi
 export function adminUnpublishBriefing(kind: BriefingOwnerKind, id: string): Promise<BriefingMeta> {
 	return apiFetch<BriefingMeta>(`${briefingPath(kind, id)}/unpublish`, { method: 'POST' });
 }
+
+// --- Lab briefings (student / pod view) ---
+
+export interface BriefingSection {
+	scope: 'blueprint' | 'template';
+	title: string;
+	template_id?: string;
+	template_name?: string;
+	vm_names?: string[];
+	body_md: string;
+	revision: number;
+	updated_at: string;
+}
+
+/** Published briefings for a pod (owner or instructor). Empty when none are published. */
+export async function getPodBriefing(podId: string): Promise<BriefingSection[]> {
+	if (isMock) return mockApi.getPodBriefing(podId);
+	const res = await apiFetch<{ sections: BriefingSection[] | null }>(
+		`/api/v1/pods/${encodeURIComponent(podId)}/briefing`
+	);
+	return res?.sections ?? [];
+}

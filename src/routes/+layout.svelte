@@ -24,7 +24,11 @@
 	const isConsolePage = $derived(
 		page.url.pathname.startsWith('/console') || page.url.pathname.endsWith('/console')
 	);
-	const showSidebar = $derived(authStore.isAuthenticated && !isLoginPage && !isConsolePage);
+	// Standalone lab briefing (/briefing/[podId]) opens in a popup or new tab beside the console.
+	const isStandalonePage = $derived(page.url.pathname.startsWith('/briefing/'));
+	const showSidebar = $derived(
+		authStore.isAuthenticated && !isLoginPage && !isConsolePage && !isStandalonePage
+	);
 
 	let mobileMenuOpen = $state(false);
 
