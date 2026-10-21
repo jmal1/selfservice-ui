@@ -24,6 +24,8 @@
 		adminRestoreBriefingRevision,
 		adminSaveBriefingRevision,
 		adminUnpublishBriefing,
+		adminUploadBriefingAsset,
+		BRIEFING_IMAGE_MAX_BYTES,
 		type BriefingMeta,
 		type BriefingOwnerKind,
 		type BriefingRevision
@@ -48,6 +50,8 @@
 	let busy = $state(false);
 	let loadError = $state('');
 	let editorError = $state('');
+	let uploading = $state(0);
+	let fileInput: HTMLInputElement | undefined = $state();
 	let loaded = false; // the draft mirror must not run before the head (and any draft) is loaded
 	let conflict = $state<{ head: number; headBody: string } | null>(null);
 	let compare = $state<{ title: string; original: string; modified: string } | null>(null);
@@ -286,6 +290,58 @@
 		editor?.dispose();
 	});
 
+	function insertAtCursor(text: string) {
+		if (editor) {
+			editor.executeEdits('briefing-image', [{ range: editor.getSelection(), text, forceMoveMarkers: true }]);
+			editor.focus();
+		} else {
+			value += text;
+		}
+	}
+
+	// Upload images and insert Markdown links at the cursor. The API sniffs
+	// and restricts the type (PNG/JPEG/GIF/WebP, no SVG); we only pre-check size.
+	async function uploadImages(files: File[]) {
+		for (const file of files) {
+			if (file.size > BRIEFING_IMAGE_MAX_BYTES) {
+				toastStore.error('Image too large', `${file.name} is over 5 MiB.`);
+				continue;
+			}
+			uploading++;
+			try {
+				const asset = await adminUploadBriefingAsset(file);
+				insertAtCursor(`![image](${asset.url})\n`);
+			} catch (e) {
+				toastStore.error(`Could not upload ${file.name || 'image'}`, errorText(e));
+			} finally {
+				uploading--;
+			}
+		}
+	}
+
+	const imageFiles = (list: FileList | null | undefined) =>
+		[...(list ?? [])].filter((f) => f.type.startsWith('image/'));
+
+	function onPaste(e: ClipboardEvent) {
+		const files = imageFiles(e.clipboardData?.files);
+		if (files.length === 0) return;
+		e.preventDefault();
+		e.stopPropagation();
+		uploadImages(files);
+	}
+
+	function onDrop(e: DragEvent) {
+		const files = imageFiles(e.dataTransfer?.files);
+		if (files.length === 0) return;
+		e.preventDefault();
+		e.stopPropagation();
+		uploadImages(files);
+	}
+
+	function onDragOver(e: DragEvent) {
+		if (e.dataTransfer?.types.includes('Files')) e.preventDefault();
+	}
+
 	const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—');
 </script>
 
@@ -338,6 +394,23 @@
 			<button class="btn btn-sm btn-ghost" onclick={unpublish} disabled={busy || !meta?.published_revision}>
 				Unpublish
 			</button>
+			<button class="btn btn-sm btn-ghost" onclick={() => fileInput?.click()} disabled={busy || uploading > 0}>
+				Insert image
+			</button>
+			<input
+				bind:this={fileInput}
+				type="file"
+				accept="image/png,image/jpeg,image/gif,image/webp"
+				multiple
+				class="hidden"
+				aria-label="Choose briefing images"
+				onchange={(e) => {
+					const input = e.currentTarget as HTMLInputElement;
+					uploadImages(imageFiles(input.files));
+					input.value = '';
+				}}
+			/>
+			{#if uploading > 0}<span class="text-xs text-surface-500" role="status">Uploading image…</span>{/if}
 		</div>
 
 		{#if conflict}
@@ -351,7 +424,13 @@
 		{/if}
 
 		<div class="grid gap-4 lg:grid-cols-2">
-			<section aria-label="Markdown editor" class="overflow-hidden rounded border border-surface-300 dark:border-surface-700">
+			<section
+				aria-label="Markdown editor"
+				class="overflow-hidden rounded border border-surface-300 dark:border-surface-700"
+				onpastecapture={onPaste}
+				ondropcapture={onDrop}
+				ondragovercapture={onDragOver}
+			>
 				{#if editorError}
 					<p class="p-3 text-xs text-error-500">Editor failed to load ({editorError}). You can still edit below.</p>
 					<textarea class="h-[65vh] w-full p-3 font-mono text-sm" bind:value aria-label="Briefing markdown"></textarea>

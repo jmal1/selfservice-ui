@@ -1410,3 +1410,22 @@ export async function getPodBriefing(podId: string): Promise<BriefingSection[]> 
 	);
 	return res?.sections ?? [];
 }
+
+export interface BriefingAsset {
+	sha256: string;
+	url: string;
+	content_type: string;
+	size_bytes: number;
+}
+
+/** Max briefing image size; the API enforces the same limit. */
+export const BRIEFING_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Upload one briefing image as the raw request body. The API sniffs the type. */
+export function adminUploadBriefingAsset(file: Blob): Promise<BriefingAsset> {
+	return apiFetch<BriefingAsset>('/api/v1/admin/briefing-assets', {
+		method: 'POST',
+		headers: { 'Content-Type': file.type || 'application/octet-stream' },
+		body: file
+	});
+}
