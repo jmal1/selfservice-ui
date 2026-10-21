@@ -204,6 +204,42 @@ export function renderMarkdown(source: string, sourcePath: string): string {
 	});
 }
 
+/** Same-origin path that serves uploaded briefing images (Phase 4). */
+const BRIEFING_ASSET_PREFIX = '/api/v1/briefing-assets/';
+
+/**
+ * Render an instructor-authored lab briefing to sanitized HTML.
+ *
+ * Briefings are written by instructors but read by students, so a
+ * phished instructor account must not be able to run script in a
+ * student's session. On top of the wiki's DOMPurify pass this:
+ *   * skips the wiki's bundle-path link rewriting;
+ *   * opens absolute http(s) links in a new tab with no opener/referrer,
+ *     so a briefing link cannot navigate the lab tab away;
+ *   * keeps <img> only for https: URLs and our own briefing-asset path
+ *     (DOMPurify already drops javascript: and non-image data: URIs).
+ */
+export function renderBriefing(source: string): string {
+	if (!source) return '';
+	const html = marked.parse(normalizeAlertSyntax(source), { async: false }) as string;
+	const body = DOMPurify.sanitize(html, {
+		USE_PROFILES: { html: true },
+		ADD_ATTR: ['id'],
+		RETURN_DOM: true
+	}) as HTMLElement;
+	for (const a of body.querySelectorAll('a[href]')) {
+		if (/^https?:\/\//i.test(a.getAttribute('href') ?? '')) {
+			a.setAttribute('target', '_blank');
+			a.setAttribute('rel', 'noopener noreferrer');
+		}
+	}
+	for (const img of body.querySelectorAll('img')) {
+		const src = img.getAttribute('src') ?? '';
+		if (!/^https:\/\//i.test(src) && !src.startsWith(BRIEFING_ASSET_PREFIX)) img.remove();
+	}
+	return body.innerHTML;
+}
+
 // Exported solely so the bundler-link contract has a unit test. Not
 // intended for general use; callers should prefer renderMarkdown.
 export const __test = { resolveBundlePath, rewriteIntraBundleLinks, normalizeAlertSyntax };
