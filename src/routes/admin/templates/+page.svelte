@@ -608,6 +608,15 @@
 											</div>
 										</td>
 									</tr>
+									<tr class="border-b border-primary-500/20 bg-primary-500/5">
+										<td colspan="9" class="px-5 pb-4">
+											<MarkdownField
+												bind:value={editValues.description}
+												rows={5}
+												label="Description shown to students before they provision (Markdown, max 16 KiB)"
+											/>
+										</td>
+									</tr>
 								{:else if deletingId === t.id}
 									<!-- Delete confirmation row -->
 									<tr class="border-b border-error-500/20 bg-error-500/5">
