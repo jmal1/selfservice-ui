@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Template } from '$lib/types';
+	import { renderBriefing } from '$lib/wiki/markdown';
 
 	let {
 		templates,
@@ -43,7 +44,7 @@
 				<div class="min-w-0 flex-1">
 					<h3 class="font-semibold text-surface-900 dark:text-surface-100">{template.name}</h3>
 					{#if template.description}
-						<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
+						<div class="template-description prose prose-sm mt-0.5 max-w-none text-xs text-surface-500 dark:prose-invert">{@html renderBriefing(template.description)}</div>
 					{/if}
 				</div>
 			</div>

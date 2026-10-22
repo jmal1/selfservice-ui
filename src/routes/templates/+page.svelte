@@ -3,6 +3,7 @@
 	import { friendlyError } from '$lib/errors/friendly';
 	import { getTemplates } from '$lib/api/client';
 	import type { Template } from '$lib/types';
+	import { renderBriefing } from '$lib/wiki/markdown';
 	import LoadingSkeleton from '$lib/components/LoadingSkeleton.svelte';
 	import { provisioningStore } from '$lib/stores/provisioning.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
@@ -104,7 +105,7 @@
 										{/if}
 									</div>
 									{#if template.description}
-										<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
+										<div class="template-description prose prose-sm mt-0.5 max-w-none text-xs text-surface-500 dark:prose-invert">{@html renderBriefing(template.description)}</div>
 									{/if}
 								</div>
 							</div>
@@ -139,7 +140,7 @@
 										{/if}
 									</div>
 									{#if template.description}
-										<p class="mt-0.5 text-xs text-surface-500">{template.description}</p>
+										<div class="template-description prose prose-sm mt-0.5 max-w-none text-xs text-surface-500 dark:prose-invert">{@html renderBriefing(template.description)}</div>
 									{/if}
 								</div>
 							</div>
